@@ -3,9 +3,12 @@
 name: Codex auto-fix
 
 on:  # yamllint disable-line rule:truthy
+  # zizmor: ignore[dangerous-triggers] gated below to same-repo head refs, so no fork-controlled code is checked out
   workflow_run:
     workflows:
-      - Deploy Worker
+      - Android CI
+      - Backend CI
+      - Dependency Submission
       - MegaLinter
     types:
       - completed
@@ -19,13 +22,16 @@ permissions: {}
 
 jobs:
   fix_and_pr:
+    # The workflow_run branch checks out the failing head SHA and then runs
+    # repository tooling plus a Codex action holding OPENAI_API_KEY, with
+    # contents:write. Restrict this to runs from this repository.
     if: >-
       ${{
         github.event_name == 'workflow_dispatch' ||
         (github.event.workflow_run.conclusion == 'failure' &&
          github.event.workflow_run.head_repository.full_name == github.repository)
       }}
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-latest
     permissions:
       contents: write
       pull-requests: write
@@ -39,15 +45,34 @@ jobs:
           persist-credentials: false
 
       - name: Set up Node.js
+        if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.name == 'Backend CI'
         uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version: "22"
           cache: npm
-          cache-dependency-path: worker/package-lock.json
+          cache-dependency-path: backend/package-lock.json
 
-      - name: Install Worker dependencies
+      - name: Install backend dependencies
+        if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.name == 'Backend CI'
         run: npm ci
-        working-directory: worker
+        working-directory: backend
+
+      - name: Set up JDK 17
+        if: >-
+          github.event_name == 'workflow_dispatch' ||
+          github.event.workflow_run.name == 'Android CI' ||
+          github.event.workflow_run.name == 'Dependency Submission'
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        if: >-
+          github.event_name == 'workflow_dispatch' ||
+          github.event.workflow_run.name == 'Android CI' ||
+          github.event.workflow_run.name == 'Dependency Submission'
+        uses: gradle/actions/setup-gradle@v6
 
       - name: Run Codex
         uses: openai/codex-action@v1
@@ -57,32 +82,29 @@ jobs:
             The repository workflow "${{ github.event.workflow_run.name || 'manual Codex auto-fix run' }}"
             failed for commit ${{ github.event.workflow_run.head_sha || github.sha }}.
 
-            This repo's main automated checks are:
-            - `npm run typecheck` from the `worker` directory for the Cloudflare Worker.
-            - MegaLinter for repository linting and formatting.
-            - `python3 generate.py` for playlist generation smoke checks when Python files or streams are involved.
+            Reproduce only the relevant check:
+            - Android CI: run
+              `./gradlew --no-daemon --stacktrace lintDebug assembleDebug testDebugUnitTest`.
+            - Backend CI: from `backend`, run `npx wrangler types`, `npm run typecheck`,
+              and `npm test`.
+            - Dependency Submission: inspect whether dependency graph generation or dependency
+              review failed, then reproduce the smallest relevant Gradle dependency resolution.
+            - MegaLinter: inspect the failed linter and run only its targeted check where possible.
 
-            Start by reproducing the likely failure with the smallest relevant command:
-            - For Deploy Worker failures, run `npm run typecheck` in `worker`.
-            - For MegaLinter failures, inspect the workflow failure and run targeted lint/format checks only when possible.
-            - If the failure appears related to playlist generation, run `python3 generate.py`.
+            Identify the minimal change needed to make the failing check pass, implement only that
+            change, and rerun the smallest relevant command. Do not refactor unrelated files.
 
-            Identify the minimal change needed to make the failing check pass, implement only that change,
-            and rerun the relevant command. Do not refactor unrelated files.
-
-      - name: Check for patch
+      - name: Check for changes
         id: diff
         run: |
-          git add -N .
-          git diff --binary HEAD > codex.patch
-          if [ -s codex.patch ]; then
-            echo "has_patch=true" >> "$GITHUB_OUTPUT"
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
           else
-            echo "has_patch=false" >> "$GITHUB_OUTPUT"
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Apply patch and open PR
-        if: steps.diff.outputs.has_patch == 'true'
+      - name: Commit changes and open PR
+        if: steps.diff.outputs.has_changes == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           FAILED_HEAD_BRANCH: ${{ github.event.workflow_run.head_branch || github.ref_name }}
@@ -91,11 +113,12 @@ jobs:
         run: |
           branch="codex/auto-fix-$RUN_ID"
 
-          git apply --index codex.patch
+          git switch -c "$branch"
+          git add -A
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git switch -c "$branch"
           git commit -m "Auto-fix failing checks via Codex"
+          gh auth setup-git
           git push origin "$branch"
 
           {
