@@ -1,10 +1,15 @@
 # MegaLinter configuration
 # Docs: https://megalinter.io/latest/config-file/
 ---
-# Auto-fix applied in-container and surfaced under
-# megalinter-reports/updated_sources/ in the artifact. No writeback:
-# mega-linter.yml keeps APPLY_FIXES_EVENT: none, so nothing is committed.
+FLAVOR_SUGGESTIONS: false
+SECURITY_SUGGESTIONS: false
+
+# Apply safe formatter fixes inside the runner and expose only changed sources
+# through a dedicated workflow artifact. Nothing is committed back to branches.
 APPLY_FIXES: all
+UPDATED_SOURCES_REPORTER: true
+UPDATED_SOURCES_REPORTER_DIR: updated_sources
+
 # REPOSITORY: secret/SAST scanning - GitHub secret scanning + Dependabot
 #   already cover this here
 # SPELL: cspell - Polish strings.xml resources produce mostly noise
