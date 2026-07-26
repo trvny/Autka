@@ -47,4 +47,5 @@ DISABLE_ERRORS_LINTERS:
   - YAML_YAMLLINT
   - MARKDOWN_MARKDOWNLINT
 
-FILTER_REGEX_EXCLUDE: "(gradle/wrapper/gradle-wrapper\\.jar|fastlane/metadata/.*/images/|package-lock\\.json)"
+# gradlew.bat is a generated Gradle wrapper with intentional Windows CRLF.
+FILTER_REGEX_EXCLUDE: "(gradlew\\.bat|gradle/wrapper/gradle-wrapper\\.jar|fastlane/metadata/.*/images/|package-lock\\.json)"
