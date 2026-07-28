@@ -20,9 +20,7 @@ An Android app that aggregates used-car offers from Polish, EU, and US-import
 marketplaces into one searchable list, with landed-cost estimation for cars imported
 from the USA.
 
-> Formerly **CarGate**. The user-facing name and Gradle project are now **Autka**; code
-> identity is unchanged (package `com.autka`). Live Cloudflare resources keep the
-> original `cargate-` prefix.
+> Formerly **CarGate**.
 
 ## Status
 
@@ -65,7 +63,7 @@ Or open the folder in Android Studio and hit Run. First sync downloads dependenc
 
 ## License
 
-[![license](https://img.shields.io/github/license/trvny/trvny)](LICENSE)
+[![license](https://img.shields.io/github/license/trvny/autka)](LICENSE)
 
 ## Other stuff
 
