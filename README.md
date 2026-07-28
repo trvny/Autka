@@ -65,4 +65,8 @@ Or open the folder in Android Studio and hit Run. First sync downloads dependenc
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+[![license](https://img.shields.io/github/license/trvny/trvny)](LICENSE)
+
+## Other stuff
+
+[![feeds](https://github-stats-extended.vercel.app/api/pin?username=trvny&repo=trvny%2Ffeeds&theme=great-gatsby)](https://github.com/trvny/feeds)
