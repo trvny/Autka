@@ -82,8 +82,20 @@ if (-not $ghAuthenticated) {
 
 $keytoolCommand = Get-Command keytool.exe -ErrorAction SilentlyContinue
 $keytoolPath = if ($keytoolCommand) { $keytoolCommand.Source } else { $null }
+$jdkPatterns = @()
+if ($env:ProgramFiles) {
+    $jdkPatterns += Join-Path $env:ProgramFiles "Java\jdk*\bin\keytool.exe"
+    $jdkPatterns += Join-Path $env:ProgramFiles "Eclipse Adoptium\jdk*\bin\keytool.exe"
+    $jdkPatterns += Join-Path $env:ProgramFiles "Microsoft\jdk-*\bin\keytool.exe"
+}
+$installedJdkCandidates = @(
+    foreach ($pattern in $jdkPatterns) {
+        Get-Item -Path $pattern -ErrorAction SilentlyContinue
+    }
+) | Sort-Object LastWriteTime -Descending | ForEach-Object { $_.FullName }
 $candidates = @(
     $(if ($env:JAVA_HOME) { Join-Path $env:JAVA_HOME "bin\keytool.exe" }),
+    $installedJdkCandidates,
     $(if ($env:ProgramFiles) { Join-Path $env:ProgramFiles "Android\Android Studio\jbr\bin\keytool.exe" }),
     $(if ($env:LOCALAPPDATA) { Join-Path $env:LOCALAPPDATA "Programs\Android Studio\jbr\bin\keytool.exe" })
 ) | Where-Object { $_ }
@@ -92,8 +104,9 @@ if (-not $keytoolPath) {
     $keytoolPath = $candidates | Where-Object { Test-Path $_ } | Select-Object -First 1
 }
 if (-not $keytoolPath) {
-    throw "keytool.exe was not found. Install Android Studio/JDK 17 or set JAVA_HOME."
+    throw "keytool.exe was not found. Install a JDK or set JAVA_HOME to its directory."
 }
+Write-Host "Using keytool: $keytoolPath"
 
 New-Item -ItemType Directory -Force -Path $keystoreDirectory | Out-Null
 if (Test-Path $keystorePath) {
