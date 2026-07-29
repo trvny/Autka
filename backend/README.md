@@ -1,3 +1,5 @@
+[![Cloudflare](https://workers.cloudflare.com/built-with-cloudflare.svg)](https://cloudflare.com) 
+
 # Autka Backend
 
 Cloudflare Workers backend that aggregates used-car offers server-side and serves a
