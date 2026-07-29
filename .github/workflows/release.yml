@@ -1,47 +1,61 @@
-# ----------------------------------------------------------------------------------------
 # Autka release workflow.
-#
-# Trigger: push a tag matching v* (e.g. v0.1.0) or run it manually from the Actions tab.
-# It builds a release APK + AAB and publishes them on a GitHub release. Signing is OPT-IN
-# (see RELEASING.md): with the keystore secrets set the artifacts are signed; without them
-# the build still succeeds but the APK is unsigned (OK for F-Droid, not for Play / direct).
-# ----------------------------------------------------------------------------------------
 name: Release
 
 on:
   push:
-    tags: [ 'v*' ]
+    tags: ["v*"]
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing release tag (for example v0.2.0)"
+        required: true
+        type: string
 
 concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
 
 permissions:
-  contents: write   # required to create the GitHub release
+  contents: write
 
 jobs:
   release:
-    name: Build & publish release
+    name: Build and publish release
     runs-on: ubuntu-latest
     env:
       KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
     steps:
-      - name: Checkout
+      - name: Checkout release tag
         uses: actions/checkout@v7
         with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
           persist-credentials: false
+
+      - name: Resolve release names
+        id: release
+        shell: bash
+        env:
+          INPUT_TAG: ${{ github.event.inputs.tag }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          tag="${INPUT_TAG:-$REF_NAME}"
+          if [[ ! "$tag" =~ ^v[0-9A-Za-z][0-9A-Za-z._-]*$ ]]; then
+            echo "::error::Release tag must start with v and contain only filename-safe characters."
+            exit 1
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=${tag#v}" >> "$GITHUB_OUTPUT"
 
       - name: Set up JDK 17
         uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: "17"
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
         with:
-          cache-disabled: true   # release build must not restore a poisonable cache
+          cache-disabled: true
 
       - name: Decode signing keystore
         id: keystore
@@ -50,7 +64,7 @@ jobs:
           echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.keystore"
           echo "path=$RUNNER_TEMP/release.keystore" >> "$GITHUB_OUTPUT"
 
-      - name: Build release APK + AAB
+      - name: Build release APK and AAB
         env:
           AUTKA_KEYSTORE: ${{ steps.keystore.outputs.path }}
           AUTKA_KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
@@ -58,16 +72,26 @@ jobs:
           AUTKA_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: ./gradlew --no-daemon --stacktrace assembleRelease bundleRelease
 
-      - name: Collect artifacts
+      - name: Name release artifacts
+        shell: bash
+        env:
+          RELEASE_VERSION: ${{ steps.release.outputs.version }}
         run: |
+          set -euo pipefail
           mkdir -p dist
-          find app/build/outputs/apk/release -name '*.apk' -exec cp {} dist/ \; || true
-          find app/build/outputs/bundle/release -name '*.aab' -exec cp {} dist/ \; || true
+          apk="$(find app/build/outputs/apk/release -maxdepth 1 -type f -name '*.apk' -print -quit)"
+          aab="$(find app/build/outputs/bundle/release -maxdepth 1 -type f -name '*.aab' -print -quit)"
+          test -n "$apk"
+          test -n "$aab"
+          cp "$apk" "dist/autka-$RELEASE_VERSION.apk"
+          cp "$aab" "dist/autka-$RELEASE_VERSION.aab"
           ls -la dist
 
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v3
         with:
+          tag_name: ${{ steps.release.outputs.tag }}
+          name: Autka ${{ steps.release.outputs.version }}
           files: dist/*
           generate_release_notes: true
           fail_on_unmatched_files: true
