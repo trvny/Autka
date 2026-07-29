@@ -52,13 +52,44 @@ function Set-RepositorySecret {
     }
 }
 
+$ghCommand = Get-Command gh.exe -ErrorAction SilentlyContinue
+$ghPath = if ($ghCommand) { $ghCommand.Source } else { $null }
+$ghAuthenticated = $false
+if ($ghPath) {
+    & $ghPath auth status --hostname github.com *> $null
+    if ($LASTEXITCODE -eq 0) {
+        $ghAuthenticated = $true
+        $secretNames = @(& $ghPath secret list --repo $repository --json name --jq ".[].name")
+        if ($LASTEXITCODE -ne 0) {
+            throw "Could not inspect existing Actions secrets in $repository."
+        }
+
+        $signingSecrets = @($base64Secret, "KEYSTORE_PASSWORD", "KEY_ALIAS", "KEY_PASSWORD")
+        $existingSigningSecrets = @($secretNames | Where-Object { $signingSecrets -contains $_ })
+        if ($existingSigningSecrets.Count -gt 0) {
+            throw "Release signing secrets already exist in $repository ($($existingSigningSecrets -join ', ')). Restore the existing keystore instead of generating a new certificate."
+        }
+    }
+}
+
+if (-not $ghAuthenticated) {
+    Write-Warning "GitHub CLI is unavailable or not authenticated, so existing signing secrets cannot be checked."
+    $confirmation = Read-Host "Type CREATE-FIRST-KEY only if this app has never had a release signing key"
+    if ($confirmation -cne "CREATE-FIRST-KEY") {
+        throw "Cancelled without creating a key."
+    }
+}
+
 $keytoolCommand = Get-Command keytool.exe -ErrorAction SilentlyContinue
 $keytoolPath = if ($keytoolCommand) { $keytoolCommand.Source } else { $null }
-if (-not $keytoolPath -and $env:JAVA_HOME) {
-    $candidate = Join-Path $env:JAVA_HOME "bin\keytool.exe"
-    if (Test-Path $candidate) {
-        $keytoolPath = $candidate
-    }
+$candidates = @(
+    $(if ($env:JAVA_HOME) { Join-Path $env:JAVA_HOME "bin\keytool.exe" }),
+    $(if ($env:ProgramFiles) { Join-Path $env:ProgramFiles "Android\Android Studio\jbr\bin\keytool.exe" }),
+    $(if ($env:LOCALAPPDATA) { Join-Path $env:LOCALAPPDATA "Programs\Android Studio\jbr\bin\keytool.exe" })
+) | Where-Object { $_ }
+
+if (-not $keytoolPath) {
+    $keytoolPath = $candidates | Where-Object { Test-Path $_ } | Select-Object -First 1
 }
 if (-not $keytoolPath) {
     throw "keytool.exe was not found. Install Android Studio/JDK 17 or set JAVA_HOME."
@@ -92,18 +123,13 @@ if ($LASTEXITCODE -ne 0) {
 $base64 = [Convert]::ToBase64String([IO.File]::ReadAllBytes($keystorePath))
 [IO.File]::WriteAllText($base64Path, $base64, [Text.Encoding]::ASCII)
 
-$ghCommand = Get-Command gh.exe -ErrorAction SilentlyContinue
-$ghPath = if ($ghCommand) { $ghCommand.Source } else { $null }
 $uploaded = $false
-if ($ghPath) {
-    & $ghPath auth status --hostname github.com *> $null
-    if ($LASTEXITCODE -eq 0) {
-        Set-RepositorySecret $base64Secret $base64 $ghPath
-        Set-RepositorySecret "KEYSTORE_PASSWORD" $storePassword $ghPath
-        Set-RepositorySecret "KEY_ALIAS" $keyAlias $ghPath
-        Set-RepositorySecret "KEY_PASSWORD" $keyPassword $ghPath
-        $uploaded = $true
-    }
+if ($ghAuthenticated) {
+    Set-RepositorySecret $base64Secret $base64 $ghPath
+    Set-RepositorySecret "KEYSTORE_PASSWORD" $storePassword $ghPath
+    Set-RepositorySecret "KEY_ALIAS" $keyAlias $ghPath
+    Set-RepositorySecret "KEY_PASSWORD" $keyPassword $ghPath
+    $uploaded = $true
 }
 
 Write-Host ""
@@ -115,8 +141,7 @@ if ($uploaded) {
     Write-Host "GitHub Actions secrets were uploaded to $repository." -ForegroundColor Green
 }
 else {
-    Write-Host "GitHub CLI is unavailable or not authenticated." -ForegroundColor Yellow
-    Write-Host "Add these repository Actions secrets manually:"
+    Write-Host "Add these repository Actions secrets manually:" -ForegroundColor Yellow
     Write-Host "  $base64Secret = contents of $base64Path"
     Write-Host "  KEYSTORE_PASSWORD = the keystore password"
     Write-Host "  KEY_ALIAS = $keyAlias"
