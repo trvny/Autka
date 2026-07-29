@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Release tag (for example v0.2.0)"
+        description: "Existing release tag (for example v0.2.0)"
         required: true
         type: string
 
@@ -25,9 +25,10 @@ jobs:
     env:
       KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
     steps:
-      - name: Checkout
+      - name: Checkout release tag
         uses: actions/checkout@v7
         with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
           persist-credentials: false
 
       - name: Resolve release names
