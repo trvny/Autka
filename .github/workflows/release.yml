@@ -33,15 +33,17 @@ jobs:
       - name: Resolve release names
         id: release
         shell: bash
+        env:
+          INPUT_TAG: ${{ github.event.inputs.tag }}
+          REF_NAME: ${{ github.ref_name }}
         run: |
-          tag="${{ github.event.inputs.tag || github.ref_name }}"
-          version="${tag#v}"
-          if [ -z "$version" ] || [ "$version" = "$tag" ]; then
-            echo "::error::Release tag must start with v."
+          tag="${INPUT_TAG:-$REF_NAME}"
+          if [[ ! "$tag" =~ ^v[0-9A-Za-z][0-9A-Za-z._-]*$ ]]; then
+            echo "::error::Release tag must start with v and contain only filename-safe characters."
             exit 1
           fi
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
-          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "version=${tag#v}" >> "$GITHUB_OUTPUT"
 
       - name: Set up JDK 17
         uses: actions/setup-java@v5
@@ -71,6 +73,8 @@ jobs:
 
       - name: Name release artifacts
         shell: bash
+        env:
+          RELEASE_VERSION: ${{ steps.release.outputs.version }}
         run: |
           set -euo pipefail
           mkdir -p dist
@@ -78,8 +82,8 @@ jobs:
           aab="$(find app/build/outputs/bundle/release -maxdepth 1 -type f -name '*.aab' -print -quit)"
           test -n "$apk"
           test -n "$aab"
-          cp "$apk" "dist/autka-${{ steps.release.outputs.version }}.apk"
-          cp "$aab" "dist/autka-${{ steps.release.outputs.version }}.aab"
+          cp "$apk" "dist/autka-$RELEASE_VERSION.apk"
+          cp "$aab" "dist/autka-$RELEASE_VERSION.aab"
           ls -la dist
 
       - name: Publish GitHub release
