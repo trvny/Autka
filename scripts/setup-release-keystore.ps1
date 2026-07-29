@@ -94,10 +94,10 @@ $installedJdkCandidates = @(
     }
 ) | Sort-Object LastWriteTime -Descending | ForEach-Object { $_.FullName }
 $candidates = @(
-    $(if ($env:JAVA_HOME) { Join-Path $env:JAVA_HOME "bin\keytool.exe" }),
-    $installedJdkCandidates,
-    $(if ($env:ProgramFiles) { Join-Path $env:ProgramFiles "Android\Android Studio\jbr\bin\keytool.exe" }),
-    $(if ($env:LOCALAPPDATA) { Join-Path $env:LOCALAPPDATA "Programs\Android Studio\jbr\bin\keytool.exe" })
+    if ($env:JAVA_HOME) { Join-Path $env:JAVA_HOME "bin\keytool.exe" }
+    $installedJdkCandidates
+    if ($env:ProgramFiles) { Join-Path $env:ProgramFiles "Android\Android Studio\jbr\bin\keytool.exe" }
+    if ($env:LOCALAPPDATA) { Join-Path $env:LOCALAPPDATA "Programs\Android Studio\jbr\bin\keytool.exe" }
 ) | Where-Object { $_ }
 
 if (-not $keytoolPath) {
