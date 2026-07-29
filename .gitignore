@@ -1,15 +1,21 @@
-*.iml
+# Android and Gradle
 .gradle/
-/local.properties
-/.idea/
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
+.kotlin/
 local.properties
-/app/build/
-/*/build/
+.idea/
+*.iml
+build/
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+*.jks
 *.keystore
 !debug.keystore
-.kotlin/
+
+# Operating systems and reports
+.DS_Store
+Thumbs.db
+megalinter-reports/
+mega-linter.log
