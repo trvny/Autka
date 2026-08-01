@@ -61,9 +61,7 @@ Or open the folder in Android Studio and hit Run. First sync downloads dependenc
 | [`docs/TODO.md`](docs/TODO.md) | Remaining blockers and verification work |
 | [`backend/README.md`](backend/README.md) | Backend API, ingestion and operations |
 
-<a href="LICENSE"><img src="https://miro.medium.com/v2/resize:fit:300/0*TyCQe1530Rs3AQjS.png" alt="MIT License"></a>
 ---
-
 ## Other stuff
 
 [![feeds](https://github-stats-extended.vercel.app/api/pin?username=trvny&repo=trvny%2Ffeeds&theme=great-gatsby)](https://github.com/trvny/feeds) [![tvpi](https://github.com/trvny/.github/blob/main/assets/profile/pin_tvpi.svg)](https://github.com/trvny/tvpi)
