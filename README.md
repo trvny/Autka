@@ -22,6 +22,23 @@ from the USA.
 
 > Formerly **CarGate**.
 
+> [!IMPORTANT]
+> **Current blocker / Obecna blokada**
+>
+> **EN:** Autka is currently limited less by code than by access to lawful, reliable
+> listing data. Scraping marketplaces is not the direction of this project, while
+> arranging a licensed feed or a business partnership with a major platform such as OLX
+> is not something a small independent project can do overnight. Leads to legal data
+> providers, API/feed access, relevant contacts, or concrete collaboration offers are
+> very welcome.
+>
+> **PL:** Rozwój projektu Autka ogranicza dziś nie tyle kod, co dostęp do legalnych i
+> wiarygodnych danych ogłoszeniowych. Scraping serwisów nie jest kierunkiem tego projektu,
+> a dogadanie licencjonowanego feedu lub współpracy biznesowej z dużą platformą typu OLX
+> nie jest dla małego, niezależnego projektu sprawą do załatwienia od ręki. Kontakty do
+> legalnych dostawców danych, dostęp do API/feedów albo konkretne propozycje współpracy są
+> bardzo mile widziane.
+
 ## Status
 
 Runnable scaffold. Search → filter → list → detail → import-cost breakdown works
