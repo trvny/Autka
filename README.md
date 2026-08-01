@@ -13,7 +13,7 @@
   <a href="https://github.com/trvny/autka/actions/workflows/backend-ci.yml"><img src="https://github.com/trvny/autka/actions/workflows/backend-ci.yml/badge.svg" alt="Backend CI"></a>
   <img src="https://img.shields.io/badge/kotlin-2.4.0-7F52FF?logo=kotlin&logoColor=white" alt="Kotlin 2.4.0">
   <img src="https://img.shields.io/badge/minSdk-26-3DDC84?logo=android&logoColor=white" alt="minSdk 26">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/trvny/autka" alt="0BSD"></a>
 </p>
 
 An Android app that aggregates used-car offers from Polish, EU, and US-import
@@ -60,6 +60,9 @@ Or open the folder in Android Studio and hit Run. First sync downloads dependenc
 | [`docs/RELEASING.md`](docs/RELEASING.md) | Signing, Google Play and F-Droid release process |
 | [`docs/TODO.md`](docs/TODO.md) | Remaining blockers and verification work |
 | [`backend/README.md`](backend/README.md) | Backend API, ingestion and operations |
+
+<a href="LICENSE"><img src="https://miro.medium.com/v2/resize:fit:300/0*TyCQe1530Rs3AQjS.png" alt="MIT License"></a>
+---
 
 ## Other stuff
 
