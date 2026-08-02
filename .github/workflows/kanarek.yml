@@ -1,0 +1,62 @@
+---
+name: kanarek
+
+on: # yamllint disable-line rule:truthy
+  # zizmor: ignore[dangerous-triggers] only same-repository PRs call the trusted reusable workflow
+  pull_request_target:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+      - converted_to_draft
+      - closed
+  pull_request_review:
+    types:
+      - submitted
+      - dismissed
+  # zizmor: ignore[dangerous-triggers] only PR runs from this repository are accepted
+  workflow_run:
+    workflows:
+      - Android CI
+      - Backend CI
+      - MegaLinter
+    types:
+      - completed
+  workflow_dispatch:
+
+concurrency:
+  group: kanarek-companion-${{ github.repository }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  companion:
+    if: >-
+      ${{
+        vars.KANAREK_ENABLED == 'true' &&
+        (github.event_name != 'pull_request_target' ||
+         github.event.pull_request.head.repo.full_name == github.repository) &&
+        (github.event_name != 'pull_request_review' ||
+         github.event.pull_request.head.repo.full_name == github.repository) &&
+        (github.event_name != 'workflow_run' ||
+         (github.event.workflow_run.event == 'pull_request' &&
+          github.event.workflow_run.head_repository.full_name == github.repository))
+      }}
+    permissions:
+      actions: read
+      checks: read
+      contents: read
+      pull-requests: write
+      statuses: read
+    uses: trvny/.github/.github/workflows/kanarek-companion.yml@main
+    with:
+      watched_workflows: Android CI,Backend CI,MegaLinter
+    secrets:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
