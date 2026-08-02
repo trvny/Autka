@@ -75,14 +75,14 @@ attached. Verify the run is green and the artifacts are present.
 
 ## 5. F-Droid
 
-The app is F-Droid-eligible: MIT-licensed, all dependencies are FOSS, maps use osmdroid
+The app is F-Droid-eligible: Apache-2.0-licensed, all dependencies are FOSS, maps use osmdroid
 (no Google Play Services / Maps key), and there is no proprietary blob.
 
 * Listing metadata is read directly from `fastlane/metadata/android/`.
 * Submit by opening a merge request on `fdroiddata` with a build recipe pointing at this repo
   and the `v*` tag, or test locally with `fdroidserver`.
 * Expect F-Droid to apply the **NonFreeNet** anti-feature, since the app depends on the hosted
-  `cargate-backend` service. The backend source is MIT in this repo, but the label reflects the
+  `cargate-backend` service. The backend source is Apache-2.0 in this repo, but the label reflects the
   runtime dependency on a network service; it is informational, not a rejection.
 
 ## Safety checklist (per release)
