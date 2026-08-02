@@ -20,6 +20,7 @@ on: # yamllint disable-line rule:truthy
     workflows:
       - Android CI
       - Backend CI
+      - Dependency Submission
       - MegaLinter
     types:
       - completed
@@ -52,7 +53,7 @@ jobs:
       statuses: read
     uses: trvny/.github/.github/workflows/kanarek-companion.yml@main
     with:
-      watched_workflows: Android CI,Backend CI,MegaLinter
+      watched_workflows: Android CI,Backend CI,Dependency Submission,MegaLinter
     secrets:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
