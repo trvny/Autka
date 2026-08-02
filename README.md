@@ -82,7 +82,7 @@ Or open the folder in Android Studio and hit Run. First sync downloads dependenc
 
 Original source code and documentation are licensed under [Apache-2.0](LICENSE).
 Marketplace data, names, trademarks, logos and linked media are not covered by that
-license. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+license. See [THIRD_PARTY_NOTICES.md](docs/THIRD_PARTY_NOTICES.md).
 
 ---
 ## Other stuff
