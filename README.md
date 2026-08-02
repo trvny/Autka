@@ -13,7 +13,7 @@
   <a href="https://github.com/trvny/autka/actions/workflows/backend-ci.yml"><img src="https://github.com/trvny/autka/actions/workflows/backend-ci.yml/badge.svg" alt="Backend CI"></a>
   <img src="https://img.shields.io/badge/kotlin-2.4.0-7F52FF?logo=kotlin&logoColor=white" alt="Kotlin 2.4.0">
   <img src="https://img.shields.io/badge/minSdk-26-3DDC84?logo=android&logoColor=white" alt="minSdk 26">
-  <a href="LICENSE"><img src="https://img.shields.io/github/license/trvny/autka" alt="0BSD"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/trvny/autka" alt="Apache-2.0"></a>
 </p>
 
 An Android app that aggregates used-car offers from Polish, EU, and US-import
@@ -77,6 +77,12 @@ Or open the folder in Android Studio and hit Run. First sync downloads dependenc
 | [`docs/RELEASING.md`](docs/RELEASING.md) | Signing, Google Play and F-Droid release process |
 | [`docs/TODO.md`](docs/TODO.md) | Remaining blockers and verification work |
 | [`backend/README.md`](backend/README.md) | Backend API, ingestion and operations |
+
+## License and third-party materials
+
+Original source code and documentation are licensed under [Apache-2.0](LICENSE).
+Marketplace data, names, trademarks, logos and linked media are not covered by that
+license. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 ---
 ## Other stuff
