@@ -134,7 +134,9 @@ jobs:
           build_tools="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)"
           "$build_tools/apksigner" verify --verbose "$apk"
           "$build_tools/aapt2" dump badging "$apk" | grep -F "versionName='$RELEASE_VERSION'"
-          unzip -Z1 "$aab" | grep -Eq '^META-INF/.*\.(RSA|DSA|EC)$'
+          aab_files="$RUNNER_TEMP/aab-files.txt"
+          unzip -Z1 "$aab" > "$aab_files"
+          grep -Eq '^META-INF/.*\.(RSA|DSA|EC)$' "$aab_files"
           jarsigner -verify "$aab" >/dev/null
 
           cp "$apk" "dist/autka-$RELEASE_VERSION.apk"
