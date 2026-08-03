@@ -17,6 +17,8 @@
   <a href="https://deepwiki.com/trvny/autka"><img src="https://deepwiki.com/badge.svg" alt="DeepWiki"></a>
 </p>
 
+# Autka
+
 An Android app that aggregates used-car offers from Polish, EU, and US-import
 marketplaces into one searchable list, with landed-cost estimation for cars imported
 from the USA.
@@ -79,7 +81,7 @@ Or open the folder in Android Studio and hit Run. First sync downloads dependenc
 | [`docs/TODO.md`](docs/TODO.md) | Remaining blockers and verification work |
 | [`backend/README.md`](backend/README.md) | Backend API, ingestion and operations |
 
-## License and third-party materials
+## License
 
 Original source code and documentation are licensed under [Apache-2.0](LICENSE).
 Marketplace data, names, trademarks, logos and linked media are not covered by that
@@ -88,7 +90,7 @@ license. See [THIRD_PARTY_NOTICES](docs/THIRD_PARTY_NOTICES.md).
 ---
 ## Other stuff
 
-[![feeds](https://github-stats-extended.vercel.app/api/pin?username=trvny&repo=trvny%2Ffeeds&theme=great-gatsby)](https://github.com/trvny/feeds) [![tvpi](https://github.com/trvny/.github/blob/main/assets/profile/pin_tvpi.svg)](https://github.com/trvny/tvpi)
+[![feeds](https://github.com/trvny/.github/blob/main/assets/profile/pin_feeds.svg)](https://github.com/trvny/feeds) [![tvpi](https://github.com/trvny/.github/blob/main/assets/profile/pin_tvpi.svg)](https://github.com/trvny/tvpi)
 
 ## 💬 Cytat z szuflady
 
