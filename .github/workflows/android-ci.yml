@@ -37,7 +37,7 @@ jobs:
       # setup-gradle (v4+) validates the gradle-wrapper.jar checksum automatically
       # on every run and handles Gradle dependency/build caching.
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v6
+        uses: gradle/actions/setup-gradle@v6.2.0
 
       - name: Lint, build and unit test
         run: ./gradlew --no-daemon --stacktrace lintDebug assembleDebug testDebugUnitTest
