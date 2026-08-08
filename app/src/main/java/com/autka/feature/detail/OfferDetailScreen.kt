@@ -195,6 +195,13 @@ private fun ImportBreakdown(
                     modifier = Modifier.weight(1f),
                 )
             }
+            if (engineCapacityCc == null && est.exciseDuty.amount > 0.0) {
+                Text(
+                    stringResource(R.string.import_unknown_engine_warning),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
 
             SpecRow(stringResource(R.string.import_vehicle), est.vehiclePrice.formatted())
             SpecRow(stringResource(R.string.import_shipping), est.shipping.formatted())

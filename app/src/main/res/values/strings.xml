@@ -29,6 +29,7 @@
     <string name="import_vat">VAT (23%)</string>
     <string name="import_shipping_usd">Shipping (USD)</string>
     <string name="import_engine_cc">Engine (cc)</string>
+    <string name="import_unknown_engine_warning">Engine capacity unknown; using the highest excise rate until you enter cc.</string>
     <string name="import_total">Total landed</string>
     <string name="import_total_in">Total landed (%1$s)</string>
     <string name="import_disclaimer">Estimate only — actual customs valuation, rates and fees vary.</string>

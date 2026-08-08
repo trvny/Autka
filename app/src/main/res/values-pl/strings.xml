@@ -29,6 +29,7 @@
     <string name="import_vat">VAT (23%)</string>
     <string name="import_shipping_usd">Transport (USD)</string>
     <string name="import_engine_cc">Pojemność (cm³)</string>
+    <string name="import_unknown_engine_warning">Nieznana pojemność silnika; do czasu wpisania cm³ przyjmujemy najwyższą stawkę akcyzy.</string>
     <string name="import_total">Koszt całkowity</string>
     <string name="import_total_in">Koszt całkowity (%1$s)</string>
     <string name="import_disclaimer">Tylko szacunek — faktyczna wycena celna, stawki i opłaty mogą się różnić.</string>

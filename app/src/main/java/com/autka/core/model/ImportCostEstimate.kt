@@ -27,8 +27,12 @@ object ImportCostCalculator {
      *   - Full hybrid (HEV/MHEV):  1.55% up to 2.0L, 9.3% for 2.0-3.5L, else 18.6%
      *   - Plug-in hybrid (PHEV):   0% up to 2.0L through 2029, 9.3% for 2.0-3.5L, else 18.6%
      *   - Electric (BEV):          0% (exempt)
-     * Unknown non-electric capacity uses the highest current rate rather than silently
-     * assuming a small engine. The detail screen lets the user enter the real cc.
+     * Hydrogen vehicles are legally exempt too, but FuelType does not model hydrogen yet;
+     * they must not be silently mapped to UNKNOWN when accurate excise is required.
+     *
+     * Unknown non-electric capacity deliberately uses the highest current rate rather than
+     * silently assuming a small engine. The UI labels that as a conservative estimate until
+     * the user enters the real cc.
      */
     fun exciseRate(engineCapacityCc: Int?, fuelType: FuelType = FuelType.UNKNOWN): Double {
         if (fuelType == FuelType.ELECTRIC) return 0.0
