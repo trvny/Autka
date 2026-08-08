@@ -15,16 +15,22 @@ class NbpRateProvider @Inject constructor(
     override suspend fun latest(): ExchangeRates {
         val rates = api.tableA().firstOrNull()?.rates.orEmpty()
         val byCode = rates.associate { it.code.uppercase() to it.mid }
-        val perUnit = buildMap {
-            put(Currency.PLN, 1.0)
-            byCode["EUR"]?.let { put(Currency.EUR, it) }
-            byCode["USD"]?.let { put(Currency.USD, it) }
-        }
+        val eur = byCode["EUR"].validRateOrNull()
+            ?: error("NBP response missing a valid EUR rate")
+        val usd = byCode["USD"].validRateOrNull()
+            ?: error("NBP response missing a valid USD rate")
         return ExchangeRates(
             base = Currency.PLN,
-            perUnit = perUnit,
+            perUnit = mapOf(
+                Currency.PLN to 1.0,
+                Currency.EUR to eur,
+                Currency.USD to usd,
+            ),
             asOfEpochMs = System.currentTimeMillis(),
             isStale = false,
         )
     }
+
+    private fun Double?.validRateOrNull(): Double? =
+        this?.takeIf { it.isFinite() && it > 0.0 }
 }

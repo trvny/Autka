@@ -12,7 +12,7 @@ data class ExchangeRates(
     val base: Currency,
     val perUnit: Map<Currency, Double>,
     val asOfEpochMs: Long,
-    /** true when these are the built-in fallback rates rather than a live fetch. */
+    /** true when the rates are fallback/cached rather than a fresh live response. */
     val isStale: Boolean,
 ) {
     /** Convert [money] into [target]. Returns the input unchanged if a rate is missing. */

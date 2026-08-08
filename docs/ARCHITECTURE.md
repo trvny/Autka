@@ -51,11 +51,12 @@ same currency. Cards show the original price plus an approximate converted figur
 a currency switcher lives in the toolbar.
 
 Rates come from `ExchangeRateRepository` (offline-first): it seeds with built-in
-indicative rates (`StaticRateProvider`, flagged as stale in the UI) and refreshes on
-launch from the **NBP (Narodowy Bank Polski) public API** via `NbpRateProvider` — free,
-keyless, and outside the deferred aggregation backend. A failed fetch silently keeps the
-last good rates, and the most recent successful fetch is persisted via DataStore so a
-cold start shows real rates instead of the static seed.
+indicative rates (`StaticRateProvider`) and refreshes on launch from the **NBP (Narodowy
+Bank Polski) public API** via `NbpRateProvider` — free, keyless, and outside the deferred
+aggregation backend. The most recent successful fetch is persisted via DataStore and
+can seed a cold start, but cached and built-in fallback rates remain flagged as stale
+until a fresh NBP request succeeds. A failed fetch silently keeps the best rates already
+available.
 
 The chosen display currency is persisted app-wide via Preferences DataStore
 (`SettingsRepository`), so it survives restarts and is shared across the listings and
@@ -92,8 +93,8 @@ Room 2.8.4, compileSdk 37, minSdk 26. Bump via the version catalog at
 `.github/workflows/android-ci.yml` runs on every push and PR to `main`: sets up JDK 17
 and Gradle (validates the wrapper-jar checksum automatically and caches builds), then
 runs `lintDebug assembleDebug testDebugUnitTest`. The debug APK and lint report are
-uploaded as build artifacts. `testDebugUnitTest` covers `app/src/test` (import-cost
-calculator, listings filtering/sorting).
+uploaded as build artifacts. `testDebugUnitTest` covers `app/src/test`, including import
+costs, listings filtering/sorting, repository isolation and exchange-rate failure paths.
 
 `.github/workflows/backend-ci.yml` covers the Worker (`/backend`): typecheck, `vitest`,
 and a `wrangler deploy --dry-run`. `worker-configuration.d.ts` is generated in CI, not
