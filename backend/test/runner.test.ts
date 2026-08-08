@@ -49,6 +49,42 @@ describe("runIngestion isolation", () => {
     expect(byId.bad).toMatchObject({ ok: false, upserted: 0, error: "feed down" });
   });
 
+  it("does not let ingest history failures reject the batch", async () => {
+    const db = new Proxy(env.DB, {
+      get(target, property, receiver) {
+        if (property === "prepare") {
+          return (sql: string) => {
+            if (sql.includes("INSERT INTO ingest_runs")) {
+              throw new Error("history unavailable");
+            }
+            return target.prepare(sql);
+          };
+        }
+        const value = Reflect.get(target, property, receiver);
+        return typeof value === "function" ? value.bind(target) : value;
+      },
+    }) as D1Database;
+    const flakyEnv = new Proxy(env, {
+      get(target, property, receiver) {
+        if (property === "DB") return db;
+        return Reflect.get(target, property, receiver);
+      },
+    }) as Env;
+
+    const results = await runIngestion(flakyEnv, [
+      source("good_history", async () => [offer("good_history:1", "good_history")]),
+      source("bad_history", async () => { throw new Error("feed down"); }),
+    ]);
+
+    const byId = Object.fromEntries(results.map((r) => [r.sourceId, r]));
+    expect(byId.good_history).toMatchObject({ ok: true, upserted: 1 });
+    expect(byId.bad_history).toMatchObject({
+      ok: false,
+      upserted: 0,
+      error: "feed down",
+    });
+  });
+
   it("records an ingest_runs row per source, capturing the error", async () => {
     await runIngestion(env, [
       source("ok_src", async () => [offer("ok_src:1", "ok_src")]),
