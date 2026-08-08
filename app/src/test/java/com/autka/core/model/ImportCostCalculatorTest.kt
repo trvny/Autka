@@ -16,7 +16,7 @@ class ImportCostCalculatorTest {
     @Test
     fun `excise rate is 3_1 percent up to and including 2_0L`() {
         assertEquals(0.031, ImportCostCalculator.exciseRate(1600), delta)
-        assertEquals(0.031, ImportCostCalculator.exciseRate(2000), delta) // boundary, inclusive
+        assertEquals(0.031, ImportCostCalculator.exciseRate(2000), delta)
     }
 
     @Test
@@ -26,8 +26,11 @@ class ImportCostCalculatorTest {
     }
 
     @Test
-    fun `null engine capacity is treated as small engine`() {
-        assertEquals(0.031, ImportCostCalculator.exciseRate(null), delta)
+    fun `unknown non-electric capacity uses conservative highest rate`() {
+        assertEquals(0.186, ImportCostCalculator.exciseRate(null), delta)
+        assertEquals(0.186, ImportCostCalculator.exciseRate(null, FuelType.PETROL), delta)
+        assertEquals(0.186, ImportCostCalculator.exciseRate(null, FuelType.HYBRID), delta)
+        assertEquals(0.186, ImportCostCalculator.exciseRate(null, FuelType.PLUGIN_HYBRID), delta)
     }
 
     @Test
@@ -37,13 +40,9 @@ class ImportCostCalculatorTest {
             shippingUsd = 2_000.0,
             engineCapacityCc = 1_800,
         )
-        // customs = (20000 + 2000) * 0.10
         assertEquals(2_200.0, e.customsDuty.amount, delta)
-        // excise = (22000 + 2200) * 0.031
         assertEquals(750.2, e.exciseDuty.amount, delta)
-        // vat = (22000 + 2200 + 750.2) * 0.23
         assertEquals(5_738.546, e.vat.amount, delta)
-        // total = price + shipping + customs + excise + vat
         assertEquals(30_688.746, e.total.amount, delta)
     }
 
@@ -55,11 +54,17 @@ class ImportCostCalculatorTest {
             engineCapacityCc = 3_000,
         )
         assertEquals(2_200.0, e.customsDuty.amount, delta)
-        // excise = 24200 * 0.186
         assertEquals(4_501.2, e.exciseDuty.amount, delta)
-        // vat = (22000 + 2200 + 4501.2) * 0.23
         assertEquals(6_601.276, e.vat.amount, delta)
         assertEquals(35_302.476, e.total.amount, delta)
+    }
+
+    @Test
+    fun `unknown-engine estimate cannot undercut known large-engine estimate`() {
+        val unknown = ImportCostCalculator.estimate(20_000.0, 2_000.0, null)
+        val large = ImportCostCalculator.estimate(20_000.0, 2_000.0, 3_000)
+        assertEquals(large.exciseDuty.amount, unknown.exciseDuty.amount, delta)
+        assertEquals(large.total.amount, unknown.total.amount, delta)
     }
 
     @Test
@@ -78,8 +83,6 @@ class ImportCostCalculatorTest {
                 .all { it.currency == Currency.USD },
         )
     }
-
-    // --- 2026 drivetrain-aware excise -------------------------------------
 
     @Test
     fun `electric is exempt regardless of capacity`() {
@@ -118,18 +121,13 @@ class ImportCostCalculatorTest {
             fuelType = FuelType.ELECTRIC,
         )
         assertEquals(0.0, e.exciseDuty.amount, delta)
-        // customs = (30000 + 2000) * 0.10
         assertEquals(3_200.0, e.customsDuty.amount, delta)
-        // vat = (30000 + 2000 + 3200 + 0) * 0.23
         assertEquals(8_096.0, e.vat.amount, delta)
-        // total = 30000 + 2000 + 3200 + 0 + 8096
         assertEquals(43_296.0, e.total.amount, delta)
     }
 
     @Test
-    fun `default fuel type keeps the legacy combustion behaviour`() {
-        // estimate() without a fuelType must match exciseRate()'s combustion path,
-        // so the pre-existing call sites and tests stay valid.
+    fun `default fuel type keeps combustion behaviour for known capacity`() {
         assertEquals(
             ImportCostCalculator.exciseRate(1800),
             ImportCostCalculator.exciseRate(1800, FuelType.UNKNOWN),
