@@ -86,16 +86,24 @@ describe("runIngestion isolation", () => {
   });
 
   it("does not let lock acquisition failures reject the batch", async () => {
-    let failNextLock = true;
     const db = new Proxy(env.DB, {
       get(target, property) {
         if (property === "prepare") {
           return (sql: string) => {
-            if (failNextLock && sql.includes("INSERT INTO ingest_locks")) {
-              failNextLock = false;
-              throw new Error("lock unavailable");
-            }
-            return target.prepare(sql);
+            const statement = target.prepare(sql);
+            if (!sql.includes("INSERT INTO ingest_locks")) return statement;
+            return new Proxy(statement, {
+              get(statementTarget, statementProperty) {
+                if (statementProperty === "bind") {
+                  return (...values: unknown[]) => {
+                    if (values[0] === "bad_lock") throw new Error("lock unavailable");
+                    return statementTarget.bind(...values);
+                  };
+                }
+                const value = Reflect.get(statementTarget, statementProperty, statementTarget);
+                return typeof value === "function" ? value.bind(statementTarget) : value;
+              },
+            });
           };
         }
         const value = Reflect.get(target, property, target);
@@ -147,6 +155,7 @@ describe("runIngestion isolation", () => {
     await runIngestion(env, [
       source("weird", async () => { throw "plain string failure"; }),
     ]);
+
     expect(await runsFor("weird")).toMatchObject({ ok: 0, error: "plain string failure" });
   });
 
