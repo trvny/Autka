@@ -195,7 +195,7 @@ private fun ImportBreakdown(
                     modifier = Modifier.weight(1f),
                 )
             }
-            if (engineCapacityCc == null && est.exciseDuty.amount > 0.0) {
+            if (est.usesConservativeExcise) {
                 Text(
                     stringResource(R.string.import_unknown_engine_warning),
                     style = MaterialTheme.typography.bodySmall,
