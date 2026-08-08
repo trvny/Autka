@@ -43,17 +43,27 @@ class OfflineFirstCarOfferRepository @Inject constructor(
         }.awaitAll()
 
         val fetchedAt = System.currentTimeMillis()
-        val results = outcomes.mapNotNull { (_, result) -> result.getOrNull() }.flatten()
+        val successful = outcomes.filter { it.second.isSuccess }
+        val results = successful.mapNotNull { (_, result) -> result.getOrNull() }.flatten()
         if (results.isNotEmpty()) {
             dao.upsertAll(results.map { it.toEntity(fetchedAt) })
         }
 
-        // Keep offline data useful, but do not let deleted listings live forever.
-        // Server-side ingestion removes missing offers immediately after a successful
-        // full snapshot; this is a second, conservative safety net for old app caches.
-        dao.deleteStale(fetchedAt - LOCAL_CACHE_MAX_AGE_MS)
+        // deleteStale is global, while refresh is filter-scoped and one backend transport
+        // may represent many marketplace sourceIds. Only a complete, unfiltered refresh
+        // from every active transport is authoritative enough to expire unrelated cache.
+        if (active.isNotEmpty() && successful.size == active.size && filter.isFullCatalogueScope()) {
+            dao.deleteStale(fetchedAt - LOCAL_CACHE_MAX_AGE_MS)
+        }
 
         outcomes.filter { it.second.isFailure }.map { it.first.sourceId }
+    }
+
+    private fun SearchFilter.isFullCatalogueScope(): Boolean {
+        val defaults = SearchFilter()
+        // Sort changes presentation only. Every other field can narrow the fetched scope;
+        // data-class equality makes future filter fields conservative by default.
+        return copy(sort = defaults.sort) == defaults
     }
 
     private companion object {
