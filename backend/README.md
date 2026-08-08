@@ -21,7 +21,7 @@ The app then talks to one endpoint.
 | GET | `/health` | Liveness check |
 | GET | `/offers` | Search and pagination; query params mirror `SearchFilter` |
 | GET | `/offers/:id` | Single offer |
-| GET | `/sources` | Source list and enabled flags |
+| GET | `/sources` | Source list, enabled flags, offer counts and latest completed-ingest health |
 | POST | `/admin/ingest` | Manually trigger ingestion; bearer-token protected |
 | GET | `/images/<key>` | Stream a cached offer image from R2 |
 | GET | `/import-services` | Import/sourcing companies, optionally filtered by region |
@@ -36,6 +36,11 @@ truncating a larger catalogue.
 Native prices may be PLN, EUR or USD, so server-side price filters and price ordering
 remain disabled until a normalized-price column lands. Android requests `complete=true`
 and performs those operations after currency conversion.
+
+`/sources` adds best-effort public health fields (`offerCount`, `lastCompletedAtEpochMs`,
+`lastCompletedOk`, `lastOffersUpserted`). If D1 health lookup fails, the static source list
+and enabled flags are still returned with health fields set to `null`; raw ingestion errors
+remain server-side.
 
 The `CarOffer` shape in `src/lib/types.ts` mirrors Android
 `com.autka.core.model.CarOffer`; keep them in sync.
@@ -105,7 +110,8 @@ fetches arbitrary URLs on demand.
 ## Operations
 
 - Cron runs hourly.
-- `ingest_runs` retains the latest 500 diagnostic rows.
+- `ingest_runs` retains the latest 500 diagnostic rows plus the latest completed row for
+  every source, so source health does not disappear when another source is noisy.
 - `ingest_locks` prevents overlapping snapshots for one source and uses expiring leases so
   a crashed Worker cannot block ingestion forever.
 - `ADMIN_TOKEN` is a Worker secret and is never committed.
