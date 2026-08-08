@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import type { SearchFilter, FuelType, Transmission, Region } from "../lib/types";
 import { countOffers, queryCompleteOffers, queryOffers, getOffer } from "../db/offers";
+import { getSourceHealth } from "../db/source-health";
 import { ALL_SOURCES } from "../ingest/runner";
 
 export const offersRouter = new Hono<{ Bindings: Env }>();
@@ -90,12 +91,28 @@ offersRouter.get("/offers/:id", async (c) => {
   return c.json(offer);
 });
 
-// GET /sources — which marketplace sources exist and whether they're enabled.
-offersRouter.get("/sources", (c) => {
-  const sources = ALL_SOURCES.map((s) => ({
-    id: s.sourceId,
-    displayName: s.displayName,
-    enabled: s.isEnabled(c.env),
-  }));
+// GET /sources — configured sources plus best-effort public ingestion health.
+offersRouter.get("/sources", async (c) => {
+  let healthAvailable = true;
+  const health = await getSourceHealth(c.env.DB).catch((err) => {
+    healthAvailable = false;
+    console.error(JSON.stringify({
+      msg: "source_health_query_failed",
+      error: err instanceof Error ? err.message : String(err),
+    }));
+    return new Map();
+  });
+  const sources = ALL_SOURCES.map((s) => {
+    const status = health.get(s.sourceId);
+    return {
+      id: s.sourceId,
+      displayName: s.displayName,
+      enabled: s.isEnabled(c.env),
+      offerCount: healthAvailable ? (status?.offerCount ?? 0) : null,
+      lastCompletedAtEpochMs: status?.lastCompletedAtEpochMs ?? null,
+      lastCompletedOk: status?.lastCompletedOk ?? null,
+      lastOffersUpserted: status?.lastOffersUpserted ?? null,
+    };
+  });
   return c.json({ sources });
 });

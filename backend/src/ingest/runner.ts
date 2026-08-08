@@ -13,7 +13,7 @@ export const ALL_SOURCES: IngestSource[] = [
   usAuctionSource,
 ];
 
-/** How many ingest_runs rows to keep. */
+/** How many recent ingest_runs rows to keep in addition to each source's latest row. */
 const INGEST_RUNS_KEEP = 500;
 /** Maximum offers whose current image is buffered concurrently across one ingestion run. */
 const IMAGE_CACHE_CONCURRENCY = 4;
@@ -194,7 +194,19 @@ async function recordRun(
 
 async function pruneIngestRuns(env: Env): Promise<void> {
   await env.DB.prepare(
-    `DELETE FROM ingest_runs WHERE id NOT IN (
-       SELECT id FROM ingest_runs ORDER BY started_at_ms DESC, id DESC LIMIT ?)`,
+    `WITH latest_per_source AS (
+       SELECT id FROM (
+         SELECT id,
+                ROW_NUMBER() OVER (
+                  PARTITION BY source_id ORDER BY started_at_ms DESC, id DESC
+                ) AS rn
+         FROM ingest_runs
+       ) WHERE rn = 1
+     ), recent AS (
+       SELECT id FROM ingest_runs ORDER BY started_at_ms DESC, id DESC LIMIT ?
+     )
+     DELETE FROM ingest_runs
+     WHERE id NOT IN (SELECT id FROM recent)
+       AND id NOT IN (SELECT id FROM latest_per_source)`,
   ).bind(INGEST_RUNS_KEEP).run();
 }
