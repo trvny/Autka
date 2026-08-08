@@ -35,8 +35,7 @@ export default {
           console.log(JSON.stringify({ msg: "scheduled_ingest_done", results }));
         })
         .catch((err) => {
-          // Defensive: runOne isolates per-source failures, but a DB write in
-          // recordRun could still reject. Log rather than drop it silently.
+          // Defensive top-level guard for unexpected orchestration failures.
           console.error(JSON.stringify({
             msg: "scheduled_ingest_error",
             error: err instanceof Error ? err.message : String(err),
