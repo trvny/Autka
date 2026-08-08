@@ -18,32 +18,33 @@ object ImportCostCalculator {
     // Indicative rates -- externalize/configure for production use.
     private const val EU_CUSTOMS_DUTY_RATE = 0.10
     private const val PL_VAT_RATE = 0.23
+    private const val MAX_EXCISE_RATE = 0.186
 
     /**
      * Polish excise (akcyza) as a fraction of the dutiable value. Depends on BOTH engine
-     * capacity and drivetrain (2026 rates, ustawa o podatku akcyzowym art. 105/109a):
+     * capacity and drivetrain (2026 rates, ustawa o podatku akcyzowym art. 105/109a/163a):
      *   - Petrol/diesel/LPG:       3.1% up to 2.0L, else 18.6%
      *   - Full hybrid (HEV/MHEV):  1.55% up to 2.0L, 9.3% for 2.0-3.5L, else 18.6%
-     *   - Plug-in hybrid (PHEV):   0% up to 2.0L (exempt), 9.3% for 2.0-3.5L, else 18.6%
-     *   - Electric (BEV)/hydrogen: 0% (exempt through 2029)
-     * Unknown capacity is treated as <=2.0L (lowest-rate, optimistic -- matches prior
-     * behaviour); the detail screen lets the user enter the real cc.
+     *   - Plug-in hybrid (PHEV):   0% up to 2.0L through 2029, 9.3% for 2.0-3.5L, else 18.6%
+     *   - Electric (BEV):          0% (exempt)
+     * Unknown non-electric capacity uses the highest current rate rather than silently
+     * assuming a small engine. The detail screen lets the user enter the real cc.
      */
     fun exciseRate(engineCapacityCc: Int?, fuelType: FuelType = FuelType.UNKNOWN): Double {
-        val cc = engineCapacityCc ?: 0
+        if (fuelType == FuelType.ELECTRIC) return 0.0
+        val cc = engineCapacityCc ?: return MAX_EXCISE_RATE
         return when (fuelType) {
-            FuelType.ELECTRIC -> 0.0
             FuelType.PLUGIN_HYBRID -> when {
                 cc <= 2000 -> 0.0
                 cc <= 3500 -> 0.093
-                else -> 0.186
+                else -> MAX_EXCISE_RATE
             }
             FuelType.HYBRID -> when {
                 cc <= 2000 -> 0.0155
                 cc <= 3500 -> 0.093
-                else -> 0.186
+                else -> MAX_EXCISE_RATE
             }
-            else -> if (cc <= 2000) 0.031 else 0.186
+            else -> if (cc <= 2000) 0.031 else MAX_EXCISE_RATE
         }
     }
 

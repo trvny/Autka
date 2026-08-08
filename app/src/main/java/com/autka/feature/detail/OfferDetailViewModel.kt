@@ -30,7 +30,7 @@ class OfferDetailViewModel @Inject constructor(
     private val offerId: String = checkNotNull(savedStateHandle["offerId"])
 
     // Editable import-calculator inputs. Defaults: a typical US->PL shipping figure and
-    // an unknown engine capacity (the calculator then assumes the lower excise band).
+    // unknown engine capacity, which uses the conservative highest non-EV excise rate.
     private val shippingUsd = MutableStateFlow(2_400.0)
     private val engineCapacityCc = MutableStateFlow<Int?>(null)
 
