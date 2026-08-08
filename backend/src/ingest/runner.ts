@@ -15,8 +15,10 @@ export const ALL_SOURCES: IngestSource[] = [
 
 /** How many ingest_runs rows to keep. */
 const INGEST_RUNS_KEEP = 500;
+/** Maximum offers whose current image is buffered concurrently while caching to R2. */
+const IMAGE_CACHE_CONCURRENCY = 4;
 /** A crashed run releases itself eventually; a live run refreshes the lease before writes. */
-const INGEST_LOCK_TTL_MS = 30 * 60 * 1000;
+const INGEST_LOCK_TTH_MS = 30 * 60 * 1000;
 
 export interface IngestResult {
   sourceId: string;
@@ -44,17 +46,24 @@ export async function runIngestion(
 
 async function runOne(env: Env, source: IngestSource): Promise<IngestResult> {
   const lockToken = crypto.randomUUID();
-  if (!await acquireSourceLock(env.DB, source.sourceId, lockToken)) {
-    console.log(JSON.stringify({ msg: "ingest_skipped_overlap", sourceId: source.sourceId }));
-    return { sourceId: source.sourceId, ok: true, upserted: 0, skipped: true };
-  }
-
   const started = Date.now();
+  let lockAcquired = false;
+
   try {
+    if (!await acquireSourceLock(env.DB, source.sourceId, lockToken)) {
+      console.log(JSON.stringify({ msg: "ingest_skipped_overlap", sourceId: source.sourceId }));
+      return { sourceId: source.sourceId, ok: true, upserted: 0, skipped: true };
+    }
+    lockAcquired = true;
+
     // Source.fetch is a complete snapshot contract. Only after the fetch, image cache,
     // and upsert all succeed do we remove rows that were not seen in this run.
     const offers = await source.fetch(env);
-    const withImages = await Promise.all(offers.map((o) => cacheOfferImages(env, o)));
+    const withImages = [];
+    for (let i = 0; i < offers.length; i += IMAGE_CACHE_CONCURRENCY) {
+      const batch = offers.slice(i, i + IMAGE_CACHE_CONCURRENCY);
+      withImages.push(...await Promise.all(batch.map((o) => cacheOfferImages(env, o))));
+    }
 
     // A long fetch may outlive its lease and be superseded. Refreshing by token proves
     // this run still owns the source immediately before it mutates the snapshot.
@@ -65,22 +74,24 @@ async function runOne(env: Env, source: IngestSource): Promise<IngestResult> {
 
     const upserted = await upsertOffers(env.DB, withImages);
     await deleteOffersNotSeenSince(env.DB, source.sourceId, started);
-    await recordRun(env, source.sourceId, started, upserted, true, null);
+    await recordRunSafely(env, source.sourceId, started, upserted, true, null);
     console.log(JSON.stringify({ msg: "ingest_ok", sourceId: source.sourceId, upserted }));
     return { sourceId: source.sourceId, ok: true, upserted };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    await recordRun(env, source.sourceId, started, 0, false, message);
+    await recordRunSafely(env, source.sourceId, started, 0, false, message);
     console.error(JSON.stringify({ msg: "ingest_failed", sourceId: source.sourceId, error: message }));
     return { sourceId: source.sourceId, ok: false, upserted: 0, error: message };
   } finally {
-    await releaseSourceLock(env.DB, source.sourceId, lockToken).catch((err) => {
-      console.error(JSON.stringify({
-        msg: "ingest_lock_release_failed",
-        sourceId: source.sourceId,
-        error: err instanceof Error ? err.message : String(err),
-      }));
-    });
+    if (lockAcquired) {
+      await releaseSourceLock(env.DB, source.sourceId, lockToken).catch((err) => {
+        console.error(JSON.stringify({
+          msg: "ingest_lock_release_failed",
+          sourceId: source.sourceId,
+          error: err instanceof Error ? err.message : String(err),
+        }));
+      });
+    }
   }
 }
 
@@ -120,6 +131,19 @@ async function releaseSourceLock(
   await db.prepare(
     "DELETE FROM ingest_locks WHERE source_id = ? AND token = ?",
   ).bind(sourceId, token).run();
+}
+
+async function recordRunSafely(
+  env: Env, sourceId: string, startedMs: number,
+  upserted: number, ok: boolean, error: string | null,
+): Promise<void> {
+  await recordRun(env, sourceId, startedMs, upserted, ok, error).catch((err) => {
+    console.error(JSON.stringify({
+      msg: "ingest_run_record_failed",
+      sourceId,
+      error: err instanceof Error ? err.message : String(err),
+    }));
+  });
 }
 
 async function recordRun(
