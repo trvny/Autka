@@ -18,7 +18,7 @@ const INGEST_RUNS_KEEP = 500;
 /** Maximum offers whose current image is buffered concurrently while caching to R2. */
 const IMAGE_CACHE_CONCURRENCY = 4;
 /** A crashed run releases itself eventually; a live run refreshes the lease before writes. */
-const INGEST_LOCK_TTH_MS = 30 * 60 * 1000;
+const INGEST_LOCK_TTL_MS = 30 * 60 * 1000;
 
 export interface IngestResult {
   sourceId: string;
@@ -59,7 +59,7 @@ async function runOne(env: Env, source: IngestSource): Promise<IngestResult> {
     // Source.fetch is a complete snapshot contract. Only after the fetch, image cache,
     // and upsert all succeed do we remove rows that were not seen in this run.
     const offers = await source.fetch(env);
-    const withImages = [];
+    const withImages: typeof offers = [];
     for (let i = 0; i < offers.length; i += IMAGE_CACHE_CONCURRENCY) {
       const batch = offers.slice(i, i + IMAGE_CACHE_CONCURRENCY);
       withImages.push(...await Promise.all(batch.map((o) => cacheOfferImages(env, o))));
