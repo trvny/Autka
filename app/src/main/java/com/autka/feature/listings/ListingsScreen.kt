@@ -134,7 +134,10 @@ fun ListingsScreen(
 
             if (uiState.failedSources.isNotEmpty()) {
                 Text(
-                    "Some sources didn't respond: ${uiState.failedSources.joinToString()}",
+                    stringResource(
+                        R.string.listing_failed_sources,
+                        uiState.failedSources.joinToString(),
+                    ),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error,
                     modifier = Modifier.padding(horizontal = 16.dp),
@@ -142,7 +145,7 @@ fun ListingsScreen(
             }
             if (uiState.ratesAreStale) {
                 Text(
-                    "Exchange rates are indicative (offline) -- converted prices are approximate.",
+                    stringResource(R.string.listing_rates_stale),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 16.dp),
@@ -249,7 +252,10 @@ private fun OfferCard(
                 }
                 offer.importEstimate?.let {
                     Text(
-                        "Est. landed cost: ${it.total.formatted()}",
+                        stringResource(
+                            R.string.listing_estimated_landed_cost,
+                            it.total.formatted(),
+                        ),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error,
                     )
@@ -264,7 +270,7 @@ private fun RegionBadge(region: Region) {
     val label = when (region) {
         Region.POLAND -> "PL"
         Region.EUROPE -> "EU"
-        Region.USA -> "US import"
+        Region.USA -> stringResource(R.string.region_usa_badge)
     }
     Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
 }
