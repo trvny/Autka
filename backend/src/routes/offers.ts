@@ -8,7 +8,7 @@ export const offersRouter = new Hono<{ Bindings: Env }>();
 
 const COMPLETE_RESULTS_LIMIT = 5000;
 const FUEL_TYPES: readonly FuelType[] = [
-  "PETROL", "DIESEL", "HYBRID", "PLUGIN_HYBRID", "ELECTRIC", "LPG", "OTHER", "UNKNOWN",
+  "PETROL", "DIESEL", "HYBRID", "PLUGIN_HYBRID", "ELECTRIC", "HYDROGEN", "LPG", "OTHER", "UNKNOWN",
 ];
 const REGIONS: readonly Region[] = ["POLAND", "EUROPE", "USA"];
 const TRANSMISSIONS: readonly Transmission[] = ["MANUAL", "AUTOMATIC", "UNKNOWN"];
