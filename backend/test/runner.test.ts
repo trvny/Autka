@@ -51,7 +51,7 @@ describe("runIngestion isolation", () => {
 
   it("does not let ingest history failures reject the batch", async () => {
     const db = new Proxy(env.DB, {
-      get(target, property, receiver) {
+      get(target, property) {
         if (property === "prepare") {
           return (sql: string) => {
             if (sql.includes("INSERT INTO ingest_runs")) {
@@ -60,14 +60,14 @@ describe("runIngestion isolation", () => {
             return target.prepare(sql);
           };
         }
-        const value = Reflect.get(target, property, receiver);
+        const value = Reflect.get(target, property, target);
         return typeof value === "function" ? value.bind(target) : value;
       },
     }) as D1Database;
     const flakyEnv = new Proxy(env, {
-      get(target, property, receiver) {
+      get(target, property) {
         if (property === "DB") return db;
-        return Reflect.get(target, property, receiver);
+        return Reflect.get(target, property, target);
       },
     }) as Env;
 
@@ -83,6 +83,44 @@ describe("runIngestion isolation", () => {
       upserted: 0,
       error: "feed down",
     });
+  });
+
+  it("does not let lock acquisition failures reject the batch", async () => {
+    let failNextLock = true;
+    const db = new Proxy(env.DB, {
+      get(target, property) {
+        if (property === "prepare") {
+          return (sql: string) => {
+            if (failNextLock && sql.includes("INSERT INTO ingest_locks")) {
+              failNextLock = false;
+              throw new Error("lock unavailable");
+            }
+            return target.prepare(sql);
+          };
+        }
+        const value = Reflect.get(target, property, target);
+        return typeof value === "function" ? value.bind(target) : value;
+      },
+    }) as D1Database;
+    const flakyEnv = new Proxy(env, {
+      get(target, property) {
+        if (property === "DB") return db;
+        return Reflect.get(target, property, target);
+      },
+    }) as Env;
+
+    const results = await runIngestion(flakyEnv, [
+      source("bad_lock", async () => { throw new Error("should never fetch"); }),
+      source("good_lock", async () => [offer("good_lock:1", "good_lock")]),
+    ]);
+
+    const byId = Object.fromEntries(results.map((r) => [r.sourceId, r]));
+    expect(byId.bad_lock).toMatchObject({
+      ok: false,
+      upserted: 0,
+      error: "lock unavailable",
+    });
+    expect(byId.good_lock).toMatchObject({ ok: true, upserted: 1 });
   });
 
   it("records an ingest_runs row per source, capturing the error", async () => {
