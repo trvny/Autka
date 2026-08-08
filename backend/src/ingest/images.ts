@@ -7,6 +7,39 @@ function safeId(id: string): string {
   return id.replace(/[^a-zA-Z0-9._-]/g, "_");
 }
 
+/** Read a response body without ever buffering more than maxBytes plus the current chunk. */
+export async function readBodyUpTo(
+  body: ReadableStream<Uint8Array>,
+  maxBytes: number,
+): Promise<Uint8Array | null> {
+  const reader = body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.byteLength;
+      if (total > maxBytes) {
+        await reader.cancel("body too large");
+        return null;
+      }
+      chunks.push(value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+
+  const out = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    out.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return out;
+}
+
 /**
  * Best-effort image caching. Fetches each of an offer's images and stores it in R2,
  * rewriting the URLs to backend-served `/images/...` paths so the app gets stable,
@@ -49,7 +82,10 @@ async function cacheOne(env: Env, offerId: string, index: number, url: string): 
     const declaredLen = Number(res.headers.get("content-length") ?? "0");
     if (declaredLen > MAX_IMAGE_BYTES) return null;
 
-    await env.IMAGES.put(key, res.body, { httpMetadata: { contentType } });
+    const body = await readBodyUpTo(res.body, MAX_IMAGE_BYTES);
+    if (!body) return null;
+
+    await env.IMAGES.put(key, body, { httpMetadata: { contentType } });
     return `/images/${key}`;
   } catch {
     return null; // network/parse/storage error — keep the original URL
