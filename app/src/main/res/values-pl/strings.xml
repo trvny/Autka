@@ -55,6 +55,7 @@
     <string name="fuel_hybrid">Hybryda</string>
     <string name="fuel_plugin">Hybryda plug-in</string>
     <string name="fuel_electric">Elektryczny</string>
+    <string name="fuel_hydrogen">Wodór</string>
     <string name="fuel_lpg">LPG</string>
     <string name="fuel_other">Inne</string>
     <string name="fuel_unknown">Nieznane</string>
