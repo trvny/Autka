@@ -37,7 +37,7 @@ class OfflineFirstCarOfferRepositoryTest {
         assertTrue(failed.isEmpty())
         assertEquals(filter, backend.receivedFilter)
         assertNotNull(dao.rows.value.singleOrNull { it.id == "otomoto:1" })
-        assertNotNull(dao.lastDeleteStaleCutoff)
+        assertNull(dao.lastDeleteStaleCutoff)
     }
 
     @Test
@@ -55,6 +55,78 @@ class OfflineFirstCarOfferRepositoryTest {
 
         assertNull(dao.rows.value.singleOrNull { it.sourceId == "mock" })
         assertEquals(listOf("mock"), dao.lastDeletedSourceIds)
+        assertNull(dao.lastDeleteStaleCutoff)
+    }
+
+    @Test
+    fun `successful sources merge when another source fails`() = runTest {
+        val dao = FakeDao()
+        val first = RecordingSource(
+            sourceId = "backend-a",
+            offers = listOf(offer(id = "source-a:1", sourceId = "source-a")),
+        )
+        val second = RecordingSource(
+            sourceId = "backend-b",
+            offers = listOf(offer(id = "source-b:1", sourceId = "source-b")),
+        )
+        val repository = OfflineFirstCarOfferRepository(
+            dao,
+            setOf(first, FailingSource("broken"), second),
+        )
+
+        val failed = repository.refresh(SearchFilter())
+
+        assertEquals(setOf("broken"), failed.toSet())
+        assertEquals(setOf("source-a:1", "source-b:1"), dao.rows.value.map { it.id }.toSet())
+        assertNull(dao.lastDeleteStaleCutoff)
+    }
+
+    @Test
+    fun `total source outage preserves even aged offline cache`() = runTest {
+        val now = System.currentTimeMillis()
+        val recent = offer(id = "broken:recent", sourceId = "broken-marketplace")
+            .toEntity(fetchedAt = now - 6L * 24L * 60L * 60L * 1_000L)
+        val expired = offer(id = "broken:expired", sourceId = "broken-marketplace")
+            .toEntity(fetchedAt = now - 8L * 24L * 60L * 60L * 1_000L)
+        val dao = FakeDao(initialRows = listOf(recent, expired))
+        val repository = OfflineFirstCarOfferRepository(dao, setOf(FailingSource("broken")))
+
+        val failed = repository.refresh(SearchFilter())
+
+        assertEquals(listOf("broken"), failed)
+        assertEquals(setOf("broken:recent", "broken:expired"), dao.rows.value.map { it.id }.toSet())
+        assertNull(dao.lastDeleteStaleCutoff)
+    }
+
+    @Test
+    fun `filtered success does not expire unrelated offline cache`() = runTest {
+        val expired = offer(id = "other:expired", sourceId = "other-marketplace")
+            .toEntity(fetchedAt = System.currentTimeMillis() - 8L * 24L * 60L * 60L * 1_000L)
+        val dao = FakeDao(initialRows = listOf(expired))
+        val backend = RecordingSource(sourceId = "backend", offers = emptyList())
+        val repository = OfflineFirstCarOfferRepository(dao, setOf(backend))
+
+        val failed = repository.refresh(SearchFilter(make = "Toyota"))
+
+        assertTrue(failed.isEmpty())
+        assertNotNull(dao.rows.value.singleOrNull { it.id == "other:expired" })
+        assertNull(dao.lastDeleteStaleCutoff)
+    }
+
+    @Test
+    fun `age cap resumes after complete unfiltered refresh`() = runTest {
+        val expired = offer(id = "old:expired", sourceId = "old-marketplace")
+            .toEntity(fetchedAt = System.currentTimeMillis() - 8L * 24L * 60L * 60L * 1_000L)
+        val dao = FakeDao(initialRows = listOf(expired))
+        val first = RecordingSource(sourceId = "backend-a", offers = emptyList())
+        val second = RecordingSource(sourceId = "backend-b", offers = emptyList())
+        val repository = OfflineFirstCarOfferRepository(dao, setOf(first, second))
+
+        val failed = repository.refresh(SearchFilter())
+
+        assertTrue(failed.isEmpty())
+        assertNull(dao.rows.value.singleOrNull { it.id == "old:expired" })
+        assertNotNull(dao.lastDeleteStaleCutoff)
     }
 
     private class RecordingSource(
@@ -70,6 +142,12 @@ class OfflineFirstCarOfferRepositoryTest {
             receivedFilter = filter
             return offers
         }
+    }
+
+    private class FailingSource(override val sourceId: String) : CarOfferSource {
+        override val displayName = sourceId
+        override val isEnabled = true
+        override suspend fun fetch(filter: SearchFilter): List<CarOffer> = error("source unavailable")
     }
 
     private class FakeDao(
