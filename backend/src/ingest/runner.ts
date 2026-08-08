@@ -44,13 +44,16 @@ export async function runIngestion(
 
 async function runOne(env: Env, source: IngestSource): Promise<IngestResult> {
   const lockToken = crypto.randomUUID();
-  if (!await acquireSourceLock(env.DB, source.sourceId, lockToken)) {
-    console.log(JSON.stringify({ msg: "ingest_skipped_overlap", sourceId: source.sourceId }));
-    return { sourceId: source.sourceId, ok: true, upserted: 0, skipped: true };
-  }
-
   const started = Date.now();
+  let lockAcquired = false;
+
   try {
+    if (!await acquireSourceLock(env.DB, source.sourceId, lockToken)) {
+      console.log(JSON.stringify({ msg: "ingest_skipped_overlap", sourceId: source.sourceId }));
+      return { sourceId: source.sourceId, ok: true, upserted: 0, skipped: true };
+    }
+    lockAcquired = true;
+
     // Source.fetch is a complete snapshot contract. Only after the fetch, image cache,
     // and upsert all succeed do we remove rows that were not seen in this run.
     const offers = await source.fetch(env);
@@ -74,13 +77,15 @@ async function runOne(env: Env, source: IngestSource): Promise<IngestResult> {
     console.error(JSON.stringify({ msg: "ingest_failed", sourceId: source.sourceId, error: message }));
     return { sourceId: source.sourceId, ok: false, upserted: 0, error: message };
   } finally {
-    await releaseSourceLock(env.DB, source.sourceId, lockToken).catch((err) => {
-      console.error(JSON.stringify({
-        msg: "ingest_lock_release_failed",
-        sourceId: source.sourceId,
-        error: err instanceof Error ? err.message : String(err),
-      }));
-    });
+    if (lockAcquired) {
+      await releaseSourceLock(env.DB, source.sourceId, lockToken).catch((err) => {
+        console.error(JSON.stringify({
+          msg: "ingest_lock_release_failed",
+          sourceId: source.sourceId,
+          error: err instanceof Error ? err.message : String(err),
+        }));
+      });
+    }
   }
 }
 
