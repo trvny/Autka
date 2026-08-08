@@ -7,6 +7,9 @@
     <string name="retry">Ponów</string>
     <string name="empty_no_match">Brak ofert spełniających te filtry.</string>
     <string name="empty_no_offers">Brak ofert. Rozpocznij wyszukiwanie.</string>
+    <string name="listing_failed_sources">Część źródeł nie odpowiedziała: %1$s</string>
+    <string name="listing_rates_stale">Kursy walut są orientacyjne (offline); przeliczone ceny są przybliżone.</string>
+    <string name="listing_estimated_landed_cost">Szac. koszt po sprowadzeniu: %1$s</string>
 
     <!-- Detail -->
     <string name="offer">Oferta</string>
@@ -61,6 +64,7 @@
     <string name="region_poland">Polska</string>
     <string name="region_europe">Europa</string>
     <string name="region_usa">Import z USA</string>
+    <string name="region_usa_badge">Import USA</string>
 
     <!-- Sort orders -->
     <string name="sort_newest">Najnowsze</string>

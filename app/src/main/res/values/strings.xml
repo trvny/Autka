@@ -7,6 +7,9 @@
     <string name="retry">Retry</string>
     <string name="empty_no_match">No offers match these filters.</string>
     <string name="empty_no_offers">No offers yet. Pull a search to begin.</string>
+    <string name="listing_failed_sources">Some sources didn’t respond: %1$s</string>
+    <string name="listing_rates_stale">Exchange rates are indicative (offline); converted prices are approximate.</string>
+    <string name="listing_estimated_landed_cost">Est. landed cost: %1$s</string>
 
     <!-- Detail -->
     <string name="offer">Offer</string>
@@ -61,6 +64,7 @@
     <string name="region_poland">Poland</string>
     <string name="region_europe">Europe</string>
     <string name="region_usa">US import</string>
+    <string name="region_usa_badge">US import</string>
 
     <!-- Sort orders -->
     <string name="sort_newest">Newest</string>
