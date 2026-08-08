@@ -81,9 +81,9 @@ object MarketplaceSearchLinks {
         f.minYear?.let { q["search[filter_float_year:from]"] = it.toString() }
         f.maxYear?.let { q["search[filter_float_year:to]"] = it.toString() }
         f.maxMileageKm?.let { q["search[filter_float_mileage:to]"] = it.toString() }
-        // Fuel is an INDEXED array param, one entry per selected type:
-        // search[filter_enum_fuel_type][0]=petrol&...[1]=diesel
-        f.fuelTypes.mapNotNull(::otomotoFuel).forEachIndexed { i, slug ->
+        // Fuel is an INDEXED array param, one entry per selected type. Sort enum values
+        // first so equivalent Set implementations generate the same stable URL.
+        f.fuelTypes.sortedBy { it.ordinal }.mapNotNull(::otomotoFuel).forEachIndexed { i, slug ->
             q["search[filter_enum_fuel_type][$i]"] = slug
         }
         otomotoOrder(f.sort)?.let { q["search[order]"] = it }
@@ -376,8 +376,8 @@ object MarketplaceSearchLinks {
 
     // autotrader.com path: /cars-for-sale/all-cars/cars-under-<N>/<make>/<model>/<city-state>.
     // Price bucket (/cars-under-<N>) and make/model path segments confirmed against a live
-    // filtered URL. Location (zip/searchRadius) we don't have, so it's omitted. NB: mileage
-    // is in miles on this site; our value is km, so it slightly over-restricts.
+    // filtered URL. Location (zip/searchRadius) we don't have, so it's omitted. Mileage is
+    // measured in miles on AutoTrader, while SearchFilter is kilometres.
     private fun autoTrader(f: SearchFilter): String {
         val path = buildString {
             append("https://www.autotrader.com/cars-for-sale/all-cars")
@@ -386,7 +386,7 @@ object MarketplaceSearchLinks {
             if (f.make != null) f.model?.let { append("/").append(slug(it)) } // verified: model path segment
         }
         val q = Params()
-        f.maxMileageKm?.let { q["mileage"] = it.toString() } // verified (max mileage)
+        f.maxMileageKm?.let { q["mileage"] = kmToMilesFloor(it).toString() } // verified max mileage, miles
         return path + q.render()
     }
 
@@ -394,6 +394,9 @@ object MarketplaceSearchLinks {
 
     private fun terms(f: SearchFilter): String =
         listOfNotNull(f.make, f.model, f.query.ifBlank { null }).joinToString(" ").trim()
+
+    /** Floor conversion keeps an external max-mileage filter within the selected km cap. */
+    private fun kmToMilesFloor(km: Int): Int = (km / 1.609344).toInt()
 
     /** mobile.de-style "min:max" range (either side may be blank); null if both null. */
     private fun range(min: Long?, max: Long?): String? =
