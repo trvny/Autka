@@ -44,13 +44,16 @@ export async function runIngestion(
 
 async function runOne(env: Env, source: IngestSource): Promise<IngestResult> {
   const lockToken = crypto.randomUUID();
-  if (!await acquireSourceLock(env.DB, source.sourceId, lockToken)) {
-    console.log(JSON.stringify({ msg: "ingest_skipped_overlap", sourceId: source.sourceId }));
-    return { sourceId: source.sourceId, ok: true, upserted: 0, skipped: true };
-  }
-
   const started = Date.now();
+  let lockAcquired = false;
+
   try {
+    if (!await acquireSourceLock(env.DB, source.sourceId, lockToken)) {
+      console.log(JSON.stringify({ msg: "ingest_skipped_overlap", sourceId: source.sourceId }));
+      return { sourceId: source.sourceId, ok: true, upserted: 0, skipped: true };
+    }
+    lockAcquired = true;
+
     // Source.fetch is a complete snapshot contract. Only after the fetch, image cache,
     // and upsert all succeed do we remove rows that were not seen in this run.
     const offers = await source.fetch(env);
@@ -65,22 +68,24 @@ async function runOne(env: Env, source: IngestSource): Promise<IngestResult> {
 
     const upserted = await upsertOffers(env.DB, withImages);
     await deleteOffersNotSeenSince(env.DB, source.sourceId, started);
-    await recordRun(env, source.sourceId, started, upserted, true, null);
+    await recordRunSafely(env, source.sourceId, started, upserted, true, null);
     console.log(JSON.stringify({ msg: "ingest_ok", sourceId: source.sourceId, upserted }));
     return { sourceId: source.sourceId, ok: true, upserted };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    await recordRun(env, source.sourceId, started, 0, false, message);
+    await recordRunSafely(env, source.sourceId, started, 0, false, message);
     console.error(JSON.stringify({ msg: "ingest_failed", sourceId: source.sourceId, error: message }));
     return { sourceId: source.sourceId, ok: false, upserted: 0, error: message };
   } finally {
-    await releaseSourceLock(env.DB, source.sourceId, lockToken).catch((err) => {
-      console.error(JSON.stringify({
-        msg: "ingest_lock_release_failed",
-        sourceId: source.sourceId,
-        error: err instanceof Error ? err.message : String(err),
-      }));
-    });
+    if (lockAcquired) {
+      await releaseSourceLock(env.DB, source.sourceId, lockToken).catch((err) => {
+        console.error(JSON.stringify({
+          msg: "ingest_lock_release_failed",
+          sourceId: source.sourceId,
+          error: err instanceof Error ? err.message : String(err),
+        }));
+      });
+    }
   }
 }
 
@@ -120,6 +125,19 @@ async function releaseSourceLock(
   await db.prepare(
     "DELETE FROM ingest_locks WHERE source_id = ? AND token = ?",
   ).bind(sourceId, token).run();
+}
+
+async function recordRunSafely(
+  env: Env, sourceId: string, startedMs: number,
+  upserted: number, ok: boolean, error: string | null,
+): Promise<void> {
+  await recordRun(env, sourceId, startedMs, upserted, ok, error).catch((err) => {
+    console.error(JSON.stringify({
+      msg: "ingest_run_record_failed",
+      sourceId,
+      error: err instanceof Error ? err.message : String(err),
+    }));
+  });
 }
 
 async function recordRun(

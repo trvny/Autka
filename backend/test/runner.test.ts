@@ -49,6 +49,88 @@ describe("runIngestion isolation", () => {
     expect(byId.bad).toMatchObject({ ok: false, upserted: 0, error: "feed down" });
   });
 
+  it("does not let ingest history failures reject the batch", async () => {
+    const db = new Proxy(env.DB, {
+      get(target, property) {
+        if (property === "prepare") {
+          return (sql: string) => {
+            if (sql.includes("INSERT INTO ingest_runs")) {
+              throw new Error("history unavailable");
+            }
+            return target.prepare(sql);
+          };
+        }
+        const value = Reflect.get(target, property, target);
+        return typeof value === "function" ? value.bind(target) : value;
+      },
+    }) as D1Database;
+    const flakyEnv = new Proxy(env, {
+      get(target, property) {
+        if (property === "DB") return db;
+        return Reflect.get(target, property, target);
+      },
+    }) as Env;
+
+    const results = await runIngestion(flakyEnv, [
+      source("good_history", async () => [offer("good_history:1", "good_history")]),
+      source("bad_history", async () => { throw new Error("feed down"); }),
+    ]);
+
+    const byId = Object.fromEntries(results.map((r) => [r.sourceId, r]));
+    expect(byId.good_history).toMatchObject({ ok: true, upserted: 1 });
+    expect(byId.bad_history).toMatchObject({
+      ok: false,
+      upserted: 0,
+      error: "feed down",
+    });
+  });
+
+  it("does not let lock acquisition failures reject the batch", async () => {
+    const db = new Proxy(env.DB, {
+      get(target, property) {
+        if (property === "prepare") {
+          return (sql: string) => {
+            const statement = target.prepare(sql);
+            if (!sql.includes("INSERT INTO ingest_locks")) return statement;
+            return new Proxy(statement, {
+              get(statementTarget, statementProperty) {
+                if (statementProperty === "bind") {
+                  return (...values: unknown[]) => {
+                    if (values[0] === "bad_lock") throw new Error("lock unavailable");
+                    return statementTarget.bind(...values);
+                  };
+                }
+                const value = Reflect.get(statementTarget, statementProperty, statementTarget);
+                return typeof value === "function" ? value.bind(statementTarget) : value;
+              },
+            });
+          };
+        }
+        const value = Reflect.get(target, property, target);
+        return typeof value === "function" ? value.bind(target) : value;
+      },
+    }) as D1Database;
+    const flakyEnv = new Proxy(env, {
+      get(target, property) {
+        if (property === "DB") return db;
+        return Reflect.get(target, property, target);
+      },
+    }) as Env;
+
+    const results = await runIngestion(flakyEnv, [
+      source("bad_lock", async () => { throw new Error("should never fetch"); }),
+      source("good_lock", async () => [offer("good_lock:1", "good_lock")]),
+    ]);
+
+    const byId = Object.fromEntries(results.map((r) => [r.sourceId, r]));
+    expect(byId.bad_lock).toMatchObject({
+      ok: false,
+      upserted: 0,
+      error: "lock unavailable",
+    });
+    expect(byId.good_lock).toMatchObject({ ok: true, upserted: 1 });
+  });
+
   it("records an ingest_runs row per source, capturing the error", async () => {
     await runIngestion(env, [
       source("ok_src", async () => [offer("ok_src:1", "ok_src")]),
@@ -73,6 +155,7 @@ describe("runIngestion isolation", () => {
     await runIngestion(env, [
       source("weird", async () => { throw "plain string failure"; }),
     ]);
+
     expect(await runsFor("weird")).toMatchObject({ ok: 0, error: "plain string failure" });
   });
 
