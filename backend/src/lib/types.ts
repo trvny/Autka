@@ -6,7 +6,7 @@ export type Region = "POLAND" | "EUROPE" | "USA";
 
 export type FuelType =
   | "PETROL" | "DIESEL" | "HYBRID" | "PLUGIN_HYBRID"
-  | "ELECTRIC" | "LPG" | "OTHER" | "UNKNOWN";
+  | "ELECTRIC" | "HYDROGEN" | "LPG" | "OTHER" | "UNKNOWN";
 
 export type Transmission = "MANUAL" | "AUTOMATIC" | "UNKNOWN";
 

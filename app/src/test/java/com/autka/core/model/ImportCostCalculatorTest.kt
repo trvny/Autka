@@ -40,6 +40,9 @@ class ImportCostCalculatorTest {
             shippingUsd = 2_000.0,
             engineCapacityCc = 1_800,
         )
+        // customs = (20_000 + 2_000) * 10% = 2_200
+        // excise = (20_000 + 2_000 + 2_200) * 3.1% = 750.2
+        // VAT = (20_000 + 2_000 + 2_200 + 750.2) * 23% = 5_738.546
         assertEquals(2_200.0, e.customsDuty.amount, delta)
         assertEquals(750.2, e.exciseDuty.amount, delta)
         assertEquals(5_738.546, e.vat.amount, delta)
@@ -53,6 +56,9 @@ class ImportCostCalculatorTest {
             shippingUsd = 2_000.0,
             engineCapacityCc = 3_000,
         )
+        // customs = (20_000 + 2_000) * 10% = 2_200
+        // excise = (20_000 + 2_000 + 2_200) * 18.6% = 4_501.2
+        // VAT = (20_000 + 2_000 + 2_200 + 4_501.2) * 23% = 6_601.276
         assertEquals(2_200.0, e.customsDuty.amount, delta)
         assertEquals(4_501.2, e.exciseDuty.amount, delta)
         assertEquals(6_601.276, e.vat.amount, delta)

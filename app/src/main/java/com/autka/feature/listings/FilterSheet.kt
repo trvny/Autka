@@ -40,7 +40,7 @@ import com.autka.data.repository.SourceInfo
 
 private val FUEL_CHOICES = listOf(
     FuelType.PETROL, FuelType.DIESEL, FuelType.HYBRID,
-    FuelType.PLUGIN_HYBRID, FuelType.ELECTRIC, FuelType.LPG,
+    FuelType.PLUGIN_HYBRID, FuelType.ELECTRIC, FuelType.HYDROGEN, FuelType.LPG,
 )
 
 private val TRANSMISSION_CHOICES = listOf(Transmission.MANUAL, Transmission.AUTOMATIC)
@@ -249,6 +249,7 @@ private fun FuelType.label() = when (this) {
     FuelType.HYBRID -> stringResource(R.string.fuel_hybrid)
     FuelType.PLUGIN_HYBRID -> stringResource(R.string.fuel_plugin)
     FuelType.ELECTRIC -> stringResource(R.string.fuel_electric)
+    FuelType.HYDROGEN -> stringResource(R.string.fuel_hydrogen)
     FuelType.LPG -> stringResource(R.string.fuel_lpg)
     FuelType.OTHER -> stringResource(R.string.fuel_other)
     FuelType.UNKNOWN -> stringResource(R.string.fuel_unknown)

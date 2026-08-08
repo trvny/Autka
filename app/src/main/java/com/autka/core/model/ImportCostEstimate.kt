@@ -12,6 +12,7 @@ data class ImportCostEstimate(
     val exciseDuty: Money,    // PL akcyza -- depends on engine capacity and drivetrain
     val vat: Money,           // 23% on (price + shipping + duty + excise)
     val total: Money,
+    val usesConservativeExcise: Boolean = false,
 )
 
 object ImportCostCalculator {
@@ -26,12 +27,14 @@ object ImportCostCalculator {
      *   - Petrol/diesel/LPG:       3.1% up to 2.0L, else 18.6%
      *   - Full hybrid (HEV/MHEV):  1.55% up to 2.0L, 9.3% for 2.0-3.5L, else 18.6%
      *   - Plug-in hybrid (PHEV):   0% up to 2.0L through 2029, 9.3% for 2.0-3.5L, else 18.6%
-     *   - Electric (BEV):          0% (exempt)
-     * Unknown non-electric capacity uses the highest current rate rather than silently
-     * assuming a small engine. The detail screen lets the user enter the real cc.
+     *   - Electric / hydrogen:     0% (exempt)
+     *
+     * Unknown non-exempt capacity deliberately uses the highest current rate rather than
+     * silently assuming a small engine. The returned estimate flags that conservative
+     * fallback so the UI can explain it until the real cc is known.
      */
     fun exciseRate(engineCapacityCc: Int?, fuelType: FuelType = FuelType.UNKNOWN): Double {
-        if (fuelType == FuelType.ELECTRIC) return 0.0
+        if (fuelType == FuelType.ELECTRIC || fuelType == FuelType.HYDROGEN) return 0.0
         val cc = engineCapacityCc ?: return MAX_EXCISE_RATE
         return when (fuelType) {
             FuelType.PLUGIN_HYBRID -> when {
@@ -60,6 +63,8 @@ object ImportCostCalculator {
         val excise = (price + shipping + customs) * exciseRate(engineCapacityCc, fuelType)
         val vat = (price + shipping + customs + excise) * PL_VAT_RATE
         val total = price + shipping + customs + excise + vat
+        val usesConservativeExcise = engineCapacityCc == null &&
+            fuelType != FuelType.ELECTRIC && fuelType != FuelType.HYDROGEN
         fun usd(v: Double) = Money(v, Currency.USD)
         return ImportCostEstimate(
             vehiclePrice = usd(price),
@@ -68,6 +73,7 @@ object ImportCostCalculator {
             exciseDuty = usd(excise),
             vat = usd(vat),
             total = usd(total),
+            usesConservativeExcise = usesConservativeExcise,
         )
     }
 }
