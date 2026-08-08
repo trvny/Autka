@@ -31,6 +31,9 @@ data class CarOfferEntity(
     val postedAtEpochMs: Long?,
     val importTotalAmount: Double?,
     val importTotalCurrency: String?,
+    val listingCount: Int?,
+    val latitude: Double?,
+    val longitude: Double?,
     val fetchedAtEpochMs: Long,
 )
 
@@ -44,6 +47,9 @@ fun CarOffer.toEntity(fetchedAt: Long = System.currentTimeMillis()) = CarOfferEn
     listingUrl = listingUrl, postedAtEpochMs = postedAtEpochMs,
     importTotalAmount = importEstimate?.total?.amount,
     importTotalCurrency = importEstimate?.total?.currency?.name,
+    listingCount = listingCount,
+    latitude = latitude,
+    longitude = longitude,
     fetchedAtEpochMs = fetchedAt,
 )
 
@@ -59,4 +65,7 @@ fun CarOfferEntity.toModel() = CarOffer(
     imageUrls = if (imageUrls.isBlank()) emptyList() else imageUrls.split(";"),
     listingUrl = listingUrl, postedAtEpochMs = postedAtEpochMs,
     importEstimate = null, // full breakdown is recomputed on demand in detail view
+    listingCount = listingCount,
+    latitude = latitude,
+    longitude = longitude,
 )
