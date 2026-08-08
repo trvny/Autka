@@ -15,10 +15,12 @@ export const ALL_SOURCES: IngestSource[] = [
 
 /** How many ingest_runs rows to keep. */
 const INGEST_RUNS_KEEP = 500;
-/** Maximum offers whose current image is buffered concurrently while caching to R2. */
+/** Maximum offers whose current image is buffered concurrently across one ingestion run. */
 const IMAGE_CACHE_CONCURRENCY = 4;
 /** A crashed run releases itself eventually; a live run refreshes the lease before writes. */
 const INGEST_LOCK_TTL_MS = 30 * 60 * 1000;
+
+type TaskLimiter = <T>(task: () => Promise<T>) => Promise<T>;
 
 export interface IngestResult {
   sourceId: string;
@@ -34,7 +36,8 @@ export async function runIngestion(
   sources: readonly IngestSource[] = ALL_SOURCES,
 ): Promise<IngestResult[]> {
   const enabled = sources.filter((s) => s.isEnabled(env));
-  const results = await Promise.all(enabled.map((s) => runOne(env, s)));
+  const limitImageCache = createTaskLimiter(IMAGE_CACHE_CONCURRENCY);
+  const results = await Promise.all(enabled.map((s) => runOne(env, s, limitImageCache)));
   await pruneIngestRuns(env).catch((err) => {
     console.error(JSON.stringify({
       msg: "ingest_runs_prune_failed",
@@ -44,7 +47,11 @@ export async function runIngestion(
   return results;
 }
 
-async function runOne(env: Env, source: IngestSource): Promise<IngestResult> {
+async function runOne(
+  env: Env,
+  source: IngestSource,
+  limitImageCache: TaskLimiter,
+): Promise<IngestResult> {
   const lockToken = crypto.randomUUID();
   const started = Date.now();
   let lockAcquired = false;
@@ -59,11 +66,9 @@ async function runOne(env: Env, source: IngestSource): Promise<IngestResult> {
     // Source.fetch is a complete snapshot contract. Only after the fetch, image cache,
     // and upsert all succeed do we remove rows that were not seen in this run.
     const offers = await source.fetch(env);
-    const withImages: typeof offers = [];
-    for (let i = 0; i < offers.length; i += IMAGE_CACHE_CONCURRENCY) {
-      const batch = offers.slice(i, i + IMAGE_CACHE_CONCURRENCY);
-      withImages.push(...await Promise.all(batch.map((o) => cacheOfferImages(env, o))));
-    }
+    const withImages = await Promise.all(
+      offers.map((offer) => limitImageCache(() => cacheOfferImages(env, offer))),
+    );
 
     // A long fetch may outlive its lease and be superseded. Refreshing by token proves
     // this run still owns the source immediately before it mutates the snapshot.
@@ -93,6 +98,37 @@ async function runOne(env: Env, source: IngestSource): Promise<IngestResult> {
       });
     }
   }
+}
+
+function createTaskLimiter(limit: number): TaskLimiter {
+  let active = 0;
+  const waiters: Array<() => void> = [];
+
+  async function acquire(): Promise<void> {
+    if (active < limit) {
+      active += 1;
+      return;
+    }
+    await new Promise<void>((resolve) => waiters.push(resolve));
+  }
+
+  function release(): void {
+    const next = waiters.shift();
+    if (next) {
+      next();
+    } else {
+      active -= 1;
+    }
+  }
+
+  return async <T>(task: () => Promise<T>): Promise<T> => {
+    await acquire();
+    try {
+      return await task();
+    } finally {
+      release();
+    }
+  };
 }
 
 async function acquireSourceLock(
