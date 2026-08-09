@@ -7,6 +7,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.autka.feature.detail.OfferDetailRoute
+import com.autka.feature.importcalc.ImportCalculatorRoute
 import com.autka.feature.listings.ListingsRoute
 import com.autka.feature.map.MapRoute
 
@@ -14,6 +15,7 @@ private object Routes {
     const val LISTINGS = "listings"
     const val DETAIL = "detail/{offerId}"
     const val MAP = "map"
+    const val IMPORT_CALCULATOR = "import-calculator"
     fun detail(offerId: String) = "detail/$offerId"
 }
 
@@ -25,6 +27,7 @@ fun AutkaApp() {
             ListingsRoute(
                 onOfferClick = { id -> navController.navigate(Routes.detail(id)) },
                 onMapClick = { navController.navigate(Routes.MAP) },
+                onImportCalculatorClick = { navController.navigate(Routes.IMPORT_CALCULATOR) },
             )
         }
         composable(
@@ -38,6 +41,9 @@ fun AutkaApp() {
                 onBack = { navController.popBackStack() },
                 onOfferClick = { id -> navController.navigate(Routes.detail(id)) },
             )
+        }
+        composable(Routes.IMPORT_CALCULATOR) {
+            ImportCalculatorRoute(onBack = { navController.popBackStack() })
         }
     }
 }

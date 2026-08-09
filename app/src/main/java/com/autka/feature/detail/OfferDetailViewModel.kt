@@ -10,7 +10,6 @@ import com.autka.data.repository.CarOfferRepository
 import com.autka.data.repository.ExchangeRateRepository
 import com.autka.data.settings.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -20,7 +19,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class OfferDetailViewModel @Inject constructor(
-    savedStateHandle: SavedStateHandle,
+    private val savedStateHandle: SavedStateHandle,
     repository: CarOfferRepository,
     rateRepository: ExchangeRateRepository,
     settingsRepository: SettingsRepository,
@@ -29,10 +28,13 @@ class OfferDetailViewModel @Inject constructor(
 
     private val offerId: String = checkNotNull(savedStateHandle["offerId"])
 
-    // Editable import-calculator inputs. Defaults: a typical US->PL shipping figure and
-    // unknown engine capacity, which uses the conservative highest non-EV excise rate.
-    private val shippingUsd = MutableStateFlow(2_400.0)
-    private val engineCapacityCc = MutableStateFlow<Int?>(null)
+    // Keep accepted calculator inputs in SavedStateHandle so restored text and the
+    // recomputed estimate cannot disagree after process death/back-stack restoration.
+    private val shippingUsd = savedStateHandle.getStateFlow(
+        SHIPPING_USD_KEY,
+        ImportCostCalculator.DEFAULT_US_SHIPPING_USD,
+    )
+    private val engineCapacityCc = savedStateHandle.getStateFlow<Int?>(ENGINE_CAPACITY_CC_KEY, null)
 
     init {
         // Override the compiled-in seed with the backend directory. Offline-safe: a
@@ -88,11 +90,16 @@ class OfferDetailViewModel @Inject constructor(
 
     /** Update the shipping assumption (USD). Ignores blank/negative input. */
     fun onShippingChange(usd: Double?) {
-        if (usd != null && usd >= 0) shippingUsd.value = usd
+        if (usd != null && usd >= 0) savedStateHandle[SHIPPING_USD_KEY] = usd
     }
 
     /** Update the engine capacity (cc) used for the PL excise band; null = unknown. */
     fun onEngineCapacityChange(cc: Int?) {
-        engineCapacityCc.value = cc?.takeIf { it > 0 }
+        savedStateHandle[ENGINE_CAPACITY_CC_KEY] = cc?.takeIf { it > 0 }
+    }
+
+    private companion object {
+        const val SHIPPING_USD_KEY = "import_shipping_usd"
+        const val ENGINE_CAPACITY_CC_KEY = "import_engine_capacity_cc"
     }
 }

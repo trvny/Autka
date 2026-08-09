@@ -1,0 +1,8 @@
+<resources>
+    <string name="import_calculator">Kalkulator importu</string>
+    <string name="cd_import_calculator">Kalkulator importu</string>
+    <string name="import_vehicle_price_usd">Cena pojazdu (USD)</string>
+    <string name="import_fuel_type">Paliwo / napęd</string>
+    <string name="import_invalid_amount">Wpisz nieujemną kwotę.</string>
+    <string name="import_invalid_engine_cc">Wpisz dodatnią pojemność silnika albo pozostaw pole puste.</string>
+</resources>

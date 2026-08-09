@@ -18,6 +18,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Tune
@@ -64,6 +65,7 @@ import com.autka.ui.components.kmOrDash
 fun ListingsRoute(
     onOfferClick: (String) -> Unit,
     onMapClick: () -> Unit,
+    onImportCalculatorClick: () -> Unit,
     viewModel: ListingsViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -76,6 +78,7 @@ fun ListingsRoute(
         onDisplayCurrencyChange = viewModel::onDisplayCurrencyChange,
         onOfferClick = onOfferClick,
         onMapClick = onMapClick,
+        onImportCalculatorClick = onImportCalculatorClick,
     )
 }
 
@@ -90,6 +93,7 @@ fun ListingsScreen(
     onDisplayCurrencyChange: (Currency) -> Unit,
     onOfferClick: (String) -> Unit,
     onMapClick: () -> Unit,
+    onImportCalculatorClick: () -> Unit,
 ) {
     var showFilters by remember { mutableStateOf(false) }
 
@@ -102,6 +106,12 @@ fun ListingsScreen(
                         selected = uiState.displayCurrency,
                         onSelect = onDisplayCurrencyChange,
                     )
+                    IconButton(onClick = onImportCalculatorClick) {
+                        Icon(
+                            Icons.Default.Calculate,
+                            contentDescription = stringResource(R.string.cd_import_calculator),
+                        )
+                    }
                     IconButton(onClick = onMapClick) {
                         Icon(Icons.Default.Map, contentDescription = stringResource(R.string.cd_map))
                     }
@@ -161,8 +171,8 @@ fun ListingsScreen(
                         if (uiState.activeFilterCount > 0) stringResource(R.string.empty_no_match)
                         else stringResource(R.string.empty_no_offers),
                     )
-                    // No results in our cache — send the user to the marketplaces' own
-                    // pre-filled search instead (compliant deep-link, no ingest).
+                    // No results in our cache: send the user to each marketplace's own
+                    // pre-filled search instead. This remains a deep-link, never ingest.
                     MarketplaceLinksRow(filter = uiState.filter)
                 }
                 else -> LazyColumn(
@@ -177,7 +187,7 @@ fun ListingsScreen(
                             onClick = { onOfferClick(offer.id) },
                         )
                     }
-                    // Footer: jump to the marketplaces' own search for the same filter.
+                    // Footer keeps the same compliant hand-off for the active filter.
                     item { MarketplaceLinksRow(filter = uiState.filter) }
                 }
             }
