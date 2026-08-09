@@ -1,59 +1,62 @@
 # Autka — open work
 
-Tracks the load-bearing gaps. Architecture is settled; what's left is licensed data,
-normalized server-side pricing, verified import inputs and a few deep-link parameters.
-See `INTEGRATION.md` for the sourcing boundary and `SOURCES.md` for vetted candidates.
+Tracks the remaining product gaps and the next useful work that does not depend on
+scraping or an unlicensed marketplace feed. See `INTEGRATION.md` for the sourcing
+boundary and `SOURCES.md` for vetted provider candidates.
 
-## Hard product blockers
+## Product blockers
 
-1. **Compliant feed acquisition.** `backend/src/ingest/runner.ts` knows about `mock`,
-   `otomoto`, `olx`, `facebook` and `usAuction`, but the real marketplace adapters remain
-   disabled placeholders. Mock data is opt-in for debug/tests and disabled in release and
-   production. Until at least one licensed, partner, or seller-provided feed lands, the
-   production `GET /offers` catalogue is empty and the app relies on deep-links.
+1. **Compliant live catalogue.** Real marketplace adapters remain disabled until a
+   licensed, partner, seller-provided or otherwise authorized feed is available. Mock data
+   stays debug/test-only. Until then the production catalogue can be empty and the app
+   relies on external marketplace deep-links.
 
-   Recommended order: direct importer/dealer snapshot + Auto.dev for the first USA MVP,
-   mobile.de Search API for Europe, then evaluate MarketCheck or AutoUncle B2B. See
-   `SOURCES.md` for access constraints and links.
+2. **Normalized price + scalable pagination.** Native prices are mixed PLN/EUR/USD.
+   Android currently requests an atomic `complete=true` set and applies NBP conversion,
+   price filters and price sorting locally. Before the first large live catalogue, add a
+   normalized-price field with rate provenance/timestamp plus cursor pagination and tests
+   proving cross-currency ordering across page boundaries.
 
-2. **Normalized price + scalable pagination.** Native `price_amount` values are mixed
-   PLN/EUR/USD. Android currently requests one atomic `complete=true` result set and applies
-   NBP conversion, price filters and price sorting locally. That avoids cross-page races and
-   preserves correctness for the first live feeds. The backend rejects complete sets above
-   5,000 rows rather than silently truncating them, but downloading the entire set is not a
-   scalable catalogue design. Add a normalized price column (with rate and rate timestamp),
-   cursor pagination, and tests proving price order remains correct across page boundaries.
+3. **Authoritative import inputs.** The landed-cost calculator is intentionally an
+   estimate. Customs classification/origin relief, VAT edge cases and realistic shipping
+   ranges need authoritative inputs before totals can be presented as more than indicative.
 
-3. **Verified import-cost inputs + shipping ranges.** `ImportCostEstimate.kt` uses an
-   indicative 10% customs rate, 23% VAT and caller-supplied shipping. The 2026 Polish
-   excise table is drivetrain/capacity-aware; customs classification, origin relief,
-   VAT edge cases and realistic door-to-door shipping bands still require authoritative
-   inputs before the total can be presented as more than an estimate.
+> A US-import broker partnership could close several gaps at once: inventory, shipping
+> figures, lead attribution and a revenue path.
 
-> **Strategic note:** a US-import broker partnership can close several gaps at once:
-> unique inventory, real shipping figures, lead attribution and a revenue model.
+## Useful without a live provider
 
-## Deep-link parameter verification
+- **Standalone import calculator.** Make the landed-cost calculator usable without opening
+  a listing. Reuse the existing excise logic and EN/PL copy instead of creating a second
+  calculation path.
+- **Editable import assumptions.** Allow customs/VAT/shipping assumptions to be adjusted
+  while keeping clearly labelled defaults and the estimate disclaimer.
+- **Saved searches.** Persist filters now; add price/new-listing alerts only once a live
+  catalogue provides meaningful changes to watch.
+- **Source-health UI.** Surface the backend's safe `/sources` health metadata in a compact
+  diagnostics/status view without exposing raw provider errors.
+- **VIN helper.** Explore a provider-independent VIN decode flow for US import candidates,
+  preferring an official/authorized decoder and keeping decoded data separate from listings.
 
-`feature/external/MarketplaceSearchLinks.kt` marks uncertain parameters with
-`TODO(verify)`. A wrong key silently opens an unfiltered page, so do not emit guesses.
+## Deep-link verification
 
-- **Otomoto:** affiliate parameter pending programme access.
-- **AutoUncle:** remaining fuel values, mileage parity and plug-in hybrid slug.
-- **AutoTrader.pl:** diesel/LPG/plug-in values.
-- **Autoplac:** fuel values beyond gasoline/diesel/hybrid.
-- **OLX:** free-text and mileage/year sort keys.
-- **US sites:** make/model paths and price buckets for IAAI, Cars.com and AutoTrader.com.
+`feature/external/MarketplaceSearchLinks.kt` marks remaining uncertain values with
+`TODO(verify)`. Do not guess parameters that silently degrade to an unfiltered page.
 
-## Backend hygiene
+- Otomoto affiliate parameter after programme access.
+- AutoUncle LPG / plug-in hybrid fuel values.
+- AutoTrader.pl LPG / plug-in hybrid fuel values.
+- Autoplac plug-in hybrid fuel value.
+- Remaining parity-only transmission/fuel values where the code still says `TODO(verify)`.
 
-- `worker-configuration.d.ts` remains generated in CI and uncommitted.
-- Keep `backend/src/lib/types.ts` and Android `CarOffer` in sync.
-- Every enabled ingest adapter must explicitly declare full-snapshot or delta semantics;
-  current cleanup assumes a complete snapshot after each successful fetch.
+Verified URL contracts and the AutoTrader US km-to-mile conversion have regression tests;
+extend those tests whenever another parameter is confirmed.
 
-## Tests still wanted
+## Engineering hygiene
 
-- Repository merge and source failure-isolation.
-- Mapper round-trips (entity ↔ domain).
-- Normalized-price pagination across currencies once that backend work lands.
+- Keep `backend/src/lib/types.ts` and Android models in sync.
+- Every enabled ingest adapter must declare snapshot vs delta semantics.
+- Keep source-run history retention compatible with `/sources` health.
+- Add Room schema export plus a real migration test in CI before the next non-trivial DB
+  migration; do not manufacture historical schema JSON by hand.
+- Add normalized-price pagination tests when that backend work lands.
