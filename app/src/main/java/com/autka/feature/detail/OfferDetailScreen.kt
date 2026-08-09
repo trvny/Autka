@@ -2,17 +2,6 @@ package com.autka.feature.detail
 
 import android.content.Intent
 import android.net.Uri
-import androidx.compose.material3.Button
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.res.stringResource
-import com.autka.R
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -21,39 +10,57 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.autka.R
 import com.autka.core.model.Currency
 import com.autka.core.model.ExchangeRates
+import com.autka.core.model.FuelType
 import com.autka.core.model.ImportCostEstimate
 import com.autka.feature.external.ImportServicesSection
 import com.autka.ui.components.EmptyState
 import com.autka.ui.components.LoadingIndicator
 import com.autka.ui.components.OfferImage
 import com.autka.ui.components.formatted
+import com.autka.ui.components.isIncompleteLocalizedAmount
 import com.autka.ui.components.kmOrDash
+import com.autka.ui.components.parseLocalizedNonNegativeAmount
+import com.autka.ui.components.parsePositiveInteger
+import java.text.DecimalFormatSymbols
 
 @Composable
 fun OfferDetailRoute(
@@ -141,6 +148,8 @@ fun OfferDetailScreen(
                         rates = uiState.exchangeRates,
                         shippingUsd = uiState.shippingUsd,
                         engineCapacityCc = uiState.engineCapacityCc,
+                        engineCapacityRequired = o.fuelType != FuelType.ELECTRIC &&
+                            o.fuelType != FuelType.HYDROGEN,
                         onShippingChange = onShippingChange,
                         onEngineCapacityChange = onEngineCapacityChange,
                     )
@@ -167,12 +176,22 @@ private fun ImportBreakdown(
     rates: ExchangeRates?,
     shippingUsd: Double,
     engineCapacityCc: Int?,
+    engineCapacityRequired: Boolean,
     onShippingChange: (Double?) -> Unit,
     onEngineCapacityChange: (Int?) -> Unit,
 ) {
-    // Local text state so partial typing isn't clobbered by the reactive recompute.
-    var shippingText by remember { mutableStateOf(shippingUsd.toLong().toString()) }
-    var engineText by remember { mutableStateOf(engineCapacityCc?.toString() ?: "") }
+    // Save raw text so partially typed localized values survive configuration changes.
+    var shippingText by rememberSaveable { mutableStateOf(shippingUsd.toLong().toString()) }
+    var engineText by rememberSaveable { mutableStateOf(engineCapacityCc?.toString() ?: "") }
+    val locale = LocalConfiguration.current.locales[0]
+    val numberSymbols = remember(locale) { DecimalFormatSymbols.getInstance(locale) }
+    val parsedShipping = parseLocalizedNonNegativeAmount(shippingText, numberSymbols)
+    val shippingInvalid = parsedShipping == null &&
+        !isIncompleteLocalizedAmount(shippingText, numberSymbols)
+    val parsedEngine = if (engineCapacityRequired) parsePositiveInteger(engineText, numberSymbols) else null
+    val engineInvalid = engineCapacityRequired && engineText.isNotBlank() && parsedEngine == null
+    val inputsValidForBreakdown = parsedShipping != null && !engineInvalid
+
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(stringResource(R.string.import_title), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
@@ -180,39 +199,73 @@ private fun ImportBreakdown(
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
                     value = shippingText,
-                    onValueChange = { shippingText = it; onShippingChange(it.toDoubleOrNull()) },
+                    onValueChange = {
+                        shippingText = it
+                        onShippingChange(parseLocalizedNonNegativeAmount(it, numberSymbols))
+                    },
                     label = { Text(stringResource(R.string.import_shipping_usd)) },
                     singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    isError = shippingInvalid,
+                    supportingText = if (shippingInvalid) {
+                        { Text(stringResource(R.string.import_invalid_amount)) }
+                    } else {
+                        null
+                    },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     modifier = Modifier.weight(1f),
                 )
-                OutlinedTextField(
-                    value = engineText,
-                    onValueChange = { engineText = it; onEngineCapacityChange(it.toIntOrNull()) },
-                    label = { Text(stringResource(R.string.import_engine_cc)) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.weight(1f),
-                )
-            }
-            if (est.usesConservativeExcise) {
-                Text(
-                    stringResource(R.string.import_unknown_engine_warning),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error,
-                )
+                if (engineCapacityRequired) {
+                    OutlinedTextField(
+                        value = engineText,
+                        onValueChange = {
+                            engineText = it
+                            onEngineCapacityChange(parsePositiveInteger(it, numberSymbols))
+                        },
+                        label = { Text(stringResource(R.string.import_engine_cc)) },
+                        singleLine = true,
+                        isError = engineInvalid,
+                        supportingText = if (engineInvalid) {
+                            { Text(stringResource(R.string.import_invalid_engine_cc)) }
+                        } else {
+                            null
+                        },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f),
+                    )
+                }
             }
 
-            SpecRow(stringResource(R.string.import_vehicle), est.vehiclePrice.formatted())
-            SpecRow(stringResource(R.string.import_shipping), est.shipping.formatted())
-            SpecRow(stringResource(R.string.import_customs), est.customsDuty.formatted())
-            SpecRow(stringResource(R.string.import_excise), est.exciseDuty.formatted())
-            SpecRow(stringResource(R.string.import_vat), est.vat.formatted())
-            Divider()
-            SpecRow(stringResource(R.string.import_total), est.total.formatted())
-            if (rates != null && est.total.currency != displayCurrency) {
-                SpecRow(stringResource(R.string.import_total_in, displayCurrency.name), rates.convert(est.total, displayCurrency).formatted())
+            if (inputsValidForBreakdown) {
+                if (est.usesConservativeExcise) {
+                    Text(
+                        stringResource(R.string.import_unknown_engine_warning),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+
+                SpecRow(stringResource(R.string.import_vehicle), est.vehiclePrice.formatted())
+                SpecRow(stringResource(R.string.import_shipping), est.shipping.formatted())
+                SpecRow(stringResource(R.string.import_customs), est.customsDuty.formatted())
+                SpecRow(stringResource(R.string.import_excise), est.exciseDuty.formatted())
+                SpecRow(stringResource(R.string.import_vat), est.vat.formatted())
+                Divider()
+                SpecRow(stringResource(R.string.import_total), est.total.formatted())
+                if (rates != null && est.total.currency != displayCurrency) {
+                    SpecRow(
+                        stringResource(R.string.import_total_in, displayCurrency.name),
+                        rates.convert(est.total, displayCurrency).formatted(),
+                    )
+                    if (rates.isStale) {
+                        Text(
+                            stringResource(R.string.listing_rates_stale),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
             }
+
             Text(
                 stringResource(R.string.import_disclaimer),
                 style = MaterialTheme.typography.bodySmall,

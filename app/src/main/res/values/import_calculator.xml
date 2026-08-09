@@ -1,0 +1,8 @@
+<resources>
+    <string name="import_calculator">Import calculator</string>
+    <string name="cd_import_calculator">Import calculator</string>
+    <string name="import_vehicle_price_usd">Vehicle price (USD)</string>
+    <string name="import_fuel_type">Fuel / drivetrain</string>
+    <string name="import_invalid_amount">Enter a non-negative amount.</string>
+    <string name="import_invalid_engine_cc">Enter a positive engine capacity or leave it blank.</string>
+</resources>

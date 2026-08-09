@@ -16,6 +16,9 @@ data class ImportCostEstimate(
 )
 
 object ImportCostCalculator {
+    const val DEFAULT_VEHICLE_PRICE_USD = 20_000.0
+    const val DEFAULT_US_SHIPPING_USD = 2_400.0
+
     // Indicative rates -- externalize/configure for production use.
     private const val EU_CUSTOMS_DUTY_RATE = 0.10
     private const val PL_VAT_RATE = 0.23

@@ -11,7 +11,8 @@ data/local        Room database, DAO, entity + mappers (local cache = source of 
 data/remote       CarOfferSource interface; BackendCarOfferSource (live) + MockCarOfferSource (demo)
 data/repository   OfflineFirstCarOfferRepository: fans queries to all sources, merges, caches
 feature/listings  Search + results screen (ViewModel + Compose)
-feature/detail    Offer detail + US import cost breakdown
+feature/detail    Offer detail + inline US import cost breakdown
+feature/importcalc Provider-independent US import calculator
 feature/external  Deep-links into marketplaces with no compliant feed (see INTEGRATION.md)
 di                Hilt modules (database, repository, sources multibinding)
 ui                Theme, navigation host, shared components
@@ -38,8 +39,10 @@ backend and rendered in the app with Coil; relative `/images/...` URLs resolve a
 customs duty + PL excise/akcyza + 23% VAT). The excise rate is drivetrain- and
 capacity-aware (2026 akcyza table); duty, VAT and the default shipping figure are still
 indicative constants — verify them before relying on the numbers. The detail screen
-shows the full breakdown for any USA-region offer, with the shipping cost and engine
-capacity editable inline so the landed-cost total recomputes live.
+shows the breakdown for USA-region offers, while `feature/importcalc` exposes the same
+calculator independently of a listing from the listings toolbar. Both paths reuse the
+same calculator, shipping default and localized amount parser; totals can also be shown
+in the user's app-wide display currency using the shared exchange-rate repository.
 
 ## Currency
 
@@ -59,8 +62,8 @@ until a fresh NBP request succeeds. A failed fetch silently keeps the best rates
 available.
 
 The chosen display currency is persisted app-wide via Preferences DataStore
-(`SettingsRepository`), so it survives restarts and is shared across the listings and
-detail screens.
+(`SettingsRepository`), so it survives restarts and is shared across the listings,
+detail and standalone import-calculator screens.
 
 ## Map
 
@@ -79,8 +82,9 @@ sites" badge. `?dedup=false` returns raw rows.
 
 ## Localization
 
-UI strings live in `res/values/strings.xml` with a full Polish translation in
-`res/values-pl/` (the app targets the PL market).
+UI string resources live under `res/values/*.xml` with Polish mirrors under
+`res/values-pl/` (the app targets the PL market). Feature-specific files are fine as long
+as resource names remain unique and both locales stay in sync.
 
 ## Versions
 
@@ -94,7 +98,8 @@ Room 2.8.4, compileSdk 37, minSdk 26. Bump via the version catalog at
 and Gradle (validates the wrapper-jar checksum automatically and caches builds), then
 runs `lintDebug assembleDebug testDebugUnitTest`. The debug APK and lint report are
 uploaded as build artifacts. `testDebugUnitTest` covers `app/src/test`, including import
-costs, listings filtering/sorting, repository isolation and exchange-rate failure paths.
+costs, localized number parsing, listings filtering/sorting, repository isolation and
+exchange-rate failure paths.
 
 `.github/workflows/backend-ci.yml` covers the Worker (`/backend`): typecheck, `vitest`,
 and a `wrangler deploy --dry-run`. `worker-configuration.d.ts` is generated in CI, not
