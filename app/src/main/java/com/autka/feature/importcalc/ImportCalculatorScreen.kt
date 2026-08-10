@@ -97,18 +97,22 @@ fun ImportCalculatorScreen(
     val numberSymbols = remember(locale) { DecimalFormatSymbols.getInstance(locale) }
     val vehiclePrice = parseLocalizedNonNegativeAmount(vehiclePriceText, numberSymbols)
     val shipping = parseLocalizedNonNegativeAmount(shippingText, numberSymbols)
-    val customsRatePercent = parseLocalizedNonNegativeAmount(customsRateText, numberSymbols)
-    val vatRatePercent = parseLocalizedNonNegativeAmount(vatRateText, numberSymbols)
+    val parsedCustomsRatePercent = parseLocalizedNonNegativeAmount(customsRateText, numberSymbols)
+    val parsedVatRatePercent = parseLocalizedNonNegativeAmount(vatRateText, numberSymbols)
+    val customsRatePercent = parsedCustomsRatePercent
+        ?: if (customsRateText.isBlank()) defaultCustomsPercent.toDouble() else null
+    val vatRatePercent = parsedVatRatePercent
+        ?: if (vatRateText.isBlank()) defaultVatPercent.toDouble() else null
     val vehiclePriceInvalid = vehiclePrice == null &&
         !isIncompleteLocalizedAmount(vehiclePriceText, numberSymbols)
     val shippingInvalid = shipping == null &&
         !isIncompleteLocalizedAmount(shippingText, numberSymbols)
-    val customsRateInvalid = when {
-        customsRatePercent != null -> customsRatePercent > 100.0
+    val customsRateInvalid = customsRateText.isNotBlank() && when {
+        parsedCustomsRatePercent != null -> parsedCustomsRatePercent > 100.0
         else -> !isIncompleteLocalizedAmount(customsRateText, numberSymbols)
     }
-    val vatRateInvalid = when {
-        vatRatePercent != null -> vatRatePercent > 100.0
+    val vatRateInvalid = vatRateText.isNotBlank() && when {
+        parsedVatRatePercent != null -> parsedVatRatePercent > 100.0
         else -> !isIncompleteLocalizedAmount(vatRateText, numberSymbols)
     }
     val fuel = FuelType.entries.firstOrNull { it.name == fuelName } ?: FuelType.PETROL
