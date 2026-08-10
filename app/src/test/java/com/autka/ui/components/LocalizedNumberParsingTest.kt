@@ -107,12 +107,14 @@ class LocalizedNumberParsingTest {
     }
 
     @Test
-    fun `percentage typing only treats a single trailing decimal mark as incomplete`() {
+    fun `percentage typing only treats a valid trailing decimal mark as incomplete`() {
         val pl = DecimalFormatSymbols(Locale.forLanguageTag("pl-PL"))
 
         assertTrue(isIncompleteLocalizedPercentage("", pl))
         assertTrue(isIncompleteLocalizedPercentage("10,", pl))
         assertTrue(isIncompleteLocalizedPercentage("10.", pl))
+        assertTrue(isIncompleteLocalizedPercentage("100,", pl))
+        assertFalse(isIncompleteLocalizedPercentage("999,", pl))
         assertFalse(isIncompleteLocalizedPercentage("12,345", pl))
         assertFalse(isIncompleteLocalizedPercentage("1,2,", pl))
         assertFalse(isIncompleteLocalizedPercentage("10x", pl))
