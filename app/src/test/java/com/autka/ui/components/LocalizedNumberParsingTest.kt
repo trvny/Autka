@@ -92,6 +92,33 @@ class LocalizedNumberParsingTest {
     }
 
     @Test
+    fun `percentage input accepts either decimal mark but never grouping`() {
+        val pl = DecimalFormatSymbols(Locale.forLanguageTag("pl-PL"))
+        val us = DecimalFormatSymbols(Locale.US)
+
+        assertEquals(10.5, parseLocalizedPercentage("10,5", pl)!!, delta)
+        assertEquals(10.5, parseLocalizedPercentage("10.5", pl)!!, delta)
+        assertEquals(23.5, parseLocalizedPercentage("23,5", us)!!, delta)
+        assertEquals(23.5, parseLocalizedPercentage("23.5", us)!!, delta)
+        assertNull(parseLocalizedPercentage("0.100", pl))
+        assertNull(parseLocalizedPercentage("0,100", us))
+        assertNull(parseLocalizedPercentage("1 000", pl))
+        assertNull(parseLocalizedPercentage("100.01", us))
+    }
+
+    @Test
+    fun `percentage typing only treats a single trailing decimal mark as incomplete`() {
+        val pl = DecimalFormatSymbols(Locale.forLanguageTag("pl-PL"))
+
+        assertTrue(isIncompleteLocalizedPercentage("", pl))
+        assertTrue(isIncompleteLocalizedPercentage("10,", pl))
+        assertTrue(isIncompleteLocalizedPercentage("10.", pl))
+        assertFalse(isIncompleteLocalizedPercentage("12,345", pl))
+        assertFalse(isIncompleteLocalizedPercentage("1,2,", pl))
+        assertFalse(isIncompleteLocalizedPercentage("10x", pl))
+    }
+
+    @Test
     fun `only a valid numeric prefix can be incomplete`() {
         val pl = DecimalFormatSymbols(Locale.forLanguageTag("pl-PL"))
         val us = DecimalFormatSymbols(Locale.US)
