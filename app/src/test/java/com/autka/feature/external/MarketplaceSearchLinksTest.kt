@@ -40,8 +40,8 @@ class MarketplaceSearchLinksTest {
                 "&search%5Bfilter_float_mileage%3Ato%5D=90000" +
                 "&search%5Bfilter_enum_fuel_type%5D%5B0%5D=diesel" +
                 "&search%5Bfilter_enum_fuel_type%5D%5B1%5D=electric" +
-                "&search%5Bfilter_enum_gearbox%5D%5B0%5D=automatic" +
-                "&search%5Bfilter_enum_gearbox%5D%5B1%5D=manual" +
+                "&search%5Bfilter_enum_gearbox%5D%5B0%5D=manual" +
+                "&search%5Bfilter_enum_gearbox%5D%5B1%5D=automatic" +
                 "&search%5Border%5D=filter_float_price%3Aasc",
             url,
         )
