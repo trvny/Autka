@@ -26,12 +26,13 @@ boundary, partner paths and source acceptance checklist.
 
 ## Useful without a live provider
 
-- **Editable import assumptions.** Allow customs/VAT/shipping assumptions to be adjusted
-  while keeping clearly labelled defaults and the estimate disclaimer.
 - **Saved searches.** Persist filters now; add price/new-listing alerts only once a live
   catalogue provides meaningful changes to watch.
 - **VIN helper.** Explore a provider-independent VIN decode flow for US import candidates,
   preferring an official/authorized decoder and keeping decoded data separate from listings.
+- **Import assumption presets.** If repeated calculator use makes it worthwhile, persist
+  named local presets for shipping/customs/VAT assumptions while keeping the documented
+  defaults and one-tap reset available.
 
 ## Deep-link verification
 
