@@ -60,8 +60,7 @@ extend those tests whenever another parameter is confirmed.
 - Consider a short-lived source-health cache if diagnostics should remain useful offline
   or across navigation; keep manual refresh network-backed.
 - Split import-calculator input parsing/validation out of `ImportCalculatorScreen` before
-  adding more fields; editable assumptions pushed the composable past the detekt complexity
-  threshold.
+  adding more fields; editable assumptions now trigger MegaLinter's detekt complexity warning.
 - Add Room schema export plus a real migration test in CI before the next non-trivial DB
   migration; do not manufacture historical schema JSON by hand.
 - Add normalized-price pagination tests when that backend work lands.
