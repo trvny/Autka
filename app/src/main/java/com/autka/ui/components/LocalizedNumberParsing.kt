@@ -67,6 +67,51 @@ internal fun parseLocalizedNonNegativeAmount(
     return canonical.toDoubleOrNull()?.takeIf { it.isFinite() && it >= 0.0 }
 }
 
+/**
+ * Parse a percentage without accepting grouping syntax. Both dot and comma are accepted as
+ * decimal separators so a mistyped locale cannot turn `0,100` or `0.100` into 100%.
+ */
+internal fun parseLocalizedPercentage(
+    value: String,
+    symbols: DecimalFormatSymbols = DecimalFormatSymbols.getInstance(),
+): Double? {
+    val compact = normalizeDigitsAndWhitespace(value)
+    if (compact.isEmpty() || compact.any(Char::isWhitespace)) return null
+
+    val decimalSeparators = setOf('.', ',', symbols.decimalSeparator)
+    if (compact.any { !it.isDigit() && it !in decimalSeparators }) return null
+
+    val separators = compact.withIndex().filter { !it.value.isDigit() }
+    if (separators.size > 1) return null
+
+    val canonical = if (separators.isEmpty()) {
+        compact
+    } else {
+        val separator = separators.single()
+        val integerPart = compact.substring(0, separator.index)
+        val fractionPart = compact.substring(separator.index + 1)
+        if (fractionPart.length !in 1..2 || !fractionPart.all(Char::isDigit)) return null
+        "${integerPart.ifEmpty { "0" }}.$fractionPart"
+    }
+
+    return canonical.toDoubleOrNull()?.takeIf { it.isFinite() && it in 0.0..100.0 }
+}
+
+/** Empty or a trailing decimal separator is still a percentage being typed. */
+internal fun isIncompleteLocalizedPercentage(
+    value: String,
+    symbols: DecimalFormatSymbols = DecimalFormatSymbols.getInstance(),
+): Boolean {
+    val compact = normalizeDigitsAndWhitespace(value)
+    if (compact.isEmpty()) return true
+    if (compact.any(Char::isWhitespace)) return false
+
+    val decimalSeparators = setOf('.', ',', symbols.decimalSeparator)
+    if (compact.last() !in decimalSeparators) return false
+    if (compact.dropLast(1).any { !it.isDigit() }) return false
+    return compact.count { it in decimalSeparators } == 1
+}
+
 /** Empty or a valid partial numeric value is still being typed. */
 internal fun isIncompleteLocalizedAmount(
     value: String,
