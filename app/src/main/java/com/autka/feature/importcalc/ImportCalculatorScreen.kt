@@ -46,8 +46,11 @@ import com.autka.core.model.ImportCostCalculator
 import com.autka.core.model.ImportCostEstimate
 import com.autka.ui.components.formatted
 import com.autka.ui.components.isIncompleteLocalizedAmount
+import com.autka.ui.components.isIncompleteLocalizedPercentage
 import com.autka.ui.components.parseLocalizedNonNegativeAmount
+import com.autka.ui.components.parseLocalizedPercentage
 import com.autka.ui.components.parsePositiveInteger
+import java.math.BigDecimal
 import java.text.DecimalFormatSymbols
 
 private val CALCULATOR_FUELS = listOf(
@@ -81,15 +84,15 @@ fun ImportCalculatorScreen(
     exchangeRates: ExchangeRates?,
 ) {
     val defaultShippingUsd = ImportCostCalculator.DEFAULT_US_SHIPPING_USD.toLong()
-    val defaultCustomsPercent = (ImportCostCalculator.DEFAULT_EU_CUSTOMS_DUTY_RATE * 100).toInt()
-    val defaultVatPercent = (ImportCostCalculator.DEFAULT_PL_VAT_RATE * 100).toInt()
+    val defaultCustomsPercentText = ratePercentText(ImportCostCalculator.DEFAULT_EU_CUSTOMS_DUTY_RATE)
+    val defaultVatPercentText = ratePercentText(ImportCostCalculator.DEFAULT_PL_VAT_RATE)
 
     var vehiclePriceText by rememberSaveable {
         mutableStateOf(ImportCostCalculator.DEFAULT_VEHICLE_PRICE_USD.toLong().toString())
     }
     var shippingText by rememberSaveable { mutableStateOf(defaultShippingUsd.toString()) }
-    var customsRateText by rememberSaveable { mutableStateOf(defaultCustomsPercent.toString()) }
-    var vatRateText by rememberSaveable { mutableStateOf(defaultVatPercent.toString()) }
+    var customsRateText by rememberSaveable { mutableStateOf(defaultCustomsPercentText) }
+    var vatRateText by rememberSaveable { mutableStateOf(defaultVatPercentText) }
     var engineText by rememberSaveable { mutableStateOf("") }
     var fuelName by rememberSaveable { mutableStateOf(FuelType.PETROL.name) }
 
@@ -97,24 +100,16 @@ fun ImportCalculatorScreen(
     val numberSymbols = remember(locale) { DecimalFormatSymbols.getInstance(locale) }
     val vehiclePrice = parseLocalizedNonNegativeAmount(vehiclePriceText, numberSymbols)
     val shipping = parseLocalizedNonNegativeAmount(shippingText, numberSymbols)
-    val parsedCustomsRatePercent = parseLocalizedNonNegativeAmount(customsRateText, numberSymbols)
-    val parsedVatRatePercent = parseLocalizedNonNegativeAmount(vatRateText, numberSymbols)
-    val customsRatePercent = parsedCustomsRatePercent
-        ?: if (customsRateText.isBlank()) defaultCustomsPercent.toDouble() else null
-    val vatRatePercent = parsedVatRatePercent
-        ?: if (vatRateText.isBlank()) defaultVatPercent.toDouble() else null
+    val customsRatePercent = parseLocalizedPercentage(customsRateText, numberSymbols)
+    val vatRatePercent = parseLocalizedPercentage(vatRateText, numberSymbols)
     val vehiclePriceInvalid = vehiclePrice == null &&
         !isIncompleteLocalizedAmount(vehiclePriceText, numberSymbols)
-    val shippingInvalid = shipping == null &&
+    val shippingInvalid = shippingText.isBlank() || shipping == null &&
         !isIncompleteLocalizedAmount(shippingText, numberSymbols)
-    val customsRateInvalid = customsRateText.isNotBlank() && when {
-        parsedCustomsRatePercent != null -> parsedCustomsRatePercent > 100.0
-        else -> !isIncompleteLocalizedAmount(customsRateText, numberSymbols)
-    }
-    val vatRateInvalid = vatRateText.isNotBlank() && when {
-        parsedVatRatePercent != null -> parsedVatRatePercent > 100.0
-        else -> !isIncompleteLocalizedAmount(vatRateText, numberSymbols)
-    }
+    val customsRateInvalid = customsRateText.isBlank() || customsRatePercent == null &&
+        !isIncompleteLocalizedPercentage(customsRateText, numberSymbols)
+    val vatRateInvalid = vatRateText.isBlank() || vatRatePercent == null &&
+        !isIncompleteLocalizedPercentage(vatRateText, numberSymbols)
     val fuel = FuelType.entries.firstOrNull { it.name == fuelName } ?: FuelType.PETROL
     val engineRequired = fuel != FuelType.ELECTRIC && fuel != FuelType.HYDROGEN
     val engineCc = if (engineRequired) parsePositiveInteger(engineText, numberSymbols) else null
@@ -214,7 +209,10 @@ fun ImportCalculatorScreen(
                                 if (customsRateInvalid) {
                                     stringResource(R.string.import_invalid_rate)
                                 } else {
-                                    stringResource(R.string.import_default_percent, defaultCustomsPercent)
+                                    stringResource(
+                                        R.string.import_default_percent,
+                                        defaultCustomsPercentText,
+                                    )
                                 },
                             )
                         },
@@ -232,7 +230,10 @@ fun ImportCalculatorScreen(
                                 if (vatRateInvalid) {
                                     stringResource(R.string.import_invalid_rate)
                                 } else {
-                                    stringResource(R.string.import_default_percent, defaultVatPercent)
+                                    stringResource(
+                                        R.string.import_default_percent,
+                                        defaultVatPercentText,
+                                    )
                                 },
                             )
                         },
@@ -243,8 +244,8 @@ fun ImportCalculatorScreen(
                 TextButton(
                     onClick = {
                         shippingText = defaultShippingUsd.toString()
-                        customsRateText = defaultCustomsPercent.toString()
-                        vatRateText = defaultVatPercent.toString()
+                        customsRateText = defaultCustomsPercentText
+                        vatRateText = defaultVatPercentText
                     },
                 ) {
                     Text(stringResource(R.string.import_reset_assumptions))
@@ -304,6 +305,9 @@ fun ImportCalculatorScreen(
         }
     }
 }
+
+private fun ratePercentText(rate: Double): String =
+    BigDecimal.valueOf(rate).movePointRight(2).stripTrailingZeros().toPlainString()
 
 @Composable
 private fun ImportEstimateBreakdown(
