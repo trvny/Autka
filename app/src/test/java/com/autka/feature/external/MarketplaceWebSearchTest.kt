@@ -4,64 +4,77 @@ import com.autka.core.model.Region
 import com.autka.core.model.SearchFilter
 import java.net.URI
 import java.net.URLDecoder
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class MarketplaceWebSearchTest {
 
     @Test
-    fun `Poland web search scopes the current query to Polish marketplace domains`() {
-        val url = requireNotNull(
-            MarketplaceWebSearch.url(
-                SearchFilter(
-                    make = "BMW",
-                    model = "X5",
-                    regions = setOf(Region.POLAND),
-                ),
+    fun `Poland web search scopes every OR branch to the current vehicle terms`() {
+        val link = MarketplaceWebSearch.all(
+            SearchFilter(
+                make = "BMW",
+                model = "X5",
+                regions = setOf(Region.POLAND),
             ),
-        )
-        val query = decodedQuery(url)
+        ).single()
+        val query = decodedQuery(link.url)
 
+        assertEquals(Region.POLAND, link.region)
         assertTrue(query.startsWith("BMW X5 site:otomoto.pl"))
-        assertTrue(query.contains("OR site:olx.pl"))
+        assertTrue(query.contains("OR BMW X5 site:olx.pl"))
         assertFalse(query.contains("site:cars.com"))
     }
 
     @Test
     fun `USA web search excludes Poland-only marketplace domains`() {
-        val url = requireNotNull(
-            MarketplaceWebSearch.url(
-                SearchFilter(
-                    query = "Mustang Mach-E",
-                    regions = setOf(Region.USA),
-                ),
+        val link = MarketplaceWebSearch.all(
+            SearchFilter(
+                query = "Mustang Mach-E",
+                regions = setOf(Region.USA),
             ),
-        )
-        val query = decodedQuery(url)
+        ).single()
+        val query = decodedQuery(link.url)
 
-        assertTrue(query.contains("site:cars.com"))
-        assertTrue(query.contains("site:autotrader.com"))
+        assertTrue(query.contains("Mustang Mach-E site:cars.com"))
+        assertTrue(query.contains("Mustang Mach-E site:autotrader.com"))
         assertFalse(query.contains("site:otomoto.pl"))
     }
 
     @Test
-    fun `all-region web search stays bounded and skips poor index targets`() {
+    fun `all-region search produces one bounded query per region`() {
         val longQuery = (1..80).joinToString(" ") { "term$it" }
-        val url = requireNotNull(MarketplaceWebSearch.url(SearchFilter(query = longQuery)))
-        val query = decodedQuery(url)
+        val links = MarketplaceWebSearch.all(SearchFilter(query = longQuery))
 
-        assertTrue(query.length <= 400)
-        assertFalse(query.contains("site:facebook.com"))
-        assertFalse(query.contains("site:iaai.com"))
-        assertTrue(query.contains("site:otomoto.pl"))
-        assertTrue(query.contains("site:autotrader.com"))
+        assertEquals(Region.entries.size, links.size)
+        links.forEach { link ->
+            val query = decodedQuery(link.url)
+            assertTrue(query.length <= 400)
+            assertTrue(query.split(Regex("\\s+")).size <= 50)
+            assertFalse(query.contains("site:facebook.com"))
+            assertFalse(query.contains("site:iaai.com"))
+        }
+    }
+
+    @Test
+    fun `term bound keeps whole words`() {
+        val link = MarketplaceWebSearch.all(
+            SearchFilter(
+                query = "alpha beta gamma delta epsilon zeta supercalifragilisticexpialidocious",
+                regions = setOf(Region.USA),
+            ),
+        ).single()
+        val query = decodedQuery(link.url)
+
+        assertTrue(query.startsWith("alpha beta gamma delta epsilon"))
+        assertFalse(query.contains("supercalif"))
     }
 
     @Test
     fun `web search is hidden when there are no search terms`() {
-        assertNull(MarketplaceWebSearch.url(SearchFilter(regions = setOf(Region.POLAND))))
+        assertTrue(MarketplaceWebSearch.all(SearchFilter(regions = setOf(Region.POLAND))).isEmpty())
     }
 
     private fun decodedQuery(url: String): String {
