@@ -97,7 +97,7 @@ internal fun parseLocalizedPercentage(
     return canonical.toDoubleOrNull()?.takeIf { it.isFinite() && it in 0.0..100.0 }
 }
 
-/** Empty or a trailing decimal separator is still a percentage being typed. */
+/** Empty or a valid trailing decimal separator is still a percentage being typed. */
 internal fun isIncompleteLocalizedPercentage(
     value: String,
     symbols: DecimalFormatSymbols = DecimalFormatSymbols.getInstance(),
@@ -108,8 +108,11 @@ internal fun isIncompleteLocalizedPercentage(
 
     val decimalSeparators = setOf('.', ',', symbols.decimalSeparator)
     if (compact.last() !in decimalSeparators) return false
-    if (compact.dropLast(1).any { !it.isDigit() }) return false
-    return compact.count { it in decimalSeparators } == 1
+    val prefix = compact.dropLast(1)
+    if (prefix.any { !it.isDigit() }) return false
+    if (compact.count { it in decimalSeparators } != 1) return false
+    if (prefix.isEmpty()) return true
+    return prefix.toDoubleOrNull()?.let { it <= 100.0 } == true
 }
 
 /** Empty or a valid partial numeric value is still being typed. */
