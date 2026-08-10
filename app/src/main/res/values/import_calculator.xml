@@ -4,4 +4,14 @@
     <string name="import_fuel_type">Fuel / drivetrain</string>
     <string name="import_invalid_amount">Enter a non-negative amount.</string>
     <string name="import_invalid_engine_cc">Enter a positive engine capacity or leave it blank.</string>
+    <string name="import_assumptions">Assumptions</string>
+    <string name="import_assumptions_hint">Editable inputs used for this estimate.</string>
+    <string name="import_customs_rate_percent">Customs duty (%)</string>
+    <string name="import_vat_rate_percent">VAT (%)</string>
+    <string name="import_default_percent">Default: %1$d%%</string>
+    <string name="import_default_shipping_usd">Default: %1$d USD</string>
+    <string name="import_invalid_rate">Enter a rate from 0 to 100.</string>
+    <string name="import_reset_assumptions">Reset assumptions</string>
+    <string name="import_vat_result">VAT</string>
+    <string name="import_calculator_disclaimer">Estimate only. Editable assumptions are not official rates; actual customs valuation, taxes, fees and shipping may vary.</string>
 </resources>
