@@ -5,6 +5,7 @@ import androidx.compose.ui.res.stringResource
 import com.autka.R
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -19,7 +20,9 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Calculate
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.Badge
@@ -66,6 +69,7 @@ fun ListingsRoute(
     onOfferClick: (String) -> Unit,
     onMapClick: () -> Unit,
     onImportCalculatorClick: () -> Unit,
+    onSourceHealthClick: () -> Unit,
     viewModel: ListingsViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -79,6 +83,7 @@ fun ListingsRoute(
         onOfferClick = onOfferClick,
         onMapClick = onMapClick,
         onImportCalculatorClick = onImportCalculatorClick,
+        onSourceHealthClick = onSourceHealthClick,
     )
 }
 
@@ -94,8 +99,10 @@ fun ListingsScreen(
     onOfferClick: (String) -> Unit,
     onMapClick: () -> Unit,
     onImportCalculatorClick: () -> Unit,
+    onSourceHealthClick: () -> Unit,
 ) {
     var showFilters by remember { mutableStateOf(false) }
+    var showMore by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -106,12 +113,6 @@ fun ListingsScreen(
                         selected = uiState.displayCurrency,
                         onSelect = onDisplayCurrencyChange,
                     )
-                    IconButton(onClick = onImportCalculatorClick) {
-                        Icon(
-                            Icons.Default.Calculate,
-                            contentDescription = stringResource(R.string.cd_import_calculator),
-                        )
-                    }
                     IconButton(onClick = onMapClick) {
                         Icon(Icons.Default.Map, contentDescription = stringResource(R.string.cd_map))
                     }
@@ -124,6 +125,26 @@ fun ListingsScreen(
                             },
                         ) {
                             Icon(Icons.Default.Tune, contentDescription = stringResource(R.string.cd_filters))
+                        }
+                    }
+                    Box {
+                        IconButton(onClick = { showMore = true }) {
+                            Icon(
+                                Icons.Default.MoreVert,
+                                contentDescription = stringResource(R.string.cd_more_options),
+                            )
+                        }
+                        DropdownMenu(expanded = showMore, onDismissRequest = { showMore = false }) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.import_calculator)) },
+                                leadingIcon = { Icon(Icons.Default.Calculate, contentDescription = null) },
+                                onClick = { showMore = false; onImportCalculatorClick() },
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.source_health_title)) },
+                                leadingIcon = { Icon(Icons.Default.Info, contentDescription = null) },
+                                onClick = { showMore = false; onSourceHealthClick() },
+                            )
                         }
                     }
                 },

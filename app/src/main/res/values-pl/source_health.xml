@@ -1,0 +1,15 @@
+<resources>
+    <string name="source_health_title">Status źródeł</string>
+    <string name="cd_refresh">Odśwież</string>
+    <string name="cd_more_options">Więcej opcji</string>
+    <string name="source_health_error">Nie udało się pobrać statusu źródeł.</string>
+    <string name="source_health_empty">Brak informacji o stanie źródeł.</string>
+    <string name="source_health_disabled">Wyłączone</string>
+    <string name="source_health_unavailable">Szczegóły stanu niedostępne</string>
+    <string name="source_health_healthy">Ostatnie odświeżenie udane</string>
+    <string name="source_health_failed">Ostatnie odświeżenie nieudane</string>
+    <string name="source_health_no_run">Brak zakończonego odświeżenia</string>
+    <string name="source_health_offers">Oferty: %1$d</string>
+    <string name="source_health_last_completed">Ostatnio zakończono: %1$s</string>
+    <string name="source_health_last_upserted">Zaktualizowane oferty: %1$d</string>
+</resources>

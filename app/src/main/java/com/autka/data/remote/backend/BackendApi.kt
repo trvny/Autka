@@ -28,6 +28,9 @@ interface BackendApi {
         @Query("offset") offset: Int? = null,
     ): OffersResponse
 
+    @GET("sources")
+    suspend fun sources(): SourcesResponse
+
     /**
      * Authoritative import/sourcing-company directory (served at GET /import-services).
      * Optional [region] narrows to companies importing FROM that region. The app uses
@@ -45,6 +48,20 @@ data class OffersResponse(
     val offers: List<OfferDto>,
     /** Total matching rows/groups in this response or before pagination. */
     val count: Int,
+)
+
+@Serializable
+data class SourcesResponse(val sources: List<SourceHealthDto> = emptyList())
+
+@Serializable
+data class SourceHealthDto(
+    val id: String,
+    val displayName: String,
+    val enabled: Boolean,
+    val offerCount: Int? = null,
+    val lastCompletedAtEpochMs: Long? = null,
+    val lastCompletedOk: Boolean? = null,
+    val lastOffersUpserted: Int? = null,
 )
 
 @Serializable

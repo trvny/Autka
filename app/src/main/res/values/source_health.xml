@@ -1,0 +1,15 @@
+<resources>
+    <string name="source_health_title">Source status</string>
+    <string name="cd_refresh">Refresh</string>
+    <string name="cd_more_options">More options</string>
+    <string name="source_health_error">Couldn’t load source status.</string>
+    <string name="source_health_empty">No source status available.</string>
+    <string name="source_health_disabled">Disabled</string>
+    <string name="source_health_unavailable">Health details unavailable</string>
+    <string name="source_health_healthy">Last refresh succeeded</string>
+    <string name="source_health_failed">Last refresh failed</string>
+    <string name="source_health_no_run">No completed refresh</string>
+    <string name="source_health_offers">Offers: %1$d</string>
+    <string name="source_health_last_completed">Last completed: %1$s</string>
+    <string name="source_health_last_upserted">Updated offers: %1$d</string>
+</resources>

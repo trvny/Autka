@@ -74,6 +74,8 @@ class BackendCarOfferSourceTest {
             )
         }
 
+        override suspend fun sources(): SourcesResponse = SourcesResponse()
+
         override suspend fun importServices(region: String?): ImportServicesResponse =
             ImportServicesResponse()
     }
