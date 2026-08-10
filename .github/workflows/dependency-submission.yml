@@ -38,7 +38,7 @@ jobs:
           cache: gradle
 
       - name: Generate and submit dependency graph
-        uses: gradle/actions/dependency-submission@v6.2.0
+        uses: gradle/actions/dependency-submission@v6.3.0
 
   # On pull requests: compare the PR's dependencies against the base and fail if a PR
   # introduces a known-vulnerable dependency, before it's merged.
