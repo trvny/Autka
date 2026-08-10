@@ -26,15 +26,10 @@ boundary and `SOURCES.md` for vetted provider candidates.
 
 ## Useful without a live provider
 
-- **Standalone import calculator.** Make the landed-cost calculator usable without opening
-  a listing. Reuse the existing excise logic and EN/PL copy instead of creating a second
-  calculation path.
 - **Editable import assumptions.** Allow customs/VAT/shipping assumptions to be adjusted
   while keeping clearly labelled defaults and the estimate disclaimer.
 - **Saved searches.** Persist filters now; add price/new-listing alerts only once a live
   catalogue provides meaningful changes to watch.
-- **Source-health UI.** Surface the backend's safe `/sources` health metadata in a compact
-  diagnostics/status view without exposing raw provider errors.
 - **VIN helper.** Explore a provider-independent VIN decode flow for US import candidates,
   preferring an official/authorized decoder and keeping decoded data separate from listings.
 
@@ -57,6 +52,12 @@ extend those tests whenever another parameter is confirmed.
 - Keep `backend/src/lib/types.ts` and Android models in sync.
 - Every enabled ingest adapter must declare snapshot vs delta semantics.
 - Keep source-run history retention compatible with `/sources` health.
+- If `/sources` later exposes expected cadence or failure streaks, derive stale/degraded
+  status from those server fields rather than guessing provider-specific thresholds on Android.
+- If `/sources` payload semantics broaden, add an explicit health-availability field instead
+  of inferring backend health-query failure from `offerCount == null`.
+- Consider a short-lived source-health cache if diagnostics should remain useful offline
+  or across navigation; keep manual refresh network-backed.
 - Add Room schema export plus a real migration test in CI before the next non-trivial DB
   migration; do not manufacture historical schema JSON by hand.
 - Add normalized-price pagination tests when that backend work lands.

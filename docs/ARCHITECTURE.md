@@ -9,10 +9,11 @@ Jetpack Compose, Hilt DI, Room (offline-first), Kotlin Flow.
 core/model        Normalized domain model (CarOffer, Money, SearchFilter, ImportCostEstimate)
 data/local        Room database, DAO, entity + mappers (local cache = source of truth)
 data/remote       CarOfferSource interface; BackendCarOfferSource (live) + MockCarOfferSource (demo)
-data/repository   OfflineFirstCarOfferRepository: fans queries to all sources, merges, caches
+data/repository   Repositories for cached offers, exchange rates and backend source health
 feature/listings  Search + results screen (ViewModel + Compose)
 feature/detail    Offer detail + inline US import cost breakdown
 feature/importcalc Provider-independent US import calculator
+feature/sourcehealth Public-safe backend source status and manual refresh
 feature/external  Deep-links into marketplaces with no compliant feed (see INTEGRATION.md)
 di                Hilt modules (database, repository, sources multibinding)
 ui                Theme, navigation host, shared components
@@ -25,9 +26,15 @@ Per-marketplace aggregation happens **server-side** in the backend's `ALL_SOURCE
 on the device — adding a marketplace is a new ingest adapter + `runner.ts` registration,
 not an app change.
 
-The app talks to the backend through `GET /offers`. The two share a data model: backend
-`src/lib/types.ts` mirrors the app's `CarOffer` — keeping this pair in sync is the #1
-seam to watch. The app's backend URL is the `BACKEND_BASE_URL` `buildConfigField` in
+The app talks to the backend through `GET /offers` and `GET /sources`. The offer data
+model is shared with backend `src/lib/types.ts` — keeping it in sync with the app's
+`CarOffer` is the #1 seam to watch. `/sources` is deliberately public-safe: the source
+status screen shows enabled state, offer count and the latest completed ingest metadata,
+but raw provider errors never cross that endpoint. Android also does not invent
+provider-specific freshness thresholds; if stale/degraded severity is added later, it
+should come from explicit backend cadence/failure metadata.
+
+The app's backend URL is the `BACKEND_BASE_URL` `buildConfigField` in
 `app/build.gradle.kts` — debug uses `http://10.0.2.2:8787/` (emulator loopback to
 `wrangler dev`), release the deployed Worker URL. Offer images are cached to R2 by the
 backend and rendered in the app with Coil; relative `/images/...` URLs resolve against
