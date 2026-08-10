@@ -10,7 +10,7 @@ data class ImportCostEstimate(
     val shipping: Money,
     val customsDuty: Money,   // EU passenger-car duty (commonly 10%)
     val exciseDuty: Money,    // PL akcyza -- depends on engine capacity and drivetrain
-    val vat: Money,           // 23% on (price + shipping + duty + excise)
+    val vat: Money,           // VAT on (price + shipping + duty + excise)
     val total: Money,
     val usesConservativeExcise: Boolean = false,
 )
@@ -18,10 +18,9 @@ data class ImportCostEstimate(
 object ImportCostCalculator {
     const val DEFAULT_VEHICLE_PRICE_USD = 20_000.0
     const val DEFAULT_US_SHIPPING_USD = 2_400.0
+    const val DEFAULT_EU_CUSTOMS_DUTY_RATE = 0.10
+    const val DEFAULT_PL_VAT_RATE = 0.23
 
-    // Indicative rates -- externalize/configure for production use.
-    private const val EU_CUSTOMS_DUTY_RATE = 0.10
-    private const val PL_VAT_RATE = 0.23
     private const val MAX_EXCISE_RATE = 0.186
 
     /**
@@ -59,12 +58,17 @@ object ImportCostCalculator {
         shippingUsd: Double,
         engineCapacityCc: Int?,
         fuelType: FuelType = FuelType.UNKNOWN,
+        customsDutyRate: Double = DEFAULT_EU_CUSTOMS_DUTY_RATE,
+        vatRate: Double = DEFAULT_PL_VAT_RATE,
     ): ImportCostEstimate {
+        require(customsDutyRate in 0.0..1.0) { "customsDutyRate must be between 0 and 1" }
+        require(vatRate in 0.0..1.0) { "vatRate must be between 0 and 1" }
+
         val price = vehiclePriceUsd
         val shipping = shippingUsd
-        val customs = (price + shipping) * EU_CUSTOMS_DUTY_RATE
+        val customs = (price + shipping) * customsDutyRate
         val excise = (price + shipping + customs) * exciseRate(engineCapacityCc, fuelType)
-        val vat = (price + shipping + customs + excise) * PL_VAT_RATE
+        val vat = (price + shipping + customs + excise) * vatRate
         val total = price + shipping + customs + excise + vat
         val usesConservativeExcise = engineCapacityCc == null &&
             fuelType != FuelType.ELECTRIC && fuelType != FuelType.HYDROGEN
