@@ -65,8 +65,8 @@ object MarketplaceSearchLinks {
             .filter { it.regions.any { r -> r in filter.regions } }
             .map { MarketplaceLink(it.sourceId, it.displayName, it.build(filter, affiliateId)) }
 
-    // --- Otomoto (PL) — path + price/year/mileage/fuel/order keys VERIFIED ---
-    // (confirmed against live filtered otomoto.pl URLs). Make/model are path
+    // --- Otomoto (PL) — path + price/year/mileage/fuel/gearbox/order keys VERIFIED ---
+    // (confirmed against live/indexed filtered otomoto.pl URLs). Make/model are path
     // segments; the free-text make fallback below is still best-effort.
 
     private fun otomoto(f: SearchFilter, affiliateId: String?): String {
@@ -85,6 +85,9 @@ object MarketplaceSearchLinks {
         // first so equivalent Set implementations generate the same stable URL.
         f.fuelTypes.sortedBy { it.ordinal }.mapNotNull(::otomotoFuel).forEachIndexed { i, slug ->
             q["search[filter_enum_fuel_type][$i]"] = slug
+        }
+        f.transmissions.sortedBy { it.ordinal }.mapNotNull(::naspersTransmission).forEachIndexed { i, gearbox ->
+            q["search[filter_enum_gearbox][$i]"] = gearbox
         }
         otomotoOrder(f.sort)?.let { q["search[order]"] = it }
         if (f.make == null) f.query.takeIf { it.isNotBlank() }?.let { q["search[filter_enum_make]"] = slug(it) }
@@ -114,11 +117,11 @@ object MarketplaceSearchLinks {
         SortOrder.YEAR_DESC -> "filter_float_year:desc"   // verified (grammar + field)
     }
 
-    // OLX Group transmission facet values. automatic verified live (OLX
-    // filter_enum_transmission); manual by parity with the Naspers vocabulary.
+    // Shared Otomoto / OLX Group transmission vocabulary. Both values are confirmed in
+    // indexed marketplace URLs; the query-key name differs between the two sites.
     private fun naspersTransmission(t: Transmission?): String? = when (t) {
-        Transmission.AUTOMATIC -> "automatic" // verified live
-        Transmission.MANUAL -> "manual"       // by parity — TODO(verify)
+        Transmission.AUTOMATIC -> "automatic"
+        Transmission.MANUAL -> "manual"
         else -> null
     }
 

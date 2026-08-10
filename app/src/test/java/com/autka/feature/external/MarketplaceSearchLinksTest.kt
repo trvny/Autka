@@ -4,6 +4,7 @@ import com.autka.core.model.FuelType
 import com.autka.core.model.Region
 import com.autka.core.model.SearchFilter
 import com.autka.core.model.SortOrder
+import com.autka.core.model.Transmission
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -24,6 +25,7 @@ class MarketplaceSearchLinksTest {
                 maxYear = 2023,
                 maxMileageKm = 90_000,
                 fuelTypes = setOf(FuelType.ELECTRIC, FuelType.DIESEL),
+                transmissions = setOf(Transmission.AUTOMATIC, Transmission.MANUAL),
                 regions = setOf(Region.POLAND),
                 sort = SortOrder.PRICE_ASC,
             ),
@@ -38,6 +40,8 @@ class MarketplaceSearchLinksTest {
                 "&search%5Bfilter_float_mileage%3Ato%5D=90000" +
                 "&search%5Bfilter_enum_fuel_type%5D%5B0%5D=diesel" +
                 "&search%5Bfilter_enum_fuel_type%5D%5B1%5D=electric" +
+                "&search%5Bfilter_enum_gearbox%5D%5B0%5D=manual" +
+                "&search%5Bfilter_enum_gearbox%5D%5B1%5D=automatic" +
                 "&search%5Border%5D=filter_float_price%3Aasc",
             url,
         )
