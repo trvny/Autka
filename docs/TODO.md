@@ -26,12 +26,13 @@ boundary, partner paths and source acceptance checklist.
 
 ## Useful without a live provider
 
-- **Editable import assumptions.** Allow customs/VAT/shipping assumptions to be adjusted
-  while keeping clearly labelled defaults and the estimate disclaimer.
 - **Saved searches.** Persist filters now; add price/new-listing alerts only once a live
   catalogue provides meaningful changes to watch.
 - **VIN helper.** Explore a provider-independent VIN decode flow for US import candidates,
   preferring an official/authorized decoder and keeping decoded data separate from listings.
+- **Import assumption presets.** If repeated calculator use makes it worthwhile, persist
+  named local presets for shipping/customs/VAT assumptions while keeping the documented
+  defaults and one-tap reset available.
 
 ## Deep-link verification
 
@@ -58,6 +59,8 @@ extend those tests whenever another parameter is confirmed.
   of inferring backend health-query failure from `offerCount == null`.
 - Consider a short-lived source-health cache if diagnostics should remain useful offline
   or across navigation; keep manual refresh network-backed.
+- Split import-calculator input parsing/validation out of `ImportCalculatorScreen` before
+  adding more fields; editable assumptions now trigger MegaLinter's detekt complexity warning.
 - Add Room schema export plus a real migration test in CI before the next non-trivial DB
   migration; do not manufacture historical schema JSON by hand.
 - Add normalized-price pagination tests when that backend work lands.

@@ -74,6 +74,23 @@ class ImportCostCalculatorTest {
     }
 
     @Test
+    fun `custom customs and vat rates are applied to the same tax chain`() {
+        val e = ImportCostCalculator.estimate(
+            vehiclePriceUsd = 10_000.0,
+            shippingUsd = 1_000.0,
+            engineCapacityCc = 1_600,
+            fuelType = FuelType.PETROL,
+            customsDutyRate = 0.05,
+            vatRate = 0.20,
+        )
+
+        assertEquals(550.0, e.customsDuty.amount, delta)
+        assertEquals(358.05, e.exciseDuty.amount, delta)
+        assertEquals(2_381.61, e.vat.amount, delta)
+        assertEquals(14_289.66, e.total.amount, delta)
+    }
+
+    @Test
     fun `total equals the sum of its parts`() {
         val e = ImportCostCalculator.estimate(15_000.0, 1_500.0, 2_500)
         val sum = e.vehiclePrice.amount + e.shipping.amount + e.customsDuty.amount +
