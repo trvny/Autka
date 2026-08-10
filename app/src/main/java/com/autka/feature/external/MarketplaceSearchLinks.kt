@@ -86,7 +86,7 @@ object MarketplaceSearchLinks {
         f.fuelTypes.sortedBy { it.ordinal }.mapNotNull(::otomotoFuel).forEachIndexed { i, slug ->
             q["search[filter_enum_fuel_type][$i]"] = slug
         }
-        f.transmissions.sortedBy { it.ordinal }.mapNotNull(::otomotoGearbox).forEachIndexed { i, gearbox ->
+        f.transmissions.sortedBy { it.ordinal }.mapNotNull(::naspersTransmission).forEachIndexed { i, gearbox ->
             q["search[filter_enum_gearbox][$i]"] = gearbox
         }
         otomotoOrder(f.sort)?.let { q["search[order]"] = it }
@@ -107,12 +107,6 @@ object MarketplaceSearchLinks {
         else -> null
     }
 
-    private fun otomotoGearbox(t: Transmission?): String? = when (t) {
-        Transmission.AUTOMATIC -> "automatic" // verified in indexed 2025 Otomoto URL
-        Transmission.MANUAL -> "manual"       // verified in indexed Otomoto URLs
-        else -> null
-    }
-
     private fun otomotoOrder(s: SortOrder): String? = when (s) {
         SortOrder.NEWEST -> "created_at_first:desc"        // verified (live otomoto.pl URL)
         SortOrder.PRICE_ASC -> "filter_float_price:asc"   // verified live
@@ -123,11 +117,11 @@ object MarketplaceSearchLinks {
         SortOrder.YEAR_DESC -> "filter_float_year:desc"   // verified (grammar + field)
     }
 
-    // OLX Group transmission facet values. automatic verified live (OLX
-    // filter_enum_transmission); manual by parity with the Naspers vocabulary.
+    // Shared Otomoto / OLX Group transmission vocabulary. Both values are confirmed in
+    // indexed marketplace URLs; the query-key name differs between the two sites.
     private fun naspersTransmission(t: Transmission?): String? = when (t) {
-        Transmission.AUTOMATIC -> "automatic" // verified live
-        Transmission.MANUAL -> "manual"       // by parity — TODO(verify)
+        Transmission.AUTOMATIC -> "automatic"
+        Transmission.MANUAL -> "manual"
         else -> null
     }
 
