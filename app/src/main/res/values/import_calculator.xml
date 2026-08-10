@@ -10,7 +10,7 @@
     <string name="import_vat_rate_percent">VAT (%)</string>
     <string name="import_default_percent">Default: %1$d%%</string>
     <string name="import_default_shipping_usd">Default: %1$d USD</string>
-    <string name="import_invalid_rate">Enter a rate from 0 to 100.</string>
+    <string name="import_invalid_rate">Enter a valid rate from 0 to 100 with up to 2 decimal places.</string>
     <string name="import_reset_assumptions">Reset assumptions</string>
     <string name="import_vat_result">VAT</string>
     <string name="import_calculator_disclaimer">Estimate only. Editable assumptions are not official rates; actual customs valuation, taxes, fees and shipping may vary.</string>
