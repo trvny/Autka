@@ -1,16 +1,19 @@
-Autka aggregates used-car listings from Poland, the rest of Europe and the United States in one place, and helps you understand what an imported car will really cost once it lands in Poland.
+Autka is an open-source Android project for car shopping across Poland, Europe and US imports. It combines connected lawful data feeds with deep links to original marketplaces, so the same search intent can continue even when Autka is not allowed to ingest a site's inventory.
 
 Features
-* One search across Polish, European and US-import listings.
-* Landed-cost estimator for US imports: customs duty, excise (akcyza), VAT and shipping, with the engine size and drivetrain taken into account.
-* Prices converted to a single currency so mixed-source results are comparable at a glance.
-* Filter by make, price, year, mileage, fuel type, region and source; sort by price, year or mileage.
-* Map view for listing locations (OpenStreetMap — no Google account or API key needed).
-* Deep links that continue your search on the original marketplace, and a directory of independent import-service companies.
-* Works offline: your last results stay available with no connection.
+* Search, filter and sort the connected/cached catalogue by make, price, year, mileage, fuel, transmission, region and source.
+* Continue a search on original Polish, European and US marketplace pages through deep links instead of scraping them.
+* Estimate USA-to-Poland landed cost: shipping, customs duty, Polish excise and VAT, with engine size and drivetrain taken into account.
+* Use the import calculator from a listing or as a standalone tool.
+* Compare PLN, EUR and USD prices with NBP exchange rates and explicit stale-rate fallback.
+* View listing locations on an OpenStreetMap-based map.
+* Check public-safe source status and keep the last cached catalogue available offline.
 
 Privacy
-* No ads and no third-party tracking.
-* Only two permissions: internet and network state.
+* No ads and no analytics SDKs.
+* Android currently requests only internet and network-state permissions.
 
-Autka is open source (MIT). The import-cost figures are estimates only — actual customs valuation, rates and fees vary.
+Current project status
+Live catalogue coverage depends on licensed, partner-provided or seller-authorised feeds. Debug/demo sample offers are never enabled in production; unsupported marketplaces remain search deep-links until a compliant feed exists.
+
+Autka is open source under Apache-2.0. Import-cost figures are estimates only; actual customs valuation, tax treatment, shipping and fees can differ.

@@ -1,32 +1,38 @@
 # Releasing Autka
 
-How to cut a release and publish to GitHub, Google Play and F-Droid. The app is a sandboxed
-Android client with only `INTERNET` + `ACCESS_NETWORK_STATE` permissions and no native code,
-so it cannot damage a device. The one irreversible risk in release engineering is **losing the
-signing key** — read the keystore section before you ship anything signed.
+This guide covers the repository's current GitHub release path and the extra work required
+for store distribution. The release workflow is intentionally strict about signing: do not
+cut a public release until the signing key is backed up and the required secrets are in
+place.
 
-## 1. Bump the version
+## 1. Bump the app version
 
-In `app/build.gradle.kts`, bump both together (Play and F-Droid reject a build whose
-`versionCode` did not increase):
+Update both values in `app/build.gradle.kts` to the intended next release. For example,
+replace the placeholders below with the actual next values rather than copying them
+literally:
 
-```kotlin
-versionCode = 2          // +1 every release, never reused
-versionName = "0.2.0"    // human-facing semver
+```text
+versionCode = <next integer>
+versionName = "<next version>"
 ```
 
-Add a matching changelog for the new `versionCode`:
+`versionCode` must increase for store releases. The `v*` Git tag must match the resulting
+`versionName` exactly; the release workflow checks this and fails if they differ.
 
-```
+Add matching Fastlane changelog files for the new `versionCode`:
+
+```text
 fastlane/metadata/android/en-US/changelogs/<versionCode>.txt
 fastlane/metadata/android/pl-PL/changelogs/<versionCode>.txt
 ```
 
-## 2. Signing key (do this once, guard it forever)
+## 2. Signing key
 
-`assembleRelease` produces an **unsigned** APK unless a keystore is supplied. Unsigned is
-fine for F-Droid (it re-signs every build) but not installable directly and not accepted by
-Play. To sign, generate a keystore **once** and reuse it for the life of the app:
+Local `assembleRelease` builds may be unsigned when no signing environment is supplied.
+The GitHub release workflow is different: it requires a valid release keystore and all four
+Actions secrets before it will build/publish artifacts.
+
+Generate the keystore once and keep it for the lifetime of the app identity:
 
 ```bash
 keytool -genkeypair -v \
@@ -37,58 +43,81 @@ keytool -genkeypair -v \
   -dname "CN=Autka, O=travny, C=PL"
 ```
 
-> **Back it up offline before going further.** If you lose this keystore or its passwords you
-> can never publish an update to the same Play listing again (you would have to ship a new app
-> under a new package). Store the file + passwords in a password manager and an offline copy.
-> Never commit it — `.gitignore` already excludes `*.keystore`.
+Back up the keystore and passwords in more than one secure location before releasing.
+Never commit the keystore; `.gitignore` excludes `*.keystore`.
 
-Add four Actions secrets (Settings → Secrets and variables → Actions):
+Configure these Actions secrets:
 
 | Secret | Value |
 |---|---|
-| `KEYSTORE_BASE64` | `base64 -w0 autka-release.keystore` output |
-| `KEYSTORE_PASSWORD` | the store password |
-| `KEY_ALIAS` | `autka` |
-| `KEY_PASSWORD` | the key password |
+| `KEYSTORE_BASE64` | Base64-encoded keystore |
+| `KEYSTORE_PASSWORD` | Keystore password |
+| `KEY_ALIAS` | Signing alias, e.g. `autka` |
+| `KEY_PASSWORD` | Key password |
 
-The workflow decodes the keystore only when `KEYSTORE_BASE64` is set; the Gradle config wires
-up signing only when `AUTKA_KEYSTORE` is present. No key material ever touches the repo.
+`.github/workflows/release.yml` decodes the keystore, verifies the alias/passwords and only
+then runs the signed APK/AAB build.
 
-## 3. Ship it
+## 3. Create the GitHub release
+
+After committing the version bump, tag the **exact** `versionName` from
+`app/build.gradle.kts`:
 
 ```bash
-git tag v0.2.0
-git push origin v0.2.0
+git tag v<versionName>
+git push origin v<versionName>
 ```
 
-`.github/workflows/release.yml` builds and creates the GitHub release with the APK + AAB
-attached. Verify the run is green and the artifacts are present.
+For example, if Gradle contains `versionName = "0.2.0"`, the tag is `v0.2.0`.
+
+The workflow:
+
+1. verifies the tag matches `versionName`;
+2. validates the signing secrets;
+3. builds release APK and AAB artifacts;
+4. verifies that the APK/AAB are signed;
+5. publishes a GitHub release with generated notes.
+
+The workflow can also be dispatched manually for an **existing** `v*` tag.
 
 ## 4. Google Play
 
-* Upload the **AAB** (`app-release.aab`) — Play requires App Bundles for new apps.
-* Listing text and graphics come from `fastlane/metadata/android/` (usable via `fastlane supply`
-  or copy/paste into the console).
-* Required 512x512 icon and 1024x500 feature graphic live under each locale's `images/`.
-* Data safety form: the app collects **no** personal data; it sends only search/filter
-  parameters to its own backend. No third-party SDKs, ads or trackers.
+Use the AAB from the release workflow for Play distribution. Store text and graphics live
+under `fastlane/metadata/android/` and can be used through Fastlane or copied into the Play
+Console.
+
+Before each store submission, re-check the Play data-safety declaration against the actual
+release. The current Android manifest declares only:
+
+- `INTERNET`;
+- `ACCESS_NETWORK_STATE`.
+
+The repository currently contains no advertising or analytics SDK integration, but that is
+not a substitute for reviewing the deployed backend behavior and current store-policy
+questions. Search/filter requests are sent to the Autka backend, so answer the form based on
+what the released app and service actually do at that time.
 
 ## 5. F-Droid
 
-The app is F-Droid-eligible: Apache-2.0-licensed, all dependencies are FOSS, maps use osmdroid
-(no Google Play Services / Maps key), and there is no proprietary blob.
+Autka is structured to remain friendly to FOSS distribution: the app source is
+Apache-2.0-licensed, the map uses osmdroid/OpenStreetMap rather than Google Maps, and local
+release builds do not require proprietary signing tooling.
 
-* Listing metadata is read directly from `fastlane/metadata/android/`.
-* Submit by opening a merge request on `fdroiddata` with a build recipe pointing at this repo
-  and the `v*` tag, or test locally with `fdroidserver`.
-* Expect F-Droid to apply the **NonFreeNet** anti-feature, since the app depends on the hosted
-  `cargate-backend` service. The backend source is Apache-2.0 in this repo, but the label reflects the
-  runtime dependency on a network service; it is informational, not a rejection.
+F-Droid eligibility and anti-feature labels are determined by F-Droid policy at submission
+time, so verify them rather than treating this document as a guarantee. The hosted Autka
+backend is a runtime network dependency even though its source is included in this repo.
 
-## Safety checklist (per release)
+Fastlane listing metadata already lives under `fastlane/metadata/android/`; an F-Droid
+submission would still need its own `fdroiddata` build recipe and review.
 
-* Permissions unchanged (`INTERNET`, `ACCESS_NETWORK_STATE` only) — review the manifest diff.
-* `network_security_config.xml` keeps `cleartextTrafficPermitted=false` in `base-config`
-  (cleartext is allowed only for `10.0.2.2`/`localhost` dev loopback, never production).
-* `versionCode` incremented.
-* Keystore + passwords confirmed backed up.
+## Release safety checklist
+
+- `versionCode` increased and `versionName` matches the intended `v*` tag.
+- EN/PL changelog entries added for the new `versionCode`.
+- Release keystore and passwords are backed up.
+- All four Actions signing secrets are present and still match the keystore.
+- Manifest permission changes reviewed.
+- `network_security_config.xml` still blocks production cleartext traffic; local emulator
+  loopback exceptions remain development-only.
+- Final release workflow is green and the published APK/AAB signatures were verified by CI.
+- Store privacy/data-safety answers rechecked against the actual release.

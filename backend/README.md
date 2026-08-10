@@ -1,18 +1,24 @@
-[![Cloudflare](https://workers.cloudflare.com/built-with-cloudflare.svg)](https://cloudflare.com) 
+<!-- markdownlint-disable MD041 -->
+[![Cloudflare](https://workers.cloudflare.com/built-with-cloudflare.svg)](https://cloudflare.com)
 
 # Autka Backend
+<!-- markdownlint-enable MD041 -->
 
-Cloudflare Workers backend that aggregates used-car offers server-side and serves a
-clean API to the Autka Android app. Built on **Workers + D1** (SQL) **+ R2** (images),
-with a cron-triggered ingestion pipeline. Aggregation, credentials, and feed access live
-here — never on the device.
+Cloudflare Workers backend that aggregates authorised used-car offers server-side and
+serves a clean API to the Autka Android app. Built on **Workers + D1** (SQL) **+ R2**
+(images), with a cron-triggered ingestion pipeline. Aggregation, credentials and feed
+access live here — never on the device.
 
 ## Why a backend
 
 The app deliberately does not scrape marketplaces. This Worker is where compliant feeds
-are normalized into one schema and served. Each marketplace is an `IngestSource`; the
-cron trigger runs every enabled source, isolates failures, and upserts results into D1.
-The app then talks to one endpoint.
+are normalized into one schema and served. Each marketplace/partner is an `IngestSource`;
+the cron trigger runs every enabled source, isolates failures and upserts results into D1.
+Android talks to one backend API surface rather than carrying provider credentials or
+provider-specific ingestion logic.
+
+The maintained policy for what may become an ingestion source, partner integration paths
+and the deep-link fallback lives in [`docs/DATA_SOURCES.md`](../docs/DATA_SOURCES.md).
 
 ## API
 
@@ -50,7 +56,8 @@ The `CarOffer` shape in `src/lib/types.ts` mirrors Android
 - **D1**: `cargate-offers`
 - **R2**: `cargate-images`
 
-Both are wired in `wrangler.jsonc`.
+Both are wired in `wrangler.jsonc`. The legacy resource names are infrastructure identifiers;
+they do not change the product name back from Autka.
 
 ## Local development
 
@@ -84,7 +91,7 @@ production deployments.
 ## Ingestion semantics
 
 `src/ingest/sources/` contains the source adapters. `mock.ts` is a local/demo source;
-`stubs.ts` documents the disabled real connectors and their required compliant data paths.
+`stubs.ts` documents disabled real connectors awaiting compliant data paths.
 
 Every currently enabled adapter is treated as a **complete snapshot**:
 

@@ -1,16 +1,19 @@
-Autka zbiera ogłoszenia samochodów używanych z Polski, reszty Europy i Stanów Zjednoczonych w jednym miejscu i pomaga oszacować, ile naprawdę będzie kosztować sprowadzony samochód po dotarciu do Polski.
+Autka to otwartoźródłowy projekt na Androida pomagający w szukaniu samochodów w Polsce, Europie i przy imporcie z USA. Łączy legalnie podłączone źródła danych z linkami do wyszukiwania w oryginalnych serwisach, dzięki czemu ten sam zamiar wyszukiwania można kontynuować także wtedy, gdy Autka nie może pobierać ofert z danego marketplace'u.
 
 Funkcje
-* Jedno wyszukiwanie ofert z Polski, Europy i importu z USA.
-* Kalkulator kosztów importu z USA: cło, akcyza, VAT i transport, z uwzględnieniem pojemności silnika i rodzaju napędu.
-* Ceny przeliczane na jedną walutę, aby oferty z różnych źródeł były porównywalne.
-* Filtrowanie według marki, ceny, rocznika, przebiegu, rodzaju paliwa, regionu i źródła; sortowanie według ceny, rocznika lub przebiegu.
-* Widok mapy z lokalizacją ofert (OpenStreetMap — bez konta Google i klucza API).
-* Linki kontynuujące wyszukiwanie w oryginalnym serwisie oraz katalog niezależnych firm zajmujących się importem.
-* Działa offline: ostatnie wyniki pozostają dostępne bez połączenia.
+* Wyszukiwanie, filtrowanie i sortowanie podłączonego/zapisanego katalogu według marki, ceny, rocznika, przebiegu, paliwa, skrzyni biegów, regionu i źródła.
+* Kontynuowanie wyszukiwania w oryginalnych polskich, europejskich i amerykańskich serwisach przez deep-linki zamiast scrapingu.
+* Szacowanie kosztu sprowadzenia auta z USA do Polski: transport, cło, akcyza i VAT, z uwzględnieniem pojemności silnika i rodzaju napędu.
+* Kalkulator importu dostępny zarówno przy ofercie, jak i jako samodzielne narzędzie.
+* Porównywanie cen w PLN, EUR i USD z kursami NBP oraz jawnym oznaczeniem nieświeżych kursów awaryjnych.
+* Mapa lokalizacji ofert oparta na OpenStreetMap.
+* Bezpieczny podgląd stanu źródeł oraz dostęp do ostatnio zapisanych ofert bez połączenia.
 
 Prywatność
-* Bez reklam i bez śledzenia przez podmioty trzecie.
-* Tylko dwa uprawnienia: internet i stan sieci.
+* Bez reklam i bez SDK analitycznych.
+* Aplikacja na Androida wymaga obecnie tylko dostępu do internetu i informacji o stanie sieci.
 
-Autka jest oprogramowaniem open source (MIT). Podane koszty importu to wyłącznie szacunki — faktyczna wycena celna, stawki i opłaty mogą się różnić.
+Bieżący stan projektu
+Zakres ofert na żywo zależy od licencjonowanych, partnerskich albo autoryzowanych przez sprzedawcę feedów. Przykładowe oferty debug/demo nie są włączane w produkcji; nieobsługiwane źródła pozostają linkami do wyszukiwania do czasu uzyskania zgodnego feedu.
+
+Autka jest oprogramowaniem open source na licencji Apache-2.0. Wyliczenia kosztów importu są szacunkowe — faktyczna wycena celna, podatki, transport i opłaty mogą się różnić.
