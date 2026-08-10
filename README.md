@@ -1,3 +1,4 @@
+<!-- markdownlint-disable MD041 MD033 -->
 <p align="center">
   <img src="https://raw.githubusercontent.com/trvny/autka/main/fastlane/metadata/android/en-US/images/icon.png" width="128" alt="Autka icon">
 </p>
@@ -5,25 +6,21 @@
 <h1 align="center">Autka</h1>
 
 <p align="center">
-  Used-car aggregator for Poland, the EU, and US imports — with landed-cost estimation built in.
+  Open-source Android project for car shopping across Poland, Europe and US imports — with a built-in USA → Poland landed-cost calculator.
 </p>
 
 <p align="center">
   <a href="https://github.com/trvny/autka/actions/workflows/android-ci.yml"><img src="https://github.com/trvny/autka/actions/workflows/android-ci.yml/badge.svg" alt="Android CI"></a>
   <a href="https://github.com/trvny/autka/actions/workflows/backend-ci.yml"><img src="https://github.com/trvny/autka/actions/workflows/backend-ci.yml/badge.svg" alt="Backend CI"></a>
-  <img src="https://img.shields.io/badge/kotlin-2.4.10-7F52FF?logo=kotlin&logoColor=white" alt="Kotlin 2.4.10">
-  <img src="https://img.shields.io/badge/minSdk-26-3DDC84?logo=android&logoColor=white" alt="minSdk 26">
+  <img src="https://img.shields.io/badge/Android-minSdk%2026-3DDC84?logo=android&logoColor=white" alt="minSdk 26">
   <a href="LICENSE"><img src="https://img.shields.io/github/license/trvny/autka" alt="Apache-2.0"></a>
   <a href="https://deepwiki.com/trvny/autka"><img src="https://deepwiki.com/badge.svg" alt="DeepWiki"></a>
 </p>
 
-# Autka
-
-An Android app that aggregates used-car offers from Polish, EU, and US-import
-marketplaces into one searchable list, with landed-cost estimation for cars imported
-from the USA.
-
-> Formerly **CarGate**.
+<p align="center">
+  <img src="https://raw.githubusercontent.com/trvny/autka/main/fastlane/metadata/android/en-US/images/featureGraphic.png" width="720" alt="Autka feature graphic">
+</p>
+<!-- markdownlint-enable MD041 MD033 -->
 
 > [!IMPORTANT]
 > **Current blocker / Obecna blokada**
@@ -42,50 +39,101 @@ from the USA.
 > legalnych dostawców danych, dostęp do API/feedów albo konkretne propozycje współpracy są
 > bardzo mile widziane.
 
-## Status
+## What Autka is
 
-Runnable scaffold. Search → filter → list → detail → import-cost breakdown works
-end-to-end. Debug builds can use opt-in sample data; release builds and the production
-Worker keep mock offers disabled. Live marketplace data requires a licensed, partner, or
-seller-provided feed. Sources without one remain deep-links into their own search pages.
+Buying a car across borders means jumping between marketplaces, currencies, filters,
+auction sites and import calculators. Autka is an attempt to make that decision process
+feel like one product instead of twelve browser tabs.
 
-## Repository layout
+When a lawful listing feed is available, the backend can normalize it into one catalogue.
+When a marketplace cannot be ingested, Autka keeps the user's search intent and hands the
+search off to the original site through a deep-link instead of scraping it. For cars from
+the USA, the same app can estimate what the vehicle may cost after shipping, duty, Polish
+excise and VAT.
 
-This is a monorepo:
+> Formerly **CarGate**.
 
-```
-/            Android app (Autka) — Kotlin, Compose, root Gradle project
-/backend     Cloudflare Workers backend — TypeScript, D1, R2
-/docs        Architecture, sourcing, releasing, open items
-```
+## What already works
 
-## Build & run
+- **Search, filters and sorting** over the connected/cached catalogue, including make,
+  price, year, mileage, fuel, transmission, region and source.
+- **Marketplace hand-off** to original PL/EU/US search pages when Autka has no licensed
+  feed for that source.
+- **USA → Poland import calculator**, available both from a listing and as a standalone
+  tool, with shipping, customs duty, excise and VAT breakdowns.
+- **PLN / EUR / USD comparison** using NBP exchange rates, with explicit stale-rate
+  fallback rather than silently pretending cached rates are current.
+- **Map view**, **source-status diagnostics** and an import-service directory.
+- **Offline-first results**: the last successfully cached catalogue remains usable when
+  the network is unavailable.
+- **No ads or analytics SDKs**. The Android manifest currently asks only for internet and
+  network-state permissions.
 
-Requires Android Studio (Ladybug or newer) and JDK 17.
+Import figures are estimates, not customs quotes. Exact classification, valuation,
+shipping, tax and relief rules can change the final amount.
+
+## Looking for data and business partners
+
+The most useful contribution to Autka right now is not another scraper. It is a lawful
+way to make the catalogue real.
+
+Potential fits include:
+
+- marketplaces, aggregators or data vendors able to license search/listing data;
+- dealers and importers willing to provide an authorised JSON/CSV/API inventory feed;
+- US auction buyers, brokers and logistics partners who can provide realistic shipping
+  and landed-cost inputs;
+- connected-seller integrations where a business explicitly authorises access to its own
+  inventory;
+- affiliate or lead-generation partnerships that can fund the project without turning it
+  into an ad farm.
+
+A first integration does not need to be enormous. It does need enough structured data to
+normalize each listing into Autka's offer model: stable source/id, title, make and model,
+price/currency, fuel, transmission, region and original listing URL, plus clear update and
+expiry semantics. Optional fields such as year, mileage, location and images make the
+result substantially more useful. See [`docs/DATA_SOURCES.md`](docs/DATA_SOURCES.md) for
+the full boundary and partner checklist.
+
+## Current project state
+
+The Android app and Cloudflare backend are functional, but Autka deliberately does not
+fabricate production inventory. Sample offers are opt-in for debug/demo builds only. Until
+a compliant live provider is connected, the internal production catalogue can be empty
+and marketplace deep-links remain the main hand-off for unsupported sources.
+
+That makes the project useful today as an import-cost/search companion, while the full
+aggregator vision depends on data partnerships rather than reverse-engineering private
+marketplace endpoints.
+
+## Development
+
+Android development requires JDK 17 and a recent Android Studio:
 
 ```bash
 ./gradlew assembleDebug
 ./gradlew installDebug
 ```
 
-Or open the folder in Android Studio and hit Run. First sync downloads dependencies.
+The Worker lives in [`backend/`](backend/) and has its own setup and operations guide in
+[`backend/README.md`](backend/README.md).
 
-## Docs
+## Documentation
 
-| | |
+| Document | Purpose |
 |---|---|
-| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | App layers, currency, import cost, map, de-dup, localization, versions, CI/CD |
-| [`docs/INTEGRATION.md`](docs/INTEGRATION.md) | Compliant feeds vs. deep-links, and why Autka doesn't scrape |
-| [`docs/SOURCES.md`](docs/SOURCES.md) | Vetted API/feed candidates and recommended acquisition order |
-| [`docs/RELEASING.md`](docs/RELEASING.md) | Signing, Google Play and F-Droid release process |
-| [`docs/TODO.md`](docs/TODO.md) | Remaining blockers and verification work |
+| [`docs/DATA_SOURCES.md`](docs/DATA_SOURCES.md) | Data policy, partner integration paths, deep-link boundary and source acceptance checklist |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Android/backend architecture, currency, import costs, map, caching and CI |
+| [`docs/RELEASING.md`](docs/RELEASING.md) | Signing and release process |
+| [`docs/TODO.md`](docs/TODO.md) | Remaining product blockers and engineering follow-ups |
 | [`backend/README.md`](backend/README.md) | Backend API, ingestion and operations |
+| [`docs/THIRD_PARTY_NOTICES`](docs/THIRD_PARTY_NOTICES) | Ownership and licensing boundary for third-party material |
 
 ## License
 
 Original source code and documentation are licensed under [Apache-2.0](LICENSE).
 Marketplace data, names, trademarks, logos and linked media are not covered by that
-license. See [THIRD_PARTY_NOTICES](docs/THIRD_PARTY_NOTICES.md).
+license. See [THIRD_PARTY_NOTICES](docs/THIRD_PARTY_NOTICES).
 
 ---
 ## Other stuff

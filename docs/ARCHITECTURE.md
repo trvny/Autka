@@ -1,121 +1,167 @@
 # Architecture
 
+This document describes how the current Android app and backend fit together. Data-source
+licensing, partner onboarding and the deep-link boundary live in
+[`DATA_SOURCES.md`](DATA_SOURCES.md).
+
 ## App layers
 
-Single-module app organized by Google's recommended layers (UI / Data), Kotlin +
-Jetpack Compose, Hilt DI, Room (offline-first), Kotlin Flow.
+Single-module Android app organized around UI and data layers, using Kotlin, Jetpack
+Compose, Hilt, Room and Kotlin Flow.
 
+```text
+core/model        Normalized domain model and pure calculation/value objects
+core/util         Small shared utility/result helpers
+data/local        Room database, DAO, entities and mappers; local offer cache is the app source of truth
+data/remote       Backend API, live BackendCarOfferSource and debug MockCarOfferSource
+data/repository   Cached offers, exchange rates, settings and source-health repositories
+data/imports      Import-service catalogue and backend/default fallback
+data/settings     App-wide persisted settings such as display currency
+feature/listings  Search, filters and result list
+feature/detail    Cache-backed offer detail and inline US import estimate
+feature/importcalc Standalone USA -> Poland import calculator
+feature/map       Offer locations and map interaction
+feature/sourcehealth Public-safe backend source diagnostics
+feature/external  Marketplace deep-links and import-service UI
+di                Hilt modules and source/repository bindings
+ui                Theme, navigation host and shared components
 ```
-core/model        Normalized domain model (CarOffer, Money, SearchFilter, ImportCostEstimate)
-data/local        Room database, DAO, entity + mappers (local cache = source of truth)
-data/remote       CarOfferSource interface; BackendCarOfferSource (live) + MockCarOfferSource (demo)
-data/repository   Repositories for cached offers, exchange rates and backend source health
-feature/listings  Search + results screen (ViewModel + Compose)
-feature/detail    Offer detail + inline US import cost breakdown
-feature/importcalc Provider-independent US import calculator
-feature/sourcehealth Public-safe backend source status and manual refresh
-feature/external  Deep-links into marketplaces with no compliant feed (see INTEGRATION.md)
-di                Hilt modules (database, repository, sources multibinding)
-ui                Theme, navigation host, shared components
-```
 
-The app consumes **one** `BackendCarOfferSource` (plus the demo `MockCarOfferSource`),
-both contributed into a multibound `Set` in `di/SourcesModule.kt`; the repository merges
-whatever is enabled and isolates a failing source so the others still return.
-Per-marketplace aggregation happens **server-side** in the backend's `ALL_SOURCES`, not
-on the device — adding a marketplace is a new ingest adapter + `runner.ts` registration,
-not an app change.
+Android consumes one backend catalogue source, plus the optional debug mock source.
+Per-marketplace aggregation happens server-side: adding a real marketplace means adding a
+backend ingestion adapter, not another Android `CarOfferSource`.
 
-The app talks to the backend through `GET /offers` and `GET /sources`. The offer data
-model is shared with backend `src/lib/types.ts` — keeping it in sync with the app's
-`CarOffer` is the #1 seam to watch. `/sources` is deliberately public-safe: the source
-status screen shows enabled state, offer count and the latest completed ingest metadata,
-but raw provider errors never cross that endpoint. Android also does not invent
-provider-specific freshness thresholds; if stale/degraded severity is added later, it
-should come from explicit backend cadence/failure metadata.
+Anything that produces catalogue `CarOffer` data goes through the backend. Marketplace
+hand-offs that only produce URLs stay in `feature/external`. See
+[`DATA_SOURCES.md`](DATA_SOURCES.md) for the maintained policy and partner checklist.
 
-The app's backend URL is the `BACKEND_BASE_URL` `buildConfigField` in
-`app/build.gradle.kts` — debug uses `http://10.0.2.2:8787/` (emulator loopback to
-`wrangler dev`), release the deployed Worker URL. Offer images are cached to R2 by the
-backend and rendered in the app with Coil; relative `/images/...` URLs resolve against
-`BACKEND_BASE_URL`.
+## Backend boundary
+
+Android calls the backend for the catalogue (`GET /offers`), import-service directory and
+public-safe `GET /sources` health metadata. Offer details in the Android UI are not fetched
+through the backend's single-offer endpoint: `OfferDetailViewModel` observes the selected
+offer from the Room-backed `CarOfferRepository`, keeping detail consistent with the cached
+catalogue. The backend still exposes `GET /offers/:id` as an API endpoint, but the current
+Android `BackendApi` does not consume it.
+
+The offer model in `backend/src/lib/types.ts` mirrors the Android `CarOffer` model and
+should change in lockstep. `/sources` exposes enabled state, offer count and latest
+completed-ingest metadata without sending raw provider errors to the device. Android
+deliberately does not invent its own provider-specific freshness thresholds; a future
+stale/degraded state should be driven by explicit backend cadence/failure metadata.
+
+The Android backend URL is a `BACKEND_BASE_URL` build config field in
+`app/build.gradle.kts`. Debug points at emulator loopback for local `wrangler dev`;
+release points at the deployed Worker. Offer images may be cached in R2 and returned as
+backend `/images/...` URLs.
+
+For Worker endpoints, ingestion behavior and local deployment, see
+[`backend/README.md`](../backend/README.md).
+
+## Offer cache and failure isolation
+
+Room is the Android catalogue source of truth. Successful refreshes **upsert** returned
+offers into the local cache rather than treating every response as an authoritative
+replacement. Only a successful full-catalogue refresh from every active transport is
+allowed to run the global age-based cleanup, which removes cache rows older than seven
+days; filtered refreshes do not expire unrelated cached offers. Disabled transport rows
+are removed explicitly. A failed remote source does not wipe previously cached offers, and
+source failures are isolated so healthy sources can still update the cache.
+
+Backend ingestion has its own, separate snapshot semantics: a failed complete-snapshot
+fetch does not delete the previous successful snapshot, while a successful snapshot may
+expire source rows that disappeared from that authoritative feed. Every enabled backend
+adapter must explicitly declare snapshot vs delta semantics before its cleanup behavior can
+be trusted.
 
 ## US import cost
 
-`core/model/ImportCostEstimate.kt` estimates landed cost into Poland (shipping + EU
-customs duty + PL excise/akcyza + 23% VAT). The excise rate is drivetrain- and
-capacity-aware (2026 akcyza table); duty, VAT and the default shipping figure are still
-indicative constants — verify them before relying on the numbers. The detail screen
-shows the breakdown for USA-region offers, while `feature/importcalc` exposes the same
-calculator independently of a listing from the listings toolbar. Both paths reuse the
-same calculator, shipping default and localized amount parser; totals can also be shown
-in the user's app-wide display currency using the shared exchange-rate repository.
+`core/model/ImportCostEstimate.kt` estimates landed cost into Poland using shipping, EU
+customs duty, Polish excise and VAT. Excise is drivetrain- and engine-capacity-aware; EV
+and hydrogen paths are modeled separately.
+
+The calculator is available both from offer details and as a standalone tool. Both paths
+reuse the same calculation logic, defaults and localized numeric parsing. Missing engine
+capacity for a non-exempt drivetrain uses the deliberately conservative fallback described
+in the UI rather than silently assuming a lower excise rate.
+
+Duty, VAT edge cases, customs classification/origin relief and shipping defaults remain
+indicative inputs. The result is an estimate, not a customs quote.
 
 ## Currency
 
-Offers come in PLN, EUR or USD. `core/model/ExchangeRates.kt` is a pure value object
-that converts between any pair (routing through a PLN base). Filtering and sorting by
-price convert every offer into the user's chosen display currency first, so
-mixed-currency results rank correctly; the price-range filter is interpreted in that
-same currency. Cards show the original price plus an approximate converted figure, and
-a currency switcher lives in the toolbar.
+Offers may arrive in PLN, EUR or USD. `ExchangeRates` converts through a PLN base so price
+filtering and sorting can compare mixed-currency results in the user's selected display
+currency.
 
-Rates come from `ExchangeRateRepository` (offline-first): it seeds with built-in
-indicative rates (`StaticRateProvider`) and refreshes on launch from the **NBP (Narodowy
-Bank Polski) public API** via `NbpRateProvider` — free, keyless, and outside the deferred
-aggregation backend. The most recent successful fetch is persisted via DataStore and
-can seed a cold start, but cached and built-in fallback rates remain flagged as stale
-until a fresh NBP request succeeds. A failed fetch silently keeps the best rates already
-available.
+`ExchangeRateRepository` is offline-first. It can seed from persisted or built-in rates and
+refreshes from the NBP public API. Cached/fallback rates remain marked stale until a fresh
+NBP request succeeds. The selected display currency is persisted through Preferences
+DataStore and shared across listings, detail and import-calculator screens.
 
-The chosen display currency is persisted app-wide via Preferences DataStore
-(`SettingsRepository`), so it survives restarts and is shared across the listings,
-detail and standalone import-calculator screens.
+Large live catalogues will eventually need server-side normalized prices and cursor
+pagination; until then Android requests one atomic complete set and performs price
+conversion/filtering locally. That future work is tracked in [`TODO.md`](TODO.md).
 
 ## Map
 
-Offers carry optional coordinates (`latitude`/`longitude`); a map screen (osmdroid,
-OpenStreetMap tiles) plots them as markers, and tapping a marker opens the offer. Reach
-it from the map icon in the listings toolbar. Real source adapters would geocode the
-location string server-side — the sample data ships with coordinates. osmdroid needs no
-API key or billing account, so the map works out of the box with no extra setup.
+Offers carry optional latitude/longitude. The map screen uses osmdroid with OpenStreetMap
+tiles and opens the corresponding offer when a marker is selected. The map remains a
+direct action in the listings toolbar.
+
+Real ingestion adapters are responsible for supplying or deriving usable coordinates.
+Sample/debug data includes coordinates for development.
 
 ## De-duplication
 
-The same car is often listed on several marketplaces. The backend computes a heuristic
-`dedup_key` per offer and `GET /offers` collapses duplicates into one result annotated
-with how many listings (and which sources) it represents; the app shows a "Listed on N
-sites" badge. `?dedup=false` returns raw rows.
+The same vehicle may appear through more than one source. The backend computes a heuristic
+`dedup_key`, collapses matching offers in normal `/offers` responses and annotates the
+result with listing/source counts. `?dedup=false` returns raw rows for diagnostics.
+
+## Source-health diagnostics
+
+The source-status screen reads `GET /sources` and shows public-safe state such as enabled
+status, offer count and the latest completed ingest. It preserves the previous in-memory
+snapshot if a manual refresh fails and does not expose raw provider exceptions.
+
+The repository intentionally does not persist source-health history yet. A short-lived
+cache and explicit backend health-availability/cadence fields are tracked as possible
+follow-ups in [`TODO.md`](TODO.md).
 
 ## Localization
 
-UI string resources live under `res/values/*.xml` with Polish mirrors under
-`res/values-pl/` (the app targets the PL market). Feature-specific files are fine as long
-as resource names remain unique and both locales stay in sync.
+UI resources live under `res/values/` with Polish mirrors under `res/values-pl/`.
+Feature-specific XML files are preferred over one giant strings file when they improve
+ownership, provided resource names remain unique and both locales stay in sync.
 
-## Versions
+Numeric input uses locale-aware parsing; formatting that is visible in a localized screen
+should use the active UI locale rather than assuming the system locale.
 
-Kotlin 2.4.0, AGP 9.2.1, KSP 2.3.9, Gradle 9.5.1, Compose BOM 2026.05.01, Hilt 2.59.2,
-Room 2.8.4, compileSdk 37, minSdk 26. Bump via the version catalog at
-`gradle/libs.versions.toml`; Dependabot keeps these current and CI gates each bump.
+## Toolchain and dependency versions
+
+Do not duplicate exact dependency versions in documentation. The maintained sources of
+truth are:
+
+- `gradle/libs.versions.toml` for Android/Kotlin libraries and plugins;
+- `app/build.gradle.kts` for SDK levels, app version and build-type configuration;
+- `backend/package.json` for Worker dependencies.
+
+Dependabot and CI keep these moving frequently, so hard-coded version tables in docs become
+stale faster than they become useful.
 
 ## CI/CD
 
-`.github/workflows/android-ci.yml` runs on every push and PR to `main`: sets up JDK 17
-and Gradle (validates the wrapper-jar checksum automatically and caches builds), then
-runs `lintDebug assembleDebug testDebugUnitTest`. The debug APK and lint report are
-uploaded as build artifacts. `testDebugUnitTest` covers `app/src/test`, including import
-costs, localized number parsing, listings filtering/sorting, repository isolation and
-exchange-rate failure paths.
+`.github/workflows/android-ci.yml` runs Android lint, debug assembly and unit tests. The
+unit suite covers import calculations and parsing, listings behavior, repository failure
+isolation, exchange-rate paths and source-health refresh semantics.
 
-`.github/workflows/backend-ci.yml` covers the Worker (`/backend`): typecheck, `vitest`,
-and a `wrangler deploy --dry-run`. `worker-configuration.d.ts` is generated in CI, not
-committed.
+For pull requests, `.github/workflows/backend-ci.yml` regenerates Wrangler configuration
+types, runs TypeScript checking and executes backend tests. On pushes to `main`, the same
+workflow additionally applies remote D1 migrations and deploys the Worker.
 
-`.github/workflows/release.yml` builds a signed APK + AAB and cuts a GitHub release on a
-version tag — see [`docs/RELEASING.md`](RELEASING.md).
+`.github/workflows/release.yml` validates release signing inputs, builds signed APK/AAB
+artifacts and creates a GitHub release for a `v*` tag. See
+[`RELEASING.md`](RELEASING.md).
 
-`.github/dependabot.yml` opens weekly PRs for both Gradle/Kotlin dependencies (via the
-version catalog) and the workflow's GitHub Actions, grouped so related bumps arrive
-together. CI builds each PR, so you review a green check rather than re-auditing
-versions by hand. `dependency-submission.yml` feeds the dependency graph for alerts.
+Dependabot covers Gradle/Kotlin, backend packages and GitHub Actions. Dependency submission
+feeds the GitHub dependency graph for alerts.

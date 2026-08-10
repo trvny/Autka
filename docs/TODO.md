@@ -1,8 +1,8 @@
 # Autka — open work
 
 Tracks the remaining product gaps and the next useful work that does not depend on
-scraping or an unlicensed marketplace feed. See `INTEGRATION.md` for the sourcing
-boundary and `SOURCES.md` for vetted provider candidates.
+scraping or an unlicensed marketplace feed. See `DATA_SOURCES.md` for the sourcing
+boundary, partner paths and source acceptance checklist.
 
 ## Product blockers
 
