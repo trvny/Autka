@@ -24,8 +24,8 @@ class MarketplaceWebSearchTest {
         )
         val query = decodedQuery(url)
 
-        assertTrue(query.contains("BMW X5 site:otomoto.pl"))
-        assertTrue(query.contains("BMW X5 site:olx.pl"))
+        assertTrue(query.startsWith("BMW X5 site:otomoto.pl"))
+        assertTrue(query.contains("OR site:olx.pl"))
         assertFalse(query.contains("site:cars.com"))
     }
 
@@ -41,9 +41,22 @@ class MarketplaceWebSearchTest {
         )
         val query = decodedQuery(url)
 
-        assertTrue(query.contains("Mustang Mach-E site:cars.com"))
-        assertTrue(query.contains("Mustang Mach-E site:autotrader.com"))
+        assertTrue(query.contains("site:cars.com"))
+        assertTrue(query.contains("site:autotrader.com"))
         assertFalse(query.contains("site:otomoto.pl"))
+    }
+
+    @Test
+    fun `all-region web search stays bounded and skips poor index targets`() {
+        val longQuery = (1..80).joinToString(" ") { "term$it" }
+        val url = requireNotNull(MarketplaceWebSearch.url(SearchFilter(query = longQuery)))
+        val query = decodedQuery(url)
+
+        assertTrue(query.length <= 400)
+        assertFalse(query.contains("site:facebook.com"))
+        assertFalse(query.contains("site:iaai.com"))
+        assertTrue(query.contains("site:otomoto.pl"))
+        assertTrue(query.contains("site:autotrader.com"))
     }
 
     @Test
