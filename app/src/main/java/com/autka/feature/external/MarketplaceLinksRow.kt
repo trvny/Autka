@@ -28,13 +28,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.autka.R
+import com.autka.core.model.Region
 import com.autka.core.model.SearchFilter
 
 /**
  * "Continue your search on…" row. Shown under thin/empty results (or always as a
- * footer): marketplace chips open their own pre-filled search, while the optional web
- * chip searches the same relevant marketplace domains through Brave Search. Autka does
- * not ingest either path's content.
+ * footer): marketplace chips open their own pre-filled search, while optional regional
+ * web chips search selected marketplace domains through Brave Search. Autka does not
+ * ingest either path's content.
  */
 @Composable
 fun MarketplaceLinksRow(
@@ -46,7 +47,7 @@ fun MarketplaceLinksRow(
     val links = remember(filter, affiliateId) {
         MarketplaceSearchLinks.all(filter, affiliateId)
     }
-    val webSearchUrl = remember(filter) { MarketplaceWebSearch.url(filter) }
+    val webSearchLinks = remember(filter) { MarketplaceWebSearch.all(filter) }
 
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
@@ -58,20 +59,25 @@ fun MarketplaceLinksRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             contentPadding = PaddingValues(horizontal = 16.dp),
         ) {
-            webSearchUrl?.let { url ->
-                item(key = "web-search") {
-                    AssistChip(
-                        onClick = { openExternalLink(context, url) },
-                        label = { Text(stringResource(R.string.search_web)) },
-                        leadingIcon = {
-                            Icon(
-                                Icons.Default.Search,
-                                contentDescription = null,
-                                modifier = Modifier.size(AssistChipDefaults.IconSize),
-                            )
-                        },
-                    )
-                }
+            items(webSearchLinks, key = { "web-${it.region.name}" }) { link ->
+                AssistChip(
+                    onClick = { openExternalLink(context, link.url) },
+                    label = {
+                        Text(
+                            stringResource(
+                                R.string.search_web_region,
+                                webRegionLabel(link.region),
+                            ),
+                        )
+                    },
+                    leadingIcon = {
+                        Icon(
+                            Icons.Default.Search,
+                            contentDescription = null,
+                            modifier = Modifier.size(AssistChipDefaults.IconSize),
+                        )
+                    },
+                )
             }
             items(links, key = { it.sourceId }) { link ->
                 AssistChip(
@@ -88,6 +94,13 @@ fun MarketplaceLinksRow(
             }
         }
     }
+}
+
+@Composable
+private fun webRegionLabel(region: Region): String = when (region) {
+    Region.POLAND -> stringResource(R.string.region_poland)
+    Region.EUROPE -> stringResource(R.string.region_europe)
+    Region.USA -> stringResource(R.string.region_usa)
 }
 
 private fun openExternalLink(context: Context, url: String) {
