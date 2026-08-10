@@ -22,6 +22,7 @@ jobs:
     name: Submit dependency graph
     if: github.event_name == 'push'
     runs-on: ubuntu-slim
+    timeout-minutes: 20
     permissions:
       contents: write        # required to submit the dependency graph
     steps:
@@ -35,7 +36,6 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-          cache: gradle
 
       - name: Generate and submit dependency graph
         uses: gradle/actions/dependency-submission@v6.3.0
@@ -46,6 +46,7 @@ jobs:
     name: Review PR dependencies
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-slim
+    timeout-minutes: 20
     permissions:
       contents: read
       pull-requests: write
