@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -89,7 +90,11 @@ class ListingsViewModel @Inject constructor(
     }
 
     fun onApplySavedSearch(savedSearch: SavedSearch) {
-        onApplyFilter(savedSearch.filter)
+        viewModelScope.launch {
+            settingsRepository.setDisplayCurrency(savedSearch.displayCurrency)
+            filter.value = savedSearch.filter
+            refresh()
+        }
     }
 
     fun onResetFilter() {
@@ -100,7 +105,10 @@ class ListingsViewModel @Inject constructor(
     fun onSaveSearch(name: String) {
         val snapshot = filter.value
         if (snapshot.query.isBlank() && snapshot.activeCount() == 0) return
-        viewModelScope.launch { settingsRepository.saveSearch(name, snapshot) }
+        viewModelScope.launch {
+            val currency = settingsRepository.displayCurrency.first()
+            settingsRepository.saveSearch(name, snapshot, currency)
+        }
     }
 
     fun onDeleteSavedSearch(id: String) {
