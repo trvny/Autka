@@ -37,6 +37,7 @@ import com.autka.core.model.SearchFilter
 import com.autka.core.model.SortOrder
 import com.autka.core.model.Transmission
 import com.autka.data.repository.SourceInfo
+import com.autka.ui.components.displayLabel
 
 private val FUEL_CHOICES = listOf(
     FuelType.PETROL, FuelType.DIESEL, FuelType.HYBRID,
@@ -178,7 +179,7 @@ fun FilterSheet(
                                         },
                                     )
                                 },
-                                label = { Text(fuel.label()) },
+                                label = { Text(fuel.displayLabel()) },
                             )
                         }
                     }
@@ -199,7 +200,7 @@ fun FilterSheet(
                                         },
                                     )
                                 },
-                                label = { Text(tx.label()) },
+                                label = { Text(tx.displayLabel()) },
                             )
                         }
                     }
@@ -304,26 +305,6 @@ private fun Section(title: String, content: @Composable () -> Unit) {
         )
         content()
     }
-}
-
-@Composable
-private fun FuelType.label() = when (this) {
-    FuelType.PETROL -> stringResource(R.string.fuel_petrol)
-    FuelType.DIESEL -> stringResource(R.string.fuel_diesel)
-    FuelType.HYBRID -> stringResource(R.string.fuel_hybrid)
-    FuelType.PLUGIN_HYBRID -> stringResource(R.string.fuel_plugin)
-    FuelType.ELECTRIC -> stringResource(R.string.fuel_electric)
-    FuelType.HYDROGEN -> stringResource(R.string.fuel_hydrogen)
-    FuelType.LPG -> stringResource(R.string.fuel_lpg)
-    FuelType.OTHER -> stringResource(R.string.fuel_other)
-    FuelType.UNKNOWN -> stringResource(R.string.fuel_unknown)
-}
-
-@Composable
-private fun Transmission.label() = when (this) {
-    Transmission.MANUAL -> stringResource(R.string.trans_manual)
-    Transmission.AUTOMATIC -> stringResource(R.string.trans_automatic)
-    Transmission.UNKNOWN -> stringResource(R.string.fuel_unknown)
 }
 
 @Composable
