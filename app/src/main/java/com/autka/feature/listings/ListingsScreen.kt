@@ -179,16 +179,16 @@ fun ListingsScreen(
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                     keyboardActions = KeyboardActions(onSearch = { onSearch() }),
                 )
-                FilledTonalIconButton(
-                    onClick = { showFilters = true },
-                    modifier = Modifier.size(56.dp),
+                BadgedBox(
+                    badge = {
+                        if (uiState.activeFilterCount > 0) {
+                            Badge { Text(uiState.activeFilterCount.toString()) }
+                        }
+                    },
                 ) {
-                    BadgedBox(
-                        badge = {
-                            if (uiState.activeFilterCount > 0) {
-                                Badge { Text(uiState.activeFilterCount.toString()) }
-                            }
-                        },
+                    FilledTonalIconButton(
+                        onClick = { showFilters = true },
+                        modifier = Modifier.size(56.dp),
                     ) {
                         Icon(
                             Icons.Default.Tune,
@@ -241,8 +241,6 @@ fun ListingsScreen(
                         if (uiState.activeFilterCount > 0) stringResource(R.string.empty_no_match)
                         else stringResource(R.string.empty_no_offers),
                     )
-                    // No results in our cache: send the user to each marketplace's own
-                    // pre-filled search instead. This remains a deep-link, never ingest.
                     MarketplaceLinksRow(filter = uiState.filter)
                 }
                 else -> {
@@ -268,7 +266,6 @@ fun ListingsScreen(
                                 onClick = { onOfferClick(offer.id) },
                             )
                         }
-                        // Footer keeps the same compliant hand-off for the active filter.
                         item { MarketplaceLinksRow(filter = uiState.filter) }
                     }
                 }
