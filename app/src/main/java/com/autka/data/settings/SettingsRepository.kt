@@ -22,7 +22,6 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 
 /**
@@ -66,8 +65,8 @@ class DataStoreSettingsRepository @Inject constructor(
         if (trimmedName.isEmpty() || !filter.hasFinitePriceBounds()) return
 
         dataStore.edit { prefs ->
-            val existingItems = rawSavedSearchItems(prefs[SAVED_SEARCHES])
-            val decoded = existingItems.map { element -> element to decodeSavedSearch(element) }
+            val document = parseSavedSearchDocument(prefs[SAVED_SEARCHES]) ?: return@edit
+            val decoded = document.items.map { element -> element to decodeSavedSearch(element) }
             val existingId = decoded.firstNotNullOfOrNull { (_, saved) ->
                 saved?.takeIf {
                     it.filter == filter && it.displayCurrency == displayCurrency
@@ -85,34 +84,40 @@ class DataStoreSettingsRepository @Inject constructor(
                     if (model?.id != saved.id) add(element)
                 }
             }
-            prefs[SAVED_SEARCHES] = encodeRawItems(updated)
+            prefs[SAVED_SEARCHES] = encodeDocument(document, updated)
         }
     }
 
     override suspend fun deleteSavedSearch(id: String) {
         dataStore.edit { prefs ->
-            val existingItems = rawSavedSearchItems(prefs[SAVED_SEARCHES])
-            val updated = existingItems.filter { element ->
+            val document = parseSavedSearchDocument(prefs[SAVED_SEARCHES]) ?: return@edit
+            val updated = document.items.filter { element ->
                 decodeSavedSearch(element)?.id != id
             }
-            if (updated.isEmpty()) {
+            if (updated.isEmpty() && document.hasNoMetadata) {
                 prefs.remove(SAVED_SEARCHES)
             } else {
-                prefs[SAVED_SEARCHES] = encodeRawItems(updated)
+                prefs[SAVED_SEARCHES] = encodeDocument(document, updated)
             }
         }
     }
 
     private fun decodeSavedSearches(raw: String?): List<SavedSearch> =
-        rawSavedSearchItems(raw)
+        parseSavedSearchDocument(raw)
+            ?.items
+            .orEmpty()
             .mapNotNull(::decodeSavedSearch)
             .distinctBy { it.id }
 
-    private fun rawSavedSearchItems(raw: String?): List<JsonElement> {
-        if (raw.isNullOrBlank()) return emptyList()
-        return runCatching {
-            SAVED_SEARCH_JSON.parseToJsonElement(raw).jsonObject["items"]?.jsonArray?.toList()
-        }.getOrNull().orEmpty()
+    private fun parseSavedSearchDocument(raw: String?): SavedSearchDocument? {
+        if (raw.isNullOrBlank()) {
+            return SavedSearchDocument(JsonObject(emptyMap()), emptyList())
+        }
+        val envelope = runCatching {
+            SAVED_SEARCH_JSON.parseToJsonElement(raw).jsonObject
+        }.getOrNull() ?: return null
+        val items = envelope[ITEMS_KEY] as? JsonArray ?: return null
+        return SavedSearchDocument(envelope, items.toList())
     }
 
     private fun decodeSavedSearch(element: JsonElement): SavedSearch? {
@@ -130,10 +135,15 @@ class DataStoreSettingsRepository @Inject constructor(
             SavedSearchPayload.fromModel(saved),
         )
 
-    private fun encodeRawItems(items: List<JsonElement>): String =
-        JsonObject(mapOf("items" to JsonArray(items))).toString()
+    private fun encodeDocument(
+        document: SavedSearchDocument,
+        items: List<JsonElement>,
+    ): String = JsonObject(
+        document.envelope + (ITEMS_KEY to JsonArray(items)),
+    ).toString()
 
     private companion object {
+        const val ITEMS_KEY = "items"
         val DISPLAY_CURRENCY = stringPreferencesKey("display_currency")
         val SAVED_SEARCHES = stringPreferencesKey("saved_searches_v1")
         val DEFAULT_CURRENCY = Currency.PLN
@@ -143,6 +153,14 @@ class DataStoreSettingsRepository @Inject constructor(
             encodeDefaults = false
         }
     }
+}
+
+private data class SavedSearchDocument(
+    val envelope: JsonObject,
+    val items: List<JsonElement>,
+) {
+    val hasNoMetadata: Boolean
+        get() = envelope.keys.all { it == "items" }
 }
 
 @Serializable
