@@ -51,7 +51,7 @@ object MarketplaceWebSearch {
                 if (domains.isEmpty()) return@mapNotNull null
 
                 // Repeat sanitized terms in every OR branch so neither operator
-                // precedence nor user-supplied Boolean words can broaden the site scope.
+                // precedence nor user-supplied search syntax can broaden the site scope.
                 val query = domains.joinToString(" OR ") { domain -> "$terms site:$domain" }
                 val encoded = URLEncoder.encode(query, "UTF-8").replace("+", "%20")
                 MarketplaceWebSearchLink(region, "https://search.brave.com/search?q=$encoded")
@@ -60,8 +60,8 @@ object MarketplaceWebSearch {
 
     /**
      * Six words / 40 chars keeps the largest regional query below Brave's documented
-     * 400-char / 50-word API limit. Brave treats logical operators as uppercase-only,
-     * so user-entered AND/OR/NOT are lowercased before interpolation.
+     * 400-char / 50-word API limit. Search operators are neutralized or discarded before
+     * interpolation so only Autka controls the site scope.
      */
     private fun boundedTerms(filter: SearchFilter): String {
         val words = listOfNotNull(
@@ -73,12 +73,12 @@ object MarketplaceWebSearch {
             .trim()
             .split(Regex("\\s+"))
             .filter { it.isNotEmpty() }
-            .map(::neutralizeLogicalOperator)
-            .take(6)
+            .mapNotNull(::sanitizeSearchTerm)
 
         val accepted = mutableListOf<String>()
         var oversizedFallback: String? = null
         for (word in words) {
+            if (accepted.size >= 6) break
             if (word.length > 40) {
                 if (oversizedFallback == null) oversizedFallback = word.take(40)
                 continue
@@ -90,6 +90,13 @@ object MarketplaceWebSearch {
         return accepted.joinToString(" ").ifEmpty { oversizedFallback.orEmpty() }
     }
 
-    private fun neutralizeLogicalOperator(word: String): String =
-        if (word in setOf("AND", "OR", "NOT")) word.lowercase(Locale.ROOT) else word
+    private fun sanitizeSearchTerm(word: String): String? {
+        val literal = word.trim('"', '(', ')')
+        if (literal.isEmpty() || ':' in literal || literal.startsWith('-')) return null
+        return if (literal in setOf("AND", "OR", "NOT")) {
+            literal.lowercase(Locale.ROOT)
+        } else {
+            literal
+        }
+    }
 }
