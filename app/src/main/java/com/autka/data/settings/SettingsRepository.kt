@@ -164,6 +164,7 @@ private data class SavedSearchPayload(
         val decodedFuelTypes = decodeEnumSetOrNull<FuelType>(fuelTypes) ?: return null
         val decodedTransmissions = decodeEnumSetOrNull<Transmission>(transmissions) ?: return null
         val decodedRegions = decodeEnumSetOrNull<Region>(regions) ?: return null
+        val decodedSort = enumOrNull<SortOrder>(sort) ?: return null
         val decodedCurrency = enumOrNull<Currency>(displayCurrency) ?: return null
 
         return SavedSearch(
@@ -182,7 +183,7 @@ private data class SavedSearchPayload(
                 transmissions = decodedTransmissions,
                 regions = decodedRegions.ifEmpty { Region.entries.toSet() },
                 sourceIds = sourceIds.toSet(),
-                sort = enumOrNull<SortOrder>(sort) ?: SortOrder.NEWEST,
+                sort = decodedSort,
             ),
             displayCurrency = decodedCurrency,
         )
