@@ -105,6 +105,18 @@ class DataStoreSettingsRepositoryTest {
         assertTrue(repository.savedSearches.first().isEmpty())
     }
 
+    @Test
+    fun `future-only saved search region fails closed instead of widening scope`() = runTest {
+        val dataStore = dataStore(backgroundScope)
+        dataStore.edit { prefs ->
+            prefs[stringPreferencesKey("saved_searches_v1")] =
+                """{"items":[{"id":"future","name":"Future","regions":["MARS"]}]}"""
+        }
+        val repository = DataStoreSettingsRepository(dataStore, json())
+
+        assertTrue(repository.savedSearches.first().isEmpty())
+    }
+
     private fun repository(scope: CoroutineScope) =
         DataStoreSettingsRepository(dataStore(scope), json())
 
