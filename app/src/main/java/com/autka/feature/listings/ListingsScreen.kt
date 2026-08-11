@@ -29,6 +29,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -151,15 +152,19 @@ fun ListingsScreen(
         },
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
-            OutlinedTextField(
-                value = uiState.filter.query,
-                onValueChange = onQueryChange,
+            Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
-                label = { Text(stringResource(R.string.search_hint)) },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                trailingIcon = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        if (uiState.filter.query.isNotBlank()) {
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                OutlinedTextField(
+                    value = uiState.filter.query,
+                    onValueChange = onQueryChange,
+                    modifier = Modifier.weight(1f),
+                    label = { Text(stringResource(R.string.search_hint)) },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                    trailingIcon = if (uiState.filter.query.isNotEmpty()) {
+                        {
                             IconButton(onClick = { onQueryChange("") }) {
                                 Icon(
                                     Icons.Default.Close,
@@ -167,26 +172,31 @@ fun ListingsScreen(
                                 )
                             }
                         }
-                        IconButton(onClick = { showFilters = true }) {
-                            BadgedBox(
-                                badge = {
-                                    if (uiState.activeFilterCount > 0) {
-                                        Badge { Text(uiState.activeFilterCount.toString()) }
-                                    }
-                                },
-                            ) {
-                                Icon(
-                                    Icons.Default.Tune,
-                                    contentDescription = stringResource(R.string.cd_filters),
-                                )
+                    } else {
+                        null
+                    },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                    keyboardActions = KeyboardActions(onSearch = { onSearch() }),
+                )
+                FilledTonalIconButton(
+                    onClick = { showFilters = true },
+                    modifier = Modifier.size(56.dp),
+                ) {
+                    BadgedBox(
+                        badge = {
+                            if (uiState.activeFilterCount > 0) {
+                                Badge { Text(uiState.activeFilterCount.toString()) }
                             }
-                        }
+                        },
+                    ) {
+                        Icon(
+                            Icons.Default.Tune,
+                            contentDescription = stringResource(R.string.cd_filters),
+                        )
                     }
-                },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                keyboardActions = KeyboardActions(onSearch = { onSearch() }),
-            )
+                }
+            }
 
             if (uiState.isRefreshing && uiState.offers.isNotEmpty()) {
                 LinearProgressIndicator(Modifier.fillMaxWidth())
