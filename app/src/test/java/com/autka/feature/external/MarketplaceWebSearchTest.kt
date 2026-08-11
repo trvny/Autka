@@ -29,6 +29,21 @@ class MarketplaceWebSearchTest {
     }
 
     @Test
+    fun `Boolean user words cannot escape marketplace site scope`() {
+        val link = MarketplaceWebSearch.all(
+            SearchFilter(
+                query = "BMW OR Audi",
+                regions = setOf(Region.POLAND),
+            ),
+        ).single()
+        val query = decodedQuery(link.url)
+
+        assertTrue(query.startsWith("BMW or Audi site:otomoto.pl"))
+        assertTrue(query.contains("OR BMW or Audi site:olx.pl"))
+        assertFalse(query.startsWith("BMW OR Audi"))
+    }
+
+    @Test
     fun `USA web search excludes Poland-only marketplace domains`() {
         val link = MarketplaceWebSearch.all(
             SearchFilter(
@@ -59,7 +74,22 @@ class MarketplaceWebSearchTest {
     }
 
     @Test
-    fun `term bound keeps whole words`() {
+    fun `term bound keeps useful words after an oversized token`() {
+        val longToken = "x".repeat(80)
+        val link = MarketplaceWebSearch.all(
+            SearchFilter(
+                query = "$longToken BMW X5",
+                regions = setOf(Region.USA),
+            ),
+        ).single()
+        val query = decodedQuery(link.url)
+
+        assertTrue(query.startsWith("${"x".repeat(40)} site:copart.com"))
+        assertFalse(query.contains("BMW X5"))
+    }
+
+    @Test
+    fun `term bound keeps whole normal words`() {
         val link = MarketplaceWebSearch.all(
             SearchFilter(
                 query = "alpha beta gamma delta epsilon zeta supercalifragilisticexpialidocious",
