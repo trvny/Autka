@@ -95,6 +95,21 @@ class DataStoreSettingsRepositoryTest {
     }
 
     @Test
+    fun `saved searches are not silently evicted`() = runTest {
+        val repository = repository(backgroundScope)
+
+        repeat(25) { index ->
+            repository.saveSearch(
+                "Search $index",
+                SearchFilter(query = "car-$index"),
+                Currency.PLN,
+            )
+        }
+
+        assertEquals(25, repository.savedSearches.first().size)
+    }
+
+    @Test
     fun `non-finite price bounds are not serialized`() = runTest {
         val repository = repository(backgroundScope)
 
@@ -124,11 +139,30 @@ class DataStoreSettingsRepositoryTest {
     }
 
     @Test
-    fun `future-only saved search region fails closed instead of widening scope`() = runTest {
+    fun `malformed entry does not discard valid siblings`() = runTest {
         val dataStore = dataStore(backgroundScope)
         dataStore.edit { prefs ->
             prefs[stringPreferencesKey("saved_searches_v1")] =
-                """{"items":[{"id":"future","name":"Future","regions":["MARS"]}]}"""
+                """{"items":[{"id":"good","name":"Good","query":"BMW"},{"id":"bad","name":"Bad","minPrice":"oops"}]}"""
+        }
+        val repository = DataStoreSettingsRepository(dataStore, json())
+
+        val saved = repository.savedSearches.first().single()
+        assertEquals("Good", saved.name)
+        assertEquals("BMW", saved.filter.query)
+    }
+
+    @Test
+    fun `unsupported enum values fail closed instead of widening or reinterpreting scope`() = runTest {
+        val dataStore = dataStore(backgroundScope)
+        dataStore.edit { prefs ->
+            prefs[stringPreferencesKey("saved_searches_v1")] =
+                """{"items":[
+                    {"id":"fuel","name":"Fuel","fuelTypes":["HYDROGEN"]},
+                    {"id":"gearbox","name":"Gearbox","transmissions":["CVT_FUTURE"]},
+                    {"id":"region","name":"Region","regions":["MARS"]},
+                    {"id":"currency","name":"Currency","displayCurrency":"CHF_FUTURE"}
+                ]}""".trimIndent()
         }
         val repository = DataStoreSettingsRepository(dataStore, json())
 
