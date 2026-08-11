@@ -1,0 +1,4 @@
+<resources>
+    <string name="search_web_region">WWW · %1$s</string>
+    <string name="web_region_usa">USA</string>
+</resources>
