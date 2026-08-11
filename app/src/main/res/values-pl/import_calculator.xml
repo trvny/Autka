@@ -4,7 +4,12 @@
     <string name="import_fuel_type">Paliwo / napęd</string>
     <string name="import_invalid_amount">Wpisz nieujemną kwotę.</string>
     <string name="import_invalid_engine_cc">Wpisz dodatnią pojemność silnika albo pozostaw pole puste.</string>
+    <string name="import_estimated_total">Szacowany koszt po sprowadzeniu</string>
     <string name="import_assumptions">Założenia</string>
+    <string name="import_assumptions_default">Używane są domyślne wartości transportu, cła i VAT.</string>
+    <string name="import_assumptions_custom">Używane są własne wartości transportu, cła lub VAT.</string>
+    <string name="import_assumptions_adjust">Dostosuj</string>
+    <string name="import_assumptions_done">Gotowe</string>
     <string name="import_assumptions_hint">Edytowalne parametry używane w tym szacunku.</string>
     <string name="import_customs_rate_percent">Cło (%)</string>
     <string name="import_vat_rate_percent">VAT (%)</string>
