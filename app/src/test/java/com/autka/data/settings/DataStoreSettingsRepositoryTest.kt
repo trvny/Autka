@@ -3,6 +3,7 @@ package com.autka.data.settings
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
+import com.autka.core.model.Currency
 import com.autka.core.model.FuelType
 import com.autka.core.model.Region
 import com.autka.core.model.SearchFilter
@@ -26,7 +27,7 @@ class DataStoreSettingsRepositoryTest {
     val temporaryFolder = TemporaryFolder()
 
     @Test
-    fun `saved search round trips the complete filter`() = runTest {
+    fun `saved search round trips the complete filter and currency`() = runTest {
         val repository = repository(backgroundScope)
         val filter = SearchFilter(
             query = "BMW X5",
@@ -44,33 +45,48 @@ class DataStoreSettingsRepositoryTest {
             sort = SortOrder.PRICE_ASC,
         )
 
-        repository.saveSearch("Family SUV", filter)
+        repository.saveSearch("Family SUV", filter, Currency.PLN)
 
         val saved = repository.savedSearches.first().single()
         assertEquals("Family SUV", saved.name)
         assertEquals(filter, saved.filter)
+        assertEquals(Currency.PLN, saved.displayCurrency)
     }
 
     @Test
-    fun `saving identical filter renames instead of duplicating it`() = runTest {
+    fun `saving identical filter and currency renames instead of duplicating it`() = runTest {
         val repository = repository(backgroundScope)
         val filter = SearchFilter(query = "MX-5", regions = setOf(Region.EUROPE))
 
-        repository.saveSearch("Roadster", filter)
+        repository.saveSearch("Roadster", filter, Currency.EUR)
         val original = repository.savedSearches.first().single()
-        repository.saveSearch("Weekend", filter)
+        repository.saveSearch("Weekend", filter, Currency.EUR)
 
         val saved = repository.savedSearches.first().single()
         assertEquals(original.id, saved.id)
         assertEquals("Weekend", saved.name)
         assertEquals(filter, saved.filter)
+        assertEquals(Currency.EUR, saved.displayCurrency)
+    }
+
+    @Test
+    fun `identical numeric filter in another currency remains a distinct search`() = runTest {
+        val repository = repository(backgroundScope)
+        val filter = SearchFilter(minPrice = 50_000.0, maxPrice = 100_000.0)
+
+        repository.saveSearch("PL prices", filter, Currency.PLN)
+        repository.saveSearch("EU prices", filter, Currency.EUR)
+
+        val saved = repository.savedSearches.first()
+        assertEquals(2, saved.size)
+        assertEquals(setOf(Currency.PLN, Currency.EUR), saved.map { it.displayCurrency }.toSet())
     }
 
     @Test
     fun `saved search can be deleted independently`() = runTest {
         val repository = repository(backgroundScope)
-        repository.saveSearch("BMW", SearchFilter(query = "BMW"))
-        repository.saveSearch("Audi", SearchFilter(query = "Audi"))
+        repository.saveSearch("BMW", SearchFilter(query = "BMW"), Currency.PLN)
+        repository.saveSearch("Audi", SearchFilter(query = "Audi"), Currency.PLN)
         val bmw = repository.savedSearches.first().single { it.name == "BMW" }
 
         repository.deleteSavedSearch(bmw.id)
