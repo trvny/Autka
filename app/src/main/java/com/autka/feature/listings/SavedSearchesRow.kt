@@ -92,7 +92,7 @@ fun SavedSearchesRow(
                     trailingIcon = {
                         IconButton(
                             onClick = { onDelete(saved.id) },
-                            modifier = Modifier.size(24.dp),
+                            modifier = Modifier.size(48.dp),
                         ) {
                             Icon(
                                 Icons.Default.Close,
@@ -100,7 +100,7 @@ fun SavedSearchesRow(
                                     R.string.saved_search_delete,
                                     saved.name,
                                 ),
-                                modifier = Modifier.size(16.dp),
+                                modifier = Modifier.size(18.dp),
                             )
                         }
                     },
