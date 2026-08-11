@@ -3,20 +3,21 @@ package com.autka.feature.listings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.autka.core.model.Currency
+import com.autka.core.model.SavedSearch
 import com.autka.core.model.SearchFilter
 import com.autka.data.repository.CarOfferRepository
 import com.autka.data.repository.ExchangeRateRepository
 import com.autka.data.repository.SourceInfo
 import com.autka.data.settings.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.util.Locale
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import java.util.Locale
-import javax.inject.Inject
 
 @HiltViewModel
 class ListingsViewModel @Inject constructor(
@@ -27,6 +28,12 @@ class ListingsViewModel @Inject constructor(
 
     private val filter = MutableStateFlow(SearchFilter())
     private val transient = MutableStateFlow(TransientState())
+    private val userPreferences = combine(
+        settingsRepository.displayCurrency,
+        settingsRepository.savedSearches,
+    ) { currency, savedSearches ->
+        UserPreferences(currency, savedSearches)
+    }
 
     val uiState: StateFlow<ListingsUiState> =
         combine(
@@ -34,13 +41,14 @@ class ListingsViewModel @Inject constructor(
             filter,
             transient,
             rateRepository.rates(),
-            settingsRepository.displayCurrency,
-        ) { offers, f, t, rates, currency ->
+            userPreferences,
+        ) { offers, f, t, rates, preferences ->
             ListingsUiState(
                 isRefreshing = t.isRefreshing,
-                offers = offers.applyFilter(f, rates, currency)
-                    .sortedWith(sortComparator(f.sort, rates, currency)),
+                offers = offers.applyFilter(f, rates, preferences.currency)
+                    .sortedWith(sortComparator(f.sort, rates, preferences.currency)),
                 filter = f,
+                savedSearches = preferences.savedSearches,
                 availableMakes = offers.map { it.make }.distinct().sorted(),
                 // Facets describe the actual marketplaces represented by cached offers.
                 // The backend is only a transport and must never appear as a selectable
@@ -57,7 +65,7 @@ class ListingsViewModel @Inject constructor(
                     .sortedBy { it.displayName },
                 failedSources = t.failedSources,
                 errorMessage = t.errorMessage,
-                displayCurrency = currency,
+                displayCurrency = preferences.currency,
                 exchangeRates = rates,
             )
         }.stateIn(
@@ -80,9 +88,23 @@ class ListingsViewModel @Inject constructor(
         refresh()
     }
 
+    fun onApplySavedSearch(savedSearch: SavedSearch) {
+        onApplyFilter(savedSearch.filter)
+    }
+
     fun onResetFilter() {
         filter.value = SearchFilter(query = filter.value.query)
         refresh()
+    }
+
+    fun onSaveSearch(name: String) {
+        val snapshot = filter.value
+        if (snapshot.query.isBlank() && snapshot.activeCount() == 0) return
+        viewModelScope.launch { settingsRepository.saveSearch(name, snapshot) }
+    }
+
+    fun onDeleteSavedSearch(id: String) {
+        viewModelScope.launch { settingsRepository.deleteSavedSearch(id) }
     }
 
     fun onDisplayCurrencyChange(currency: Currency) {
@@ -118,6 +140,11 @@ private fun String.toSourceDisplayName(): String = when (this) {
             }
         }
 }
+
+private data class UserPreferences(
+    val currency: Currency,
+    val savedSearches: List<SavedSearch>,
+)
 
 private data class TransientState(
     val isRefreshing: Boolean = false,
