@@ -29,6 +29,7 @@
     <string name="spec_fuel">Paliwo</string>
     <string name="spec_transmission">Skrzynia biegów</string>
     <string name="spec_power">Moc</string>
+    <string name="spec_power_hp">%1$d hp</string>
     <string name="spec_location">Lokalizacja</string>
     <string name="import_title">Szacowany import do Polski</string>
     <string name="import_vehicle">Pojazd</string>
@@ -71,6 +72,7 @@
     <string name="fuel_unknown">Nieznane</string>
     <string name="trans_manual">Manualna</string>
     <string name="trans_automatic">Automatyczna</string>
+    <string name="trans_unknown">Nieznana</string>
 
     <!-- Regions -->
     <string name="region_poland">Polska</string>

@@ -48,6 +48,7 @@ import com.autka.core.model.FuelType
 import com.autka.core.model.ImportCostCalculator
 import com.autka.core.model.ImportCostEstimate
 import com.autka.core.model.Money
+import com.autka.ui.components.displayLabel
 import com.autka.ui.components.formatted
 import com.autka.ui.components.isIncompleteLocalizedAmount
 import com.autka.ui.components.isIncompleteLocalizedPercentage
@@ -256,7 +257,7 @@ fun ImportCalculatorScreen(
                         FilterChip(
                             selected = fuel == option,
                             onClick = { fuelName = option.name },
-                            label = { Text(option.label()) },
+                            label = { Text(option.displayLabel()) },
                         )
                     }
                 }
@@ -541,17 +542,4 @@ private fun CostRow(label: String, value: String) {
         Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(value, fontWeight = FontWeight.Medium)
     }
-}
-
-@Composable
-private fun FuelType.label(): String = when (this) {
-    FuelType.PETROL -> stringResource(R.string.fuel_petrol)
-    FuelType.DIESEL -> stringResource(R.string.fuel_diesel)
-    FuelType.HYBRID -> stringResource(R.string.fuel_hybrid)
-    FuelType.PLUGIN_HYBRID -> stringResource(R.string.fuel_plugin)
-    FuelType.ELECTRIC -> stringResource(R.string.fuel_electric)
-    FuelType.HYDROGEN -> stringResource(R.string.fuel_hydrogen)
-    FuelType.LPG -> stringResource(R.string.fuel_lpg)
-    FuelType.OTHER -> stringResource(R.string.fuel_other)
-    FuelType.UNKNOWN -> stringResource(R.string.fuel_unknown)
 }

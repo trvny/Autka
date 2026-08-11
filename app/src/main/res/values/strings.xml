@@ -27,6 +27,7 @@
     <string name="spec_fuel">Fuel</string>
     <string name="spec_transmission">Transmission</string>
     <string name="spec_power">Power</string>
+    <string name="spec_power_hp">%1$d hp</string>
     <string name="spec_location">Location</string>
     <string name="import_title">Estimated import to Poland</string>
     <string name="import_vehicle">Vehicle</string>
@@ -69,6 +70,7 @@
     <string name="fuel_unknown">Unknown</string>
     <string name="trans_manual">Manual</string>
     <string name="trans_automatic">Automatic</string>
+    <string name="trans_unknown">Unknown</string>
 
     <!-- Regions -->
     <string name="region_poland">Poland</string>
