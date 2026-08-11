@@ -53,6 +53,7 @@ import com.autka.ui.components.parseLocalizedPercentage
 import com.autka.ui.components.parsePositiveInteger
 import java.math.BigDecimal
 import java.text.DecimalFormatSymbols
+import kotlin.math.abs
 
 private val CALCULATOR_FUELS = listOf(
     FuelType.PETROL,
@@ -63,6 +64,8 @@ private val CALCULATOR_FUELS = listOf(
     FuelType.HYDROGEN,
     FuelType.LPG,
 )
+
+private const val RATE_COMPARISON_EPSILON = 0.0001
 
 @Composable
 fun ImportCalculatorRoute(
@@ -122,8 +125,8 @@ fun ImportCalculatorScreen(
         !isIncompleteLocalizedPercentage(vatRateText, numberSymbols)
     val assumptionsReady = shipping != null && customsRatePercent != null && vatRatePercent != null
     val assumptionsAreDefault = shipping == defaultShippingUsd.toDouble() &&
-        customsRatePercent == defaultCustomsPercent &&
-        vatRatePercent == defaultVatPercent
+        customsRatePercent.isNear(defaultCustomsPercent) &&
+        vatRatePercent.isNear(defaultVatPercent)
     val fuel = FuelType.entries.firstOrNull { it.name == fuelName } ?: FuelType.PETROL
     val engineRequired = fuel != FuelType.ELECTRIC && fuel != FuelType.HYDROGEN
     val engineCc = if (engineRequired) parsePositiveInteger(engineText, numberSymbols) else null
@@ -320,6 +323,14 @@ private fun AssumptionsCard(
                 }
             }
 
+            if (expanded && !canCollapse) {
+                Text(
+                    stringResource(R.string.import_assumptions_finish),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
+
             if (expanded) {
                 Text(
                     stringResource(R.string.import_assumptions_hint),
@@ -402,6 +413,9 @@ private fun ratePercentText(rate: Double, symbols: DecimalFormatSymbols): String
         .stripTrailingZeros()
         .toPlainString()
         .replace('.', symbols.decimalSeparator)
+
+private fun Double?.isNear(expected: Double): Boolean =
+    this != null && abs(this - expected) < RATE_COMPARISON_EPSILON
 
 @Composable
 private fun ImportEstimateBreakdown(
