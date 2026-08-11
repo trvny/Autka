@@ -160,7 +160,7 @@ class DataStoreSettingsRepositoryTest {
             prefs[key] =
                 """{"items":[
                     {"id":"good","name":"Good","query":"BMW"},
-                    {"id":"future","name":"Future","fuelTypes":["HYDROGEN"]}
+                    {"id":"future","name":"Future","fuelTypes":["FUTURE_FUEL"]}
                 ]}""".trimIndent()
         }
         val repository = DataStoreSettingsRepository(dataStore, json())
@@ -168,7 +168,7 @@ class DataStoreSettingsRepositoryTest {
         repository.saveSearch("Audi", SearchFilter(query = "Audi"), Currency.PLN)
 
         assertEquals(listOf("Audi", "Good"), repository.savedSearches.first().map { it.name })
-        assertTrue(dataStore.data.first()[key].orEmpty().contains("HYDROGEN"))
+        assertTrue(dataStore.data.first()[key].orEmpty().contains("FUTURE_FUEL"))
     }
 
     @Test
@@ -193,7 +193,7 @@ class DataStoreSettingsRepositoryTest {
         dataStore.edit { prefs ->
             prefs[stringPreferencesKey("saved_searches_v1")] =
                 """{"items":[
-                    {"id":"fuel","name":"Fuel","fuelTypes":["HYDROGEN"]},
+                    {"id":"fuel","name":"Fuel","fuelTypes":["FUTURE_FUEL"]},
                     {"id":"gearbox","name":"Gearbox","transmissions":["CVT_FUTURE"]},
                     {"id":"region","name":"Region","regions":["MARS"]},
                     {"id":"currency","name":"Currency","displayCurrency":"CHF_FUTURE"}
