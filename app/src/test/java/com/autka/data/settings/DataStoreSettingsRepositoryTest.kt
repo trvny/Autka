@@ -213,6 +213,41 @@ class DataStoreSettingsRepositoryTest {
     }
 
     @Test
+    fun `future envelope metadata survives rewrites`() = runTest {
+        val key = stringPreferencesKey("saved_searches_v1")
+        val dataStore = dataStore(backgroundScope)
+        dataStore.edit { prefs ->
+            prefs[key] =
+                """{"schemaVersion":2,"writer":"future","items":[
+                    {"id":"good","name":"Good","query":"BMW"}
+                ]}""".trimIndent()
+        }
+        val repository = DataStoreSettingsRepository(dataStore)
+
+        repository.saveSearch("Audi", SearchFilter(query = "Audi"), Currency.PLN)
+
+        assertEquals(listOf("Audi", "Good"), repository.savedSearches.first().map { it.name })
+        val persisted = dataStore.data.first()[key].orEmpty()
+        assertTrue(persisted.contains("\"schemaVersion\":2"))
+        assertTrue(persisted.contains("\"writer\":\"future\""))
+    }
+
+    @Test
+    fun `unsupported future envelope is preserved without rewriting`() = runTest {
+        val key = stringPreferencesKey("saved_searches_v1")
+        val original = """{"schemaVersion":3,"records":[{"id":"future"}]}"""
+        val dataStore = dataStore(backgroundScope)
+        dataStore.edit { prefs -> prefs[key] = original }
+        val repository = DataStoreSettingsRepository(dataStore)
+
+        assertTrue(repository.savedSearches.first().isEmpty())
+        repository.saveSearch("Audi", SearchFilter(query = "Audi"), Currency.PLN)
+
+        assertTrue(repository.savedSearches.first().isEmpty())
+        assertEquals(original, dataStore.data.first()[key])
+    }
+
+    @Test
     fun `duplicate stored ids expose only one saved search`() = runTest {
         val dataStore = dataStore(backgroundScope)
         dataStore.edit { prefs ->
