@@ -28,6 +28,10 @@ boundary, partner paths and source acceptance checklist.
 
 - **Saved searches.** Persist filters now; add price/new-listing alerts only once a live
   catalogue provides meaningful changes to watch.
+- **Indexed listing previews.** Build on the browser-only web fallback with optional
+  lightweight results from a licensed search API behind the backend: title, source, URL and
+  snippet only. Keep them separate from `CarOffer`, never crawl listing pages, and treat the
+  original marketplace as authoritative.
 - **VIN helper.** Explore a provider-independent VIN decode flow for US import candidates,
   preferring an official/authorized decoder and keeping decoded data separate from listings.
 - **Import assumption presets.** If repeated calculator use makes it worthwhile, persist
@@ -61,6 +65,10 @@ extend those tests whenever another parameter is confirmed.
   or across navigation; keep manual refresh network-backed.
 - Split import-calculator input parsing/validation out of `ImportCalculatorScreen` before
   adding more fields; editable assumptions now trigger MegaLinter's detekt complexity warning.
+- Keep `MarketplaceWebSearch` targets aligned with the external-marketplace provider intent;
+  if the lists grow, centralize index-search metadata instead of maintaining parallel lists.
+- If web-search recall starts suffering, deduplicate overlapping make/model/free-text terms
+  before the six-word Brave bound so repeated terms do not consume the query budget.
 - Add Room schema export plus a real migration test in CI before the next non-trivial DB
   migration; do not manufacture historical schema JSON by hand.
 - Add normalized-price pagination tests when that backend work lands.
