@@ -14,7 +14,6 @@ import java.util.UUID
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
-import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -133,7 +132,7 @@ class DataStoreSettingsRepositoryTest {
         dataStore.edit { prefs ->
             prefs[stringPreferencesKey("saved_searches_v1")] = "{not-json"
         }
-        val repository = DataStoreSettingsRepository(dataStore, json())
+        val repository = DataStoreSettingsRepository(dataStore)
 
         assertTrue(repository.savedSearches.first().isEmpty())
     }
@@ -145,11 +144,34 @@ class DataStoreSettingsRepositoryTest {
             prefs[stringPreferencesKey("saved_searches_v1")] =
                 """{"items":[{"id":"good","name":"Good","query":"BMW"},{"id":"bad","name":"Bad","minPrice":"oops"}]}"""
         }
-        val repository = DataStoreSettingsRepository(dataStore, json())
+        val repository = DataStoreSettingsRepository(dataStore)
 
         val saved = repository.savedSearches.first().single()
         assertEquals("Good", saved.name)
         assertEquals("BMW", saved.filter.query)
+    }
+
+    @Test
+    fun `explicit null constraints stay opaque instead of widening`() = runTest {
+        val key = stringPreferencesKey("saved_searches_v1")
+        val dataStore = dataStore(backgroundScope)
+        dataStore.edit { prefs ->
+            prefs[key] =
+                """{"items":[
+                    {"id":"null-regions","name":"Null regions","regions":null},
+                    {"id":"null-fuel","name":"Null fuel","fuelTypes":null},
+                    {"id":"null-sources","name":"Null sources","sourceIds":null},
+                    {"id":"null-sort","name":"Null sort","sort":null},
+                    {"id":"null-currency","name":"Null currency","displayCurrency":null}
+                ]}""".trimIndent()
+        }
+        val repository = DataStoreSettingsRepository(dataStore)
+
+        assertTrue(repository.savedSearches.first().isEmpty())
+        repository.saveSearch("Audi", SearchFilter(query = "Audi"), Currency.PLN)
+
+        assertEquals(listOf("Audi"), repository.savedSearches.first().map { it.name })
+        assertTrue(dataStore.data.first()[key].orEmpty().contains("null-regions"))
     }
 
     @Test
@@ -163,7 +185,7 @@ class DataStoreSettingsRepositoryTest {
                     {"id":"future","name":"Future","fuelTypes":["FUTURE_FUEL"]}
                 ]}""".trimIndent()
         }
-        val repository = DataStoreSettingsRepository(dataStore, json())
+        val repository = DataStoreSettingsRepository(dataStore)
 
         repository.saveSearch("Audi", SearchFilter(query = "Audi"), Currency.PLN)
 
@@ -181,7 +203,7 @@ class DataStoreSettingsRepositoryTest {
                     {"id":"future","name":"Future","query":"BMW","dealerRating":4.8}
                 ]}""".trimIndent()
         }
-        val repository = DataStoreSettingsRepository(dataStore, json())
+        val repository = DataStoreSettingsRepository(dataStore)
 
         assertTrue(repository.savedSearches.first().isEmpty())
         repository.saveSearch("Audi", SearchFilter(query = "Audi"), Currency.PLN)
@@ -200,7 +222,7 @@ class DataStoreSettingsRepositoryTest {
                     {"id":"same","name":"Second","query":"Audi"}
                 ]}""".trimIndent()
         }
-        val repository = DataStoreSettingsRepository(dataStore, json())
+        val repository = DataStoreSettingsRepository(dataStore)
 
         val saved = repository.savedSearches.first().single()
         assertEquals("First", saved.name)
@@ -219,13 +241,13 @@ class DataStoreSettingsRepositoryTest {
                     {"id":"currency","name":"Currency","displayCurrency":"CHF_FUTURE"}
                 ]}""".trimIndent()
         }
-        val repository = DataStoreSettingsRepository(dataStore, json())
+        val repository = DataStoreSettingsRepository(dataStore)
 
         assertTrue(repository.savedSearches.first().isEmpty())
     }
 
     private fun repository(scope: CoroutineScope) =
-        DataStoreSettingsRepository(dataStore(scope), json())
+        DataStoreSettingsRepository(dataStore(scope))
 
     private fun dataStore(scope: CoroutineScope) = PreferenceDataStoreFactory.create(
         scope = scope,
@@ -234,9 +256,4 @@ class DataStoreSettingsRepositoryTest {
 
     private fun newPreferencesFile(): File =
         File(temporaryFolder.root, "${UUID.randomUUID()}.preferences_pb")
-
-    private fun json() = Json {
-        ignoreUnknownKeys = true
-        coerceInputValues = true
-    }
 }
