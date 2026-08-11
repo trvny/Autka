@@ -29,6 +29,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.autka.R
+import com.autka.core.model.Currency
+import com.autka.core.model.MAX_SAVED_SEARCH_NAME_LENGTH
 import com.autka.core.model.SavedSearch
 import com.autka.core.model.SearchFilter
 
@@ -36,30 +38,37 @@ import com.autka.core.model.SearchFilter
 @Composable
 fun SavedSearchesRow(
     filter: SearchFilter,
+    displayCurrency: Currency,
     savedSearches: List<SavedSearch>,
     canSave: Boolean,
-    onSave: (String) -> Unit,
+    onSave: (String, SearchFilter, Currency) -> Unit,
     onApply: (SavedSearch) -> Unit,
     onDelete: (String) -> Unit,
 ) {
     var showSaveDialog by remember { mutableStateOf(false) }
     var draftName by remember { mutableStateOf("") }
+    var draftFilter by remember { mutableStateOf(filter) }
+    var draftCurrency by remember { mutableStateOf(displayCurrency) }
     val fallbackName = stringResource(R.string.saved_search_default_name)
 
     Column(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Text(
-            text = stringResource(R.string.saved_searches),
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        if (savedSearches.isNotEmpty()) {
+            Text(
+                text = stringResource(R.string.saved_searches),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             if (canSave) {
                 item(key = "save-current-search") {
                     AssistChip(
                         onClick = {
+                            draftFilter = filter
+                            draftCurrency = displayCurrency
                             draftName = suggestedSavedSearchName(filter, fallbackName)
                             showSaveDialog = true
                         },
@@ -77,7 +86,7 @@ fun SavedSearchesRow(
 
             items(savedSearches, key = { it.id }) { saved ->
                 InputChip(
-                    selected = saved.filter == filter,
+                    selected = saved.filter == filter && saved.displayCurrency == displayCurrency,
                     onClick = { onApply(saved) },
                     label = { Text(saved.name) },
                     trailingIcon = {
@@ -107,7 +116,7 @@ fun SavedSearchesRow(
             text = {
                 OutlinedTextField(
                     value = draftName,
-                    onValueChange = { draftName = it.take(80) },
+                    onValueChange = { draftName = it.take(MAX_SAVED_SEARCH_NAME_LENGTH) },
                     label = { Text(stringResource(R.string.saved_search_name)) },
                     singleLine = true,
                 )
@@ -116,7 +125,7 @@ fun SavedSearchesRow(
                 TextButton(
                     enabled = draftName.isNotBlank(),
                     onClick = {
-                        onSave(draftName)
+                        onSave(draftName, draftFilter, draftCurrency)
                         showSaveDialog = false
                     },
                 ) { Text(stringResource(R.string.saved_search_save)) }
@@ -137,5 +146,5 @@ private fun suggestedSavedSearchName(filter: SearchFilter, fallback: String): St
     return vehicle
         .ifBlank { filter.query.trim() }
         .ifBlank { fallback }
-        .take(80)
+        .take(MAX_SAVED_SEARCH_NAME_LENGTH)
 }
