@@ -47,14 +47,14 @@ class MarketplaceWebSearchTest {
     fun `Brave bang commands cannot redirect marketplace web search`() {
         val link = MarketplaceWebSearch.all(
             SearchFilter(
-                query = "!w BMW X5",
+                query = "!w \"!g -!b BMW X5",
                 regions = setOf(Region.POLAND),
             ),
         ).single()
         val query = decodedQuery(link.url)
 
         assertTrue(query.startsWith("BMW X5 site:otomoto.pl"))
-        assertFalse(query.contains("!w"))
+        assertFalse(query.contains("!"))
     }
 
     @Test
