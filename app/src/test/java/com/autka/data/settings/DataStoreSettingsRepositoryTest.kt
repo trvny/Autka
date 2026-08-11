@@ -53,6 +53,21 @@ class DataStoreSettingsRepositoryTest {
     }
 
     @Test
+    fun `all-region search uses the expandable sentinel`() = runTest {
+        val key = stringPreferencesKey("saved_searches_v1")
+        val dataStore = dataStore(backgroundScope)
+        val repository = DataStoreSettingsRepository(dataStore)
+
+        repository.saveSearch("All BMW", SearchFilter(query = "BMW"), Currency.PLN)
+
+        assertEquals(
+            Region.entries.toSet(),
+            repository.savedSearches.first().single().filter.regions,
+        )
+        assertTrue(!dataStore.data.first()[key].orEmpty().contains("\"regions\""))
+    }
+
+    @Test
     fun `saving identical filter and currency renames instead of duplicating it`() = runTest {
         val repository = repository(backgroundScope)
         val filter = SearchFilter(query = "MX-5", regions = setOf(Region.EUROPE))
