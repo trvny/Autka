@@ -10,6 +10,7 @@
     <string name="import_assumptions_custom">Using your custom shipping, customs or VAT values.</string>
     <string name="import_assumptions_adjust">Adjust</string>
     <string name="import_assumptions_done">Done</string>
+    <string name="import_assumptions_finish">Finish the values below before closing these settings.</string>
     <string name="import_assumptions_hint">Editable inputs used for this estimate.</string>
     <string name="import_customs_rate_percent">Customs duty (%)</string>
     <string name="import_vat_rate_percent">VAT (%)</string>
