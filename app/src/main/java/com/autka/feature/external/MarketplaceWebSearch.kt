@@ -44,13 +44,10 @@ object MarketplaceWebSearch {
         val terms = boundedTerms(filter)
         if (terms.isEmpty()) return emptyList()
 
-        val usedDomains = mutableSetOf<String>()
         return Region.entries
             .filter { it in filter.regions }
             .mapNotNull { region ->
-                // A domain appears only in the first selected regional chip that owns it,
-                // avoiding near-duplicate Poland/Europe searches in the default state.
-                val domains = targets[region].orEmpty().filter { usedDomains.add(it) }
+                val domains = targets[region].orEmpty()
                 if (domains.isEmpty()) return@mapNotNull null
 
                 // Repeat sanitized terms in every OR branch so neither operator
@@ -63,8 +60,8 @@ object MarketplaceWebSearch {
 
     /**
      * Six words / 40 chars keeps the largest regional query below Brave's documented
-     * 400-char / 50-word API limit. Search operators are neutralized or discarded before
-     * interpolation so only Autka controls the site scope.
+     * 400-char / 50-word API limit. Search operators are neutralized before interpolation
+     * so only Autka controls the site scope.
      */
     private fun boundedTerms(filter: SearchFilter): String {
         val words = listOfNotNull(
@@ -99,7 +96,9 @@ object MarketplaceWebSearch {
             .replace("(", "")
             .replace(")", "")
             .replace("|", "")
-        if (literal.isEmpty() || ':' in literal || literal.startsWith('-')) return null
+            .replace(":", "")
+            .trimStart('-')
+        if (literal.isEmpty()) return null
         return if (literal in setOf("AND", "OR", "NOT")) {
             literal.lowercase(Locale.ROOT)
         } else {
