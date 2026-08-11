@@ -22,7 +22,6 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.jsonObject
 
 /**
  * App-wide user settings and small local preferences persisted via Preferences DataStore,
@@ -65,7 +64,10 @@ class DataStoreSettingsRepository @Inject constructor(
         if (trimmedName.isEmpty() || !filter.hasFinitePriceBounds()) return
 
         dataStore.edit { prefs ->
-            val document = parseSavedSearchDocument(prefs[SAVED_SEARCHES]) ?: return@edit
+            val document = parseSavedSearchDocument(
+                prefs[SAVED_SEARCHES],
+                recoverMalformed = true,
+            ) ?: return@edit
             val decoded = document.items.map { element -> element to decodeSavedSearch(element) }
             val existingId = decoded.firstNotNullOfOrNull { (_, saved) ->
                 saved?.takeIf {
@@ -109,16 +111,23 @@ class DataStoreSettingsRepository @Inject constructor(
             .mapNotNull(::decodeSavedSearch)
             .distinctBy { it.id }
 
-    private fun parseSavedSearchDocument(raw: String?): SavedSearchDocument? {
-        if (raw.isNullOrBlank()) {
-            return SavedSearchDocument(JsonObject(emptyMap()), emptyList())
-        }
-        val envelope = runCatching {
-            SAVED_SEARCH_JSON.parseToJsonElement(raw).jsonObject
-        }.getOrNull() ?: return null
+    private fun parseSavedSearchDocument(
+        raw: String?,
+        recoverMalformed: Boolean = false,
+    ): SavedSearchDocument? {
+        if (raw.isNullOrBlank()) return emptySavedSearchDocument()
+
+        val parsed = runCatching { SAVED_SEARCH_JSON.parseToJsonElement(raw) }
+            .getOrElse {
+                return if (recoverMalformed) emptySavedSearchDocument() else null
+            }
+        val envelope = parsed as? JsonObject ?: return null
         val items = envelope[ITEMS_KEY] as? JsonArray ?: return null
         return SavedSearchDocument(envelope, items.toList())
     }
+
+    private fun emptySavedSearchDocument() =
+        SavedSearchDocument(JsonObject(emptyMap()), emptyList())
 
     private fun decodeSavedSearch(element: JsonElement): SavedSearch? {
         val payloadObject = element as? JsonObject ?: return null
