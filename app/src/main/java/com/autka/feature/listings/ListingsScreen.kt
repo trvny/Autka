@@ -165,7 +165,12 @@ fun ListingsScreen(
                     leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                     trailingIcon = if (uiState.filter.query.isNotEmpty()) {
                         {
-                            IconButton(onClick = { onQueryChange("") }) {
+                            IconButton(
+                                onClick = {
+                                    onQueryChange("")
+                                    onSearch()
+                                },
+                            ) {
                                 Icon(
                                     Icons.Default.Close,
                                     contentDescription = stringResource(R.string.cd_clear_search),
@@ -241,6 +246,8 @@ fun ListingsScreen(
                         if (uiState.activeFilterCount > 0) stringResource(R.string.empty_no_match)
                         else stringResource(R.string.empty_no_offers),
                     )
+                    // No results in our cache: send the user to each marketplace's own
+                    // pre-filled search instead. This remains a deep-link, never ingest.
                     MarketplaceLinksRow(filter = uiState.filter)
                 }
                 else -> {
@@ -266,6 +273,7 @@ fun ListingsScreen(
                                 onClick = { onOfferClick(offer.id) },
                             )
                         }
+                        // Footer keeps the same compliant hand-off for the active filter.
                         item { MarketplaceLinksRow(filter = uiState.filter) }
                     }
                 }
