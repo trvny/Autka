@@ -100,7 +100,7 @@ fun ListingsScreen(
     onApplyFilter: (SearchFilter) -> Unit,
     onApplySavedSearch: (SavedSearch) -> Unit,
     onResetFilter: () -> Unit,
-    onSaveSearch: (String) -> Unit,
+    onSaveSearch: (String, SearchFilter, Currency) -> Unit,
     onDeleteSavedSearch: (String) -> Unit,
     onDisplayCurrencyChange: (Currency) -> Unit,
     onOfferClick: (String) -> Unit,
@@ -173,6 +173,7 @@ fun ListingsScreen(
             if (uiState.canSaveSearch || uiState.savedSearches.isNotEmpty()) {
                 SavedSearchesRow(
                     filter = uiState.filter,
+                    displayCurrency = uiState.displayCurrency,
                     savedSearches = uiState.savedSearches,
                     canSave = uiState.canSaveSearch,
                     onSave = onSaveSearch,
