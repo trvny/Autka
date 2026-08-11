@@ -1,6 +1,7 @@
 package com.autka.ui
 
 import androidx.compose.runtime.Composable
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -9,6 +10,7 @@ import androidx.navigation.navArgument
 import com.autka.feature.detail.OfferDetailRoute
 import com.autka.feature.importcalc.ImportCalculatorRoute
 import com.autka.feature.listings.ListingsRoute
+import com.autka.feature.listings.ListingsViewModel
 import com.autka.feature.map.MapRoute
 import com.autka.feature.sourcehealth.SourceHealthRoute
 
@@ -24,6 +26,8 @@ private object Routes {
 @Composable
 fun AutkaApp() {
     val navController = rememberNavController()
+    val listingsViewModel: ListingsViewModel = hiltViewModel()
+
     NavHost(navController = navController, startDestination = Routes.LISTINGS) {
         composable(Routes.LISTINGS) {
             ListingsRoute(
@@ -31,6 +35,7 @@ fun AutkaApp() {
                 onMapClick = { navController.navigate(Routes.MAP) },
                 onImportCalculatorClick = { navController.navigate(Routes.IMPORT_CALCULATOR) },
                 onSourceHealthClick = { navController.navigate(Routes.SOURCE_HEALTH) },
+                viewModel = listingsViewModel,
             )
         }
         composable(
@@ -43,6 +48,7 @@ fun AutkaApp() {
             MapRoute(
                 onBack = { navController.popBackStack() },
                 onOfferClick = { id -> navController.navigate(Routes.detail(id)) },
+                viewModel = listingsViewModel,
             )
         }
         composable(Routes.IMPORT_CALCULATOR) {
