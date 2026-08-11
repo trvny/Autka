@@ -1,7 +1,5 @@
 package com.autka.feature.listings
 
-import androidx.compose.ui.res.stringResource
-import com.autka.R
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -27,9 +25,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.autka.R
 import com.autka.core.model.Currency
 import com.autka.core.model.FuelType
 import com.autka.core.model.Region
@@ -68,159 +68,210 @@ fun FilterSheet(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp)
-                .padding(bottom = 24.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(18.dp),
+                .padding(bottom = 12.dp),
         ) {
-            Text(stringResource(R.string.filters), fontWeight = FontWeight.Bold, style = androidx.compose.material3.MaterialTheme.typography.headlineSmall)
+            Text(
+                stringResource(R.string.filters),
+                fontWeight = FontWeight.Bold,
+                style = androidx.compose.material3.MaterialTheme.typography.headlineSmall,
+            )
 
-            if (availableMakes.isNotEmpty()) {
-                Section(stringResource(R.string.filter_make)) {
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        availableMakes.forEach { make ->
-                            FilterChip(
-                                selected = draft.make == make,
-                                onClick = { draft = draft.copy(make = if (draft.make == make) null else make) },
-                                label = { Text(make) },
-                            )
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f, fill = false)
+                    .verticalScroll(rememberScrollState())
+                    .padding(top = 18.dp, bottom = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(18.dp),
+            ) {
+                if (availableMakes.isNotEmpty()) {
+                    Section(stringResource(R.string.filter_make)) {
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            availableMakes.forEach { make ->
+                                FilterChip(
+                                    selected = draft.make == make,
+                                    onClick = {
+                                        draft = draft.copy(
+                                            make = if (draft.make == make) null else make,
+                                        )
+                                    },
+                                    label = { Text(make) },
+                                )
+                            }
                         }
                     }
                 }
-            }
 
-            Section(stringResource(R.string.filter_price_range, priceCurrency.symbol)) {
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    OutlinedTextField(
-                        value = draft.minPrice?.toLong()?.toString() ?: "",
-                        onValueChange = { draft = draft.copy(minPrice = it.toDoubleOrNull()) },
-                        label = { Text(stringResource(R.string.filter_min)) },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.weight(1f),
+                Section(stringResource(R.string.filter_price_range, priceCurrency.symbol)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        OutlinedTextField(
+                            value = draft.minPrice?.toLong()?.toString() ?: "",
+                            onValueChange = { draft = draft.copy(minPrice = it.toDoubleOrNull()) },
+                            label = { Text(stringResource(R.string.filter_min)) },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.weight(1f),
+                        )
+                        OutlinedTextField(
+                            value = draft.maxPrice?.toLong()?.toString() ?: "",
+                            onValueChange = { draft = draft.copy(maxPrice = it.toDoubleOrNull()) },
+                            label = { Text(stringResource(R.string.filter_max)) },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                }
+
+                Section(
+                    stringResource(
+                        R.string.filter_min_year,
+                        draft.minYear?.toString() ?: stringResource(R.string.filter_any),
+                    ),
+                ) {
+                    Slider(
+                        value = (draft.minYear ?: MIN_YEAR.toInt()).toFloat(),
+                        onValueChange = { v ->
+                            val y = v.toInt()
+                            draft = draft.copy(minYear = if (y <= MIN_YEAR.toInt()) null else y)
+                        },
+                        valueRange = MIN_YEAR..MAX_YEAR,
+                        steps = (MAX_YEAR - MIN_YEAR).toInt() - 1,
                     )
-                    OutlinedTextField(
-                        value = draft.maxPrice?.toLong()?.toString() ?: "",
-                        onValueChange = { draft = draft.copy(maxPrice = it.toDoubleOrNull()) },
-                        label = { Text(stringResource(R.string.filter_max)) },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.weight(1f),
+                }
+
+                Section(
+                    stringResource(
+                        R.string.filter_max_mileage,
+                        draft.maxMileageKm?.let { "${it / 1000}k km" }
+                            ?: stringResource(R.string.filter_any),
+                    ),
+                ) {
+                    Slider(
+                        value = (draft.maxMileageKm ?: MAX_MILEAGE.toInt()).toFloat(),
+                        onValueChange = { v ->
+                            val km = (v / 5_000).toInt() * 5_000
+                            draft = draft.copy(
+                                maxMileageKm = if (km >= MAX_MILEAGE.toInt()) null else km,
+                            )
+                        },
+                        valueRange = 0f..MAX_MILEAGE,
+                        steps = (MAX_MILEAGE / 5_000).toInt() - 1,
                     )
                 }
-            }
 
-            Section(stringResource(R.string.filter_min_year, draft.minYear?.toString() ?: stringResource(R.string.filter_any))) {
-                Slider(
-                    value = (draft.minYear ?: MIN_YEAR.toInt()).toFloat(),
-                    onValueChange = { v ->
-                        val y = v.toInt()
-                        draft = draft.copy(minYear = if (y <= MIN_YEAR.toInt()) null else y)
-                    },
-                    valueRange = MIN_YEAR..MAX_YEAR,
-                    steps = (MAX_YEAR - MIN_YEAR).toInt() - 1,
-                )
-            }
-
-            Section(stringResource(R.string.filter_max_mileage, draft.maxMileageKm?.let { "${it / 1000}k km" } ?: stringResource(R.string.filter_any))) {
-                Slider(
-                    value = (draft.maxMileageKm ?: MAX_MILEAGE.toInt()).toFloat(),
-                    onValueChange = { v ->
-                        val km = (v / 5_000).toInt() * 5_000
-                        draft = draft.copy(maxMileageKm = if (km >= MAX_MILEAGE.toInt()) null else km)
-                    },
-                    valueRange = 0f..MAX_MILEAGE,
-                    steps = (MAX_MILEAGE / 5_000).toInt() - 1,
-                )
-            }
-
-            Section(stringResource(R.string.spec_fuel)) {
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FUEL_CHOICES.forEach { fuel ->
-                        FilterChip(
-                            selected = fuel in draft.fuelTypes,
-                            onClick = {
-                                draft = draft.copy(
-                                    fuelTypes = draft.fuelTypes.toMutableSet().apply {
-                                        if (!add(fuel)) remove(fuel)
-                                    },
-                                )
-                            },
-                            label = { Text(fuel.label()) },
-                        )
-                    }
-                }
-            }
-
-            Section(stringResource(R.string.spec_transmission)) {
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    TRANSMISSION_CHOICES.forEach { tx ->
-                        FilterChip(
-                            selected = tx in draft.transmissions,
-                            onClick = {
-                                draft = draft.copy(
-                                    transmissions = draft.transmissions.toMutableSet().apply {
-                                        if (!add(tx)) remove(tx)
-                                    },
-                                )
-                            },
-                            label = { Text(tx.label()) },
-                        )
-                    }
-                }
-            }
-
-            Section(stringResource(R.string.filter_region)) {
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Region.entries.forEach { region ->
-                        FilterChip(
-                            selected = region in draft.regions,
-                            onClick = {
-                                val next = draft.regions.toMutableSet().apply {
-                                    if (!add(region)) remove(region)
-                                }
-                                // never allow zero regions -> treat empty as "all"
-                                draft = draft.copy(regions = if (next.isEmpty()) Region.entries.toSet() else next)
-                            },
-                            label = { Text(region.label()) },
-                        )
-                    }
-                }
-            }
-
-            if (availableSources.isNotEmpty()) {
-                Section(stringResource(R.string.filter_sources)) {
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        availableSources.forEach { source ->
+                Section(stringResource(R.string.spec_fuel)) {
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        FUEL_CHOICES.forEach { fuel ->
                             FilterChip(
-                                enabled = source.enabled,
-                                selected = source.id in draft.sourceIds,
+                                selected = fuel in draft.fuelTypes,
                                 onClick = {
                                     draft = draft.copy(
-                                        sourceIds = draft.sourceIds.toMutableSet().apply {
-                                            if (!add(source.id)) remove(source.id)
+                                        fuelTypes = draft.fuelTypes.toMutableSet().apply {
+                                            if (!add(fuel)) remove(fuel)
                                         },
                                     )
                                 },
-                                label = { Text(source.displayName) },
+                                label = { Text(fuel.label()) },
+                            )
+                        }
+                    }
+                }
+
+                Section(stringResource(R.string.spec_transmission)) {
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        TRANSMISSION_CHOICES.forEach { tx ->
+                            FilterChip(
+                                selected = tx in draft.transmissions,
+                                onClick = {
+                                    draft = draft.copy(
+                                        transmissions = draft.transmissions.toMutableSet().apply {
+                                            if (!add(tx)) remove(tx)
+                                        },
+                                    )
+                                },
+                                label = { Text(tx.label()) },
+                            )
+                        }
+                    }
+                }
+
+                Section(stringResource(R.string.filter_region)) {
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Region.entries.forEach { region ->
+                            FilterChip(
+                                selected = region in draft.regions,
+                                onClick = {
+                                    val next = draft.regions.toMutableSet().apply {
+                                        if (!add(region)) remove(region)
+                                    }
+                                    // Never allow zero regions: empty means all.
+                                    draft = draft.copy(
+                                        regions = if (next.isEmpty()) Region.entries.toSet() else next,
+                                    )
+                                },
+                                label = { Text(region.label()) },
+                            )
+                        }
+                    }
+                }
+
+                if (availableSources.isNotEmpty()) {
+                    Section(stringResource(R.string.filter_sources)) {
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            availableSources.forEach { source ->
+                                FilterChip(
+                                    enabled = source.enabled,
+                                    selected = source.id in draft.sourceIds,
+                                    onClick = {
+                                        draft = draft.copy(
+                                            sourceIds = draft.sourceIds.toMutableSet().apply {
+                                                if (!add(source.id)) remove(source.id)
+                                            },
+                                        )
+                                    },
+                                    label = { Text(source.displayName) },
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Section(stringResource(R.string.filter_sort_by)) {
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        SortOrder.entries.forEach { sort ->
+                            FilterChip(
+                                selected = draft.sort == sort,
+                                onClick = { draft = draft.copy(sort = sort) },
+                                label = { Text(sort.label()) },
                             )
                         }
                     }
                 }
             }
 
-            Section(stringResource(R.string.filter_sort_by)) {
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    SortOrder.entries.forEach { sort ->
-                        FilterChip(
-                            selected = draft.sort == sort,
-                            onClick = { draft = draft.copy(sort = sort) },
-                            label = { Text(sort.label()) },
-                        )
-                    }
-                }
-            }
-
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
                 OutlinedButton(
                     onClick = onReset,
                     modifier = Modifier.weight(1f),
@@ -228,7 +279,16 @@ fun FilterSheet(
                 Button(
                     onClick = { onApply(draft) },
                     modifier = Modifier.weight(1f),
-                ) { Text(stringResource(R.string.apply)) }
+                ) {
+                    val activeCount = draft.activeCount()
+                    Text(
+                        if (activeCount > 0) {
+                            stringResource(R.string.apply_count, activeCount)
+                        } else {
+                            stringResource(R.string.apply)
+                        },
+                    )
+                }
             }
         }
     }
@@ -237,7 +297,11 @@ fun FilterSheet(
 @Composable
 private fun Section(title: String, content: @Composable () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(title, fontWeight = FontWeight.SemiBold, style = androidx.compose.material3.MaterialTheme.typography.titleMedium)
+        Text(
+            title,
+            fontWeight = FontWeight.SemiBold,
+            style = androidx.compose.material3.MaterialTheme.typography.titleMedium,
+        )
         content()
     }
 }
