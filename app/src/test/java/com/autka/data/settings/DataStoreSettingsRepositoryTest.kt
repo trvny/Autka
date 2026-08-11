@@ -172,6 +172,25 @@ class DataStoreSettingsRepositoryTest {
     }
 
     @Test
+    fun `unknown future fields stay opaque and survive rewrites`() = runTest {
+        val key = stringPreferencesKey("saved_searches_v1")
+        val dataStore = dataStore(backgroundScope)
+        dataStore.edit { prefs ->
+            prefs[key] =
+                """{"items":[
+                    {"id":"future","name":"Future","query":"BMW","dealerRating":4.8}
+                ]}""".trimIndent()
+        }
+        val repository = DataStoreSettingsRepository(dataStore, json())
+
+        assertTrue(repository.savedSearches.first().isEmpty())
+        repository.saveSearch("Audi", SearchFilter(query = "Audi"), Currency.PLN)
+
+        assertEquals(listOf("Audi"), repository.savedSearches.first().map { it.name })
+        assertTrue(dataStore.data.first()[key].orEmpty().contains("dealerRating"))
+    }
+
+    @Test
     fun `duplicate stored ids expose only one saved search`() = runTest {
         val dataStore = dataStore(backgroundScope)
         dataStore.edit { prefs ->
