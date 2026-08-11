@@ -165,12 +165,7 @@ fun ListingsScreen(
                     leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                     trailingIcon = if (uiState.filter.query.isNotEmpty()) {
                         {
-                            IconButton(
-                                onClick = {
-                                    onQueryChange("")
-                                    onSearch()
-                                },
-                            ) {
+                            IconButton(onClick = { onQueryChange("") }) {
                                 Icon(
                                     Icons.Default.Close,
                                     contentDescription = stringResource(R.string.cd_clear_search),
