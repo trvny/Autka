@@ -61,6 +61,20 @@ class MarketplaceWebSearchTest {
     }
 
     @Test
+    fun `literal numeric colon term is preserved without search syntax`() {
+        val link = MarketplaceWebSearch.all(
+            SearchFilter(
+                query = "BMW 1:1",
+                regions = setOf(Region.POLAND),
+            ),
+        ).single()
+        val query = decodedQuery(link.url)
+
+        assertTrue(query.startsWith("BMW 11 site:otomoto.pl"))
+        assertFalse(query.startsWith("BMW 1:1"))
+    }
+
+    @Test
     fun `USA web search excludes Poland-only marketplace domains`() {
         val link = MarketplaceWebSearch.all(
             SearchFilter(
@@ -76,7 +90,7 @@ class MarketplaceWebSearchTest {
     }
 
     @Test
-    fun `overlapping regional domains appear in only one web chip`() {
+    fun `selected regional web chips keep their full independent scope`() {
         val links = MarketplaceWebSearch.all(
             SearchFilter(
                 query = "BMW X5",
@@ -89,8 +103,8 @@ class MarketplaceWebSearchTest {
         val europeQuery = decodedQuery(links.single { it.region == Region.EUROPE }.url)
         assertTrue(polandQuery.contains("site:autouncle.pl"))
         assertTrue(polandQuery.contains("site:autoscout24.pl"))
-        assertFalse(europeQuery.contains("site:autouncle.pl"))
-        assertFalse(europeQuery.contains("site:autoscout24.pl"))
+        assertTrue(europeQuery.contains("site:autouncle.pl"))
+        assertTrue(europeQuery.contains("site:autoscout24.pl"))
         assertTrue(europeQuery.contains("site:mobile.de"))
     }
 
