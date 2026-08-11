@@ -18,9 +18,11 @@ import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.decodeFromJsonElement
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
 
 /**
  * App-wide user settings and small local preferences persisted via Preferences DataStore,
@@ -76,10 +78,7 @@ class DataStoreSettingsRepository @Inject constructor(
             )
             val updated = buildList {
                 add(saved)
-                current.asSequence()
-                    .filterNot { it.id == saved.id }
-                    .take(MAX_SAVED_SEARCHES - 1)
-                    .forEach(::add)
+                current.filterNotTo(this) { it.id == saved.id }
             }
             prefs[SAVED_SEARCHES] = encodeSavedSearches(updated)
         }
@@ -99,9 +98,15 @@ class DataStoreSettingsRepository @Inject constructor(
 
     private fun decodeSavedSearches(raw: String?): List<SavedSearch> {
         if (raw.isNullOrBlank()) return emptyList()
-        return runCatching {
-            json.decodeFromString<SavedSearchStore>(raw).items.mapNotNull { it.toModelOrNull() }
-        }.getOrDefault(emptyList())
+        val items = runCatching {
+            json.parseToJsonElement(raw).jsonObject["items"]?.jsonArray
+        }.getOrNull() ?: return emptyList()
+
+        return items.mapNotNull { element ->
+            runCatching { json.decodeFromJsonElement<SavedSearchPayload>(element) }
+                .getOrNull()
+                ?.toModelOrNull()
+        }
     }
 
     private fun encodeSavedSearches(searches: List<SavedSearch>): String =
@@ -115,7 +120,6 @@ class DataStoreSettingsRepository @Inject constructor(
         val DISPLAY_CURRENCY = stringPreferencesKey("display_currency")
         val SAVED_SEARCHES = stringPreferencesKey("saved_searches_v1")
         val DEFAULT_CURRENCY = Currency.PLN
-        const val MAX_SAVED_SEARCHES = 20
     }
 }
 
@@ -146,8 +150,10 @@ private data class SavedSearchPayload(
     fun toModelOrNull(): SavedSearch? {
         if (id.isBlank() || name.isBlank()) return null
 
-        val decodedRegions = regions.mapNotNull { enumOrNull<Region>(it) }.toSet()
-        if (regions.isNotEmpty() && decodedRegions.isEmpty()) return null
+        val decodedFuelTypes = decodeEnumSetOrNull<FuelType>(fuelTypes) ?: return null
+        val decodedTransmissions = decodeEnumSetOrNull<Transmission>(transmissions) ?: return null
+        val decodedRegions = decodeEnumSetOrNull<Region>(regions) ?: return null
+        val decodedCurrency = enumOrNull<Currency>(displayCurrency) ?: return null
 
         return SavedSearch(
             id = id,
@@ -161,13 +167,13 @@ private data class SavedSearchPayload(
                 minYear = minYear,
                 maxYear = maxYear,
                 maxMileageKm = maxMileageKm,
-                fuelTypes = fuelTypes.mapNotNull { enumOrNull<FuelType>(it) }.toSet(),
-                transmissions = transmissions.mapNotNull { enumOrNull<Transmission>(it) }.toSet(),
+                fuelTypes = decodedFuelTypes,
+                transmissions = decodedTransmissions,
                 regions = decodedRegions.ifEmpty { Region.entries.toSet() },
                 sourceIds = sourceIds.toSet(),
                 sort = enumOrNull<SortOrder>(sort) ?: SortOrder.NEWEST,
             ),
-            displayCurrency = enumOrNull<Currency>(displayCurrency) ?: Currency.PLN,
+            displayCurrency = decodedCurrency,
         )
     }
 
@@ -197,6 +203,13 @@ private data class SavedSearchPayload(
 
 private fun SearchFilter.hasFinitePriceBounds(): Boolean =
     (minPrice == null || minPrice.isFinite()) && (maxPrice == null || maxPrice.isFinite())
+
+private inline fun <reified T : Enum<T>> decodeEnumSetOrNull(names: List<String>): Set<T>? {
+    val decoded = names.map { enumOrNull<T>(it) }
+    return decoded.takeIf { values -> values.none { it == null } }
+        ?.filterNotNull()
+        ?.toSet()
+}
 
 private inline fun <reified T : Enum<T>> enumOrNull(name: String): T? =
     enumValues<T>().firstOrNull { it.name == name }
