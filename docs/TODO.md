@@ -26,8 +26,6 @@ boundary, partner paths and source acceptance checklist.
 
 ## Useful without a live provider
 
-- **Saved searches.** Persist filters now; add price/new-listing alerts only once a live
-  catalogue provides meaningful changes to watch.
 - **Indexed listing previews.** Build on the browser-only web fallback with optional
   lightweight results from a licensed search API behind the backend: title, source, URL and
   snippet only. Keep them separate from `CarOffer`, never crawl listing pages, and treat the
@@ -37,6 +35,8 @@ boundary, partner paths and source acceptance checklist.
 - **Import assumption presets.** If repeated calculator use makes it worthwhile, persist
   named local presets for shipping/customs/VAT assumptions while keeping the documented
   defaults and one-tap reset available.
+- **Saved-search alerts.** Once a live catalogue provides meaningful changes to watch, add
+  opt-in price-drop and new-listing alerts on top of the local saved searches.
 
 ## Deep-link verification
 
