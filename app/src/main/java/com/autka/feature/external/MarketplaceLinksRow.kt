@@ -101,7 +101,7 @@ fun MarketplaceLinksRow(
 private fun webRegionLabel(region: Region): String = when (region) {
     Region.POLAND -> stringResource(R.string.region_poland)
     Region.EUROPE -> stringResource(R.string.region_europe)
-    Region.USA -> stringResource(R.string.region_usa)
+    Region.USA -> stringResource(R.string.web_region_usa)
 }
 
 private fun openExternalLink(context: Context, url: String) {
