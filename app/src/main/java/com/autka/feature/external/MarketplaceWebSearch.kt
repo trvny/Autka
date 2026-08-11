@@ -91,6 +91,8 @@ object MarketplaceWebSearch {
     }
 
     private fun sanitizeSearchTerm(word: String): String? {
+        if (word.startsWith('!')) return null
+
         val dequoted = word
             .replace("\"", "")
             .replace("(", "")
