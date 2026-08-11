@@ -1,8 +1,5 @@
 package com.autka.feature.listings
 
-import androidx.compose.ui.res.pluralStringResource
-import androidx.compose.ui.res.stringResource
-import com.autka.R
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -45,22 +42,26 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.autka.R
 import com.autka.core.model.CarOffer
 import com.autka.core.model.Currency
 import com.autka.core.model.ExchangeRates
 import com.autka.core.model.Region
+import com.autka.core.model.SavedSearch
 import com.autka.core.model.SearchFilter
 import com.autka.feature.external.MarketplaceLinksRow
 import com.autka.ui.components.EmptyState
-import com.autka.ui.components.OfferImage
 import com.autka.ui.components.LoadingIndicator
+import com.autka.ui.components.OfferImage
 import com.autka.ui.components.formatted
 import com.autka.ui.components.kmOrDash
 
@@ -78,7 +79,10 @@ fun ListingsRoute(
         onQueryChange = viewModel::onQueryChange,
         onSearch = viewModel::refresh,
         onApplyFilter = viewModel::onApplyFilter,
+        onApplySavedSearch = viewModel::onApplySavedSearch,
         onResetFilter = viewModel::onResetFilter,
+        onSaveSearch = viewModel::onSaveSearch,
+        onDeleteSavedSearch = viewModel::onDeleteSavedSearch,
         onDisplayCurrencyChange = viewModel::onDisplayCurrencyChange,
         onOfferClick = onOfferClick,
         onMapClick = onMapClick,
@@ -94,7 +98,10 @@ fun ListingsScreen(
     onQueryChange: (String) -> Unit,
     onSearch: () -> Unit,
     onApplyFilter: (SearchFilter) -> Unit,
+    onApplySavedSearch: (SavedSearch) -> Unit,
     onResetFilter: () -> Unit,
+    onSaveSearch: (String) -> Unit,
+    onDeleteSavedSearch: (String) -> Unit,
     onDisplayCurrencyChange: (Currency) -> Unit,
     onOfferClick: (String) -> Unit,
     onMapClick: () -> Unit,
@@ -162,6 +169,17 @@ fun ListingsScreen(
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                 keyboardActions = KeyboardActions(onSearch = { onSearch() }),
             )
+
+            if (uiState.canSaveSearch || uiState.savedSearches.isNotEmpty()) {
+                SavedSearchesRow(
+                    filter = uiState.filter,
+                    savedSearches = uiState.savedSearches,
+                    canSave = uiState.canSaveSearch,
+                    onSave = onSaveSearch,
+                    onApply = onApplySavedSearch,
+                    onDelete = onDeleteSavedSearch,
+                )
+            }
 
             if (uiState.failedSources.isNotEmpty()) {
                 Text(
