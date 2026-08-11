@@ -17,6 +17,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Calculate
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.MoreVert
@@ -30,9 +31,11 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -123,17 +126,6 @@ fun ListingsScreen(
                     IconButton(onClick = onMapClick) {
                         Icon(Icons.Default.Map, contentDescription = stringResource(R.string.cd_map))
                     }
-                    IconButton(onClick = { showFilters = true }) {
-                        BadgedBox(
-                            badge = {
-                                if (uiState.activeFilterCount > 0) {
-                                    Badge { Text(uiState.activeFilterCount.toString()) }
-                                }
-                            },
-                        ) {
-                            Icon(Icons.Default.Tune, contentDescription = stringResource(R.string.cd_filters))
-                        }
-                    }
                     Box {
                         IconButton(onClick = { showMore = true }) {
                             Icon(
@@ -162,13 +154,43 @@ fun ListingsScreen(
             OutlinedTextField(
                 value = uiState.filter.query,
                 onValueChange = onQueryChange,
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
                 label = { Text(stringResource(R.string.search_hint)) },
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                trailingIcon = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (uiState.filter.query.isNotBlank()) {
+                            IconButton(onClick = { onQueryChange("") }) {
+                                Icon(
+                                    Icons.Default.Close,
+                                    contentDescription = stringResource(R.string.cd_clear_search),
+                                )
+                            }
+                        }
+                        IconButton(onClick = { showFilters = true }) {
+                            BadgedBox(
+                                badge = {
+                                    if (uiState.activeFilterCount > 0) {
+                                        Badge { Text(uiState.activeFilterCount.toString()) }
+                                    }
+                                },
+                            ) {
+                                Icon(
+                                    Icons.Default.Tune,
+                                    contentDescription = stringResource(R.string.cd_filters),
+                                )
+                            }
+                        }
+                    }
+                },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                 keyboardActions = KeyboardActions(onSearch = { onSearch() }),
             )
+
+            if (uiState.isRefreshing && uiState.offers.isNotEmpty()) {
+                LinearProgressIndicator(Modifier.fillMaxWidth())
+            }
 
             if (uiState.canSaveSearch || uiState.savedSearches.isNotEmpty()) {
                 SavedSearchesRow(
@@ -182,15 +204,13 @@ fun ListingsScreen(
                 )
             }
 
+            if (uiState.errorMessage != null) {
+                RefreshErrorBanner(onRetry = onSearch)
+            }
             if (uiState.failedSources.isNotEmpty()) {
-                Text(
-                    stringResource(
-                        R.string.listing_failed_sources,
-                        uiState.failedSources.joinToString(),
-                    ),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(horizontal = 16.dp),
+                SourceWarningBanner(
+                    failedSources = uiState.failedSources,
+                    onClick = onSourceHealthClick,
                 )
             }
             if (uiState.ratesAreStale) {
@@ -198,7 +218,7 @@ fun ListingsScreen(
                     stringResource(R.string.listing_rates_stale),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 16.dp),
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
                 )
             }
 
@@ -215,20 +235,32 @@ fun ListingsScreen(
                     // pre-filled search instead. This remains a deep-link, never ingest.
                     MarketplaceLinksRow(filter = uiState.filter)
                 }
-                else -> LazyColumn(
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    items(uiState.offers, key = { it.id }) { offer ->
-                        OfferCard(
-                            offer = offer,
-                            displayCurrency = uiState.displayCurrency,
-                            rates = uiState.exchangeRates,
-                            onClick = { onOfferClick(offer.id) },
-                        )
+                else -> {
+                    Text(
+                        pluralStringResource(
+                            R.plurals.listing_results,
+                            uiState.offers.size,
+                            uiState.offers.size,
+                        ),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                    )
+                    LazyColumn(
+                        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        items(uiState.offers, key = { it.id }) { offer ->
+                            OfferCard(
+                                offer = offer,
+                                displayCurrency = uiState.displayCurrency,
+                                rates = uiState.exchangeRates,
+                                onClick = { onOfferClick(offer.id) },
+                            )
+                        }
+                        // Footer keeps the same compliant hand-off for the active filter.
+                        item { MarketplaceLinksRow(filter = uiState.filter) }
                     }
-                    // Footer keeps the same compliant hand-off for the active filter.
-                    item { MarketplaceLinksRow(filter = uiState.filter) }
                 }
             }
         }
@@ -244,6 +276,62 @@ fun ListingsScreen(
             onReset = { onResetFilter(); showFilters = false },
             onDismiss = { showFilters = false },
         )
+    }
+}
+
+@Composable
+private fun RefreshErrorBanner(onRetry: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(start = 12.dp, end = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                stringResource(R.string.listing_refresh_failed),
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+            )
+            TextButton(onClick = onRetry) {
+                Text(stringResource(R.string.retry))
+            }
+        }
+    }
+}
+
+@Composable
+private fun SourceWarningBanner(failedSources: List<String>, onClick: () -> Unit) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                Icons.Default.Info,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.error,
+            )
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    stringResource(
+                        R.string.listing_failed_sources,
+                        failedSources.joinToString(),
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                Text(
+                    stringResource(R.string.listing_source_details),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
+        }
     }
 }
 
@@ -307,7 +395,7 @@ private fun OfferCard(
                             it.total.formatted(),
                         ),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error,
+                        color = MaterialTheme.colorScheme.tertiary,
                     )
                 }
             }
@@ -322,5 +410,15 @@ private fun RegionBadge(region: Region) {
         Region.EUROPE -> "EU"
         Region.USA -> stringResource(R.string.region_usa_badge)
     }
-    Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+    Surface(
+        shape = RoundedCornerShape(999.dp),
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+    ) {
+        Text(
+            label,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+            style = MaterialTheme.typography.labelSmall,
+        )
+    }
 }
