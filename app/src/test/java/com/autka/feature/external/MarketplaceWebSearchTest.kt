@@ -74,7 +74,7 @@ class MarketplaceWebSearchTest {
     }
 
     @Test
-    fun `term bound keeps useful words after an oversized token`() {
+    fun `term bound skips oversized token when useful words follow`() {
         val longToken = "x".repeat(80)
         val link = MarketplaceWebSearch.all(
             SearchFilter(
@@ -84,8 +84,22 @@ class MarketplaceWebSearchTest {
         ).single()
         val query = decodedQuery(link.url)
 
+        assertTrue(query.startsWith("BMW X5 site:copart.com"))
+        assertFalse(query.contains(longToken))
+    }
+
+    @Test
+    fun `single oversized token still keeps web search available`() {
+        val longToken = "x".repeat(80)
+        val link = MarketplaceWebSearch.all(
+            SearchFilter(
+                query = longToken,
+                regions = setOf(Region.USA),
+            ),
+        ).single()
+        val query = decodedQuery(link.url)
+
         assertTrue(query.startsWith("${"x".repeat(40)} site:copart.com"))
-        assertFalse(query.contains("BMW X5"))
     }
 
     @Test
