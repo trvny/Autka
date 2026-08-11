@@ -120,7 +120,7 @@ fun ImportCalculatorScreen(
         !isIncompleteLocalizedPercentage(customsRateText, numberSymbols)
     val vatRateInvalid = vatRateText.isBlank() || vatRatePercent == null &&
         !isIncompleteLocalizedPercentage(vatRateText, numberSymbols)
-    val assumptionsInvalid = shippingInvalid || customsRateInvalid || vatRateInvalid
+    val assumptionsReady = shipping != null && customsRatePercent != null && vatRatePercent != null
     val assumptionsAreDefault = shipping == defaultShippingUsd.toDouble() &&
         customsRatePercent == defaultCustomsPercent &&
         vatRatePercent == defaultVatPercent
@@ -230,7 +230,7 @@ fun ImportCalculatorScreen(
             AssumptionsCard(
                 expanded = showAssumptions,
                 assumptionsAreDefault = assumptionsAreDefault,
-                canCollapse = !assumptionsInvalid,
+                canCollapse = assumptionsReady,
                 shippingText = shippingText,
                 customsRateText = customsRateText,
                 vatRateText = vatRateText,
@@ -426,10 +426,9 @@ private fun ImportEstimateBreakdown(
                 color = MaterialTheme.colorScheme.primary,
             )
             if (exchangeRates != null && estimate.total.currency != displayCurrency) {
-                Text(
-                    "~ ${exchangeRates.convert(estimate.total, displayCurrency).formatted()}",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                CostRow(
+                    stringResource(R.string.import_total_in, displayCurrency.name),
+                    exchangeRates.convert(estimate.total, displayCurrency).formatted(),
                 )
                 if (exchangeRates.isStale) {
                     Text(
