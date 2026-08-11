@@ -4,12 +4,19 @@
     <!-- Listings -->
     <string name="search_hint">Search make, model…</string>
     <string name="cd_filters">Filters</string>
+    <string name="cd_clear_search">Clear search</string>
     <string name="retry">Retry</string>
     <string name="empty_no_match">No offers match these filters.</string>
     <string name="empty_no_offers">No offers yet. Pull a search to begin.</string>
+    <string name="listing_refresh_failed">Couldn’t refresh offers.</string>
     <string name="listing_failed_sources">Some sources didn’t respond: %1$s</string>
+    <string name="listing_source_details">View source status</string>
     <string name="listing_rates_stale">Exchange rates are indicative (offline); converted prices are approximate.</string>
     <string name="listing_estimated_landed_cost">Est. landed cost: %1$s</string>
+    <plurals name="listing_results">
+        <item quantity="one">%1$d offer</item>
+        <item quantity="other">%1$d offers</item>
+    </plurals>
 
     <!-- Detail -->
     <string name="offer">Offer</string>
@@ -48,6 +55,7 @@
     <string name="filter_sort_by">Sort by</string>
     <string name="reset">Reset</string>
     <string name="apply">Apply</string>
+    <string name="apply_count">Apply (%1$d)</string>
 
     <!-- Fuel types -->
     <string name="fuel_petrol">Petrol</string>

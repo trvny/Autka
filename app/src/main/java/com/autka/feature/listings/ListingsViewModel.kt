@@ -12,12 +12,15 @@ import com.autka.data.settings.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.util.Locale
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 @HiltViewModel
@@ -29,6 +32,7 @@ class ListingsViewModel @Inject constructor(
 
     private val filter = MutableStateFlow(SearchFilter())
     private val transient = MutableStateFlow(TransientState())
+    private var refreshJob: Job? = null
     private val userPreferences = combine(
         settingsRepository.displayCurrency,
         settingsRepository.savedSearches,
@@ -64,7 +68,7 @@ class ListingsViewModel @Inject constructor(
                     }
                     .distinctBy { it.id }
                     .sortedBy { it.displayName },
-                failedSources = t.failedSources,
+                failedSources = t.failedSources.map { it.toSourceDisplayName() },
                 errorMessage = t.errorMessage,
                 displayCurrency = preferences.currency,
                 exchangeRates = rates,
@@ -116,22 +120,34 @@ class ListingsViewModel @Inject constructor(
     }
 
     fun refresh() {
-        viewModelScope.launch {
-            transient.value = transient.value.copy(isRefreshing = true, errorMessage = null)
-            val failed = runCatching { repository.refresh(filter.value) }
-                .getOrElse {
-                    transient.value = transient.value.copy(
+        refreshJob?.cancel()
+        refreshJob = viewModelScope.launch {
+            transient.update {
+                it.copy(
+                    isRefreshing = true,
+                    errorMessage = null,
+                    failedSources = emptyList(),
+                )
+            }
+            try {
+                val failed = repository.refresh(filter.value)
+                transient.update { it.copy(isRefreshing = false, failedSources = failed) }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                transient.update {
+                    it.copy(
                         isRefreshing = false,
-                        errorMessage = it.message ?: "Failed to refresh",
+                        errorMessage = error.message ?: "Failed to refresh",
                     )
-                    return@launch
                 }
-            transient.value = transient.value.copy(isRefreshing = false, failedSources = failed)
+            }
         }
     }
 }
 
 private fun String.toSourceDisplayName(): String = when (this) {
+    "backend" -> "Autka backend"
     "mock" -> "Sample data"
     "otomoto" -> "Otomoto"
     "olx" -> "OLX"

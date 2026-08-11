@@ -4,12 +4,21 @@
     <!-- Listings -->
     <string name="search_hint">Szukaj marki, modelu…</string>
     <string name="cd_filters">Filtry</string>
+    <string name="cd_clear_search">Wyczyść wyszukiwanie</string>
     <string name="retry">Ponów</string>
     <string name="empty_no_match">Brak ofert spełniających te filtry.</string>
     <string name="empty_no_offers">Brak ofert. Rozpocznij wyszukiwanie.</string>
+    <string name="listing_refresh_failed">Nie udało się odświeżyć ofert.</string>
     <string name="listing_failed_sources">Część źródeł nie odpowiedziała: %1$s</string>
+    <string name="listing_source_details">Sprawdź stan źródeł</string>
     <string name="listing_rates_stale">Kursy walut są orientacyjne (offline); przeliczone ceny są przybliżone.</string>
     <string name="listing_estimated_landed_cost">Szac. koszt po sprowadzeniu: %1$s</string>
+    <plurals name="listing_results">
+        <item quantity="one">%1$d oferta</item>
+        <item quantity="few">%1$d oferty</item>
+        <item quantity="many">%1$d ofert</item>
+        <item quantity="other">%1$d oferty</item>
+    </plurals>
 
     <!-- Detail -->
     <string name="offer">Oferta</string>
@@ -48,6 +57,7 @@
     <string name="filter_sort_by">Sortuj według</string>
     <string name="reset">Resetuj</string>
     <string name="apply">Zastosuj</string>
+    <string name="apply_count">Zastosuj (%1$d)</string>
 
     <!-- Fuel types -->
     <string name="fuel_petrol">Benzyna</string>
