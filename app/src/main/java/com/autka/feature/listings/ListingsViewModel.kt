@@ -68,7 +68,7 @@ class ListingsViewModel @Inject constructor(
                     }
                     .distinctBy { it.id }
                     .sortedBy { it.displayName },
-                failedSources = t.failedSources,
+                failedSources = t.failedSources.map { it.toSourceDisplayName() },
                 errorMessage = t.errorMessage,
                 displayCurrency = preferences.currency,
                 exchangeRates = rates,
@@ -147,6 +147,7 @@ class ListingsViewModel @Inject constructor(
 }
 
 private fun String.toSourceDisplayName(): String = when (this) {
+    "backend" -> "Autka backend"
     "mock" -> "Sample data"
     "otomoto" -> "Otomoto"
     "olx" -> "OLX"
