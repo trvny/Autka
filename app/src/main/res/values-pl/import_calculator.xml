@@ -10,6 +10,7 @@
     <string name="import_assumptions_custom">Używane są własne wartości transportu, cła lub VAT.</string>
     <string name="import_assumptions_adjust">Dostosuj</string>
     <string name="import_assumptions_done">Gotowe</string>
+    <string name="import_assumptions_finish">Dokończ wartości poniżej, zanim zamkniesz te ustawienia.</string>
     <string name="import_assumptions_hint">Edytowalne parametry używane w tym szacunku.</string>
     <string name="import_customs_rate_percent">Cło (%)</string>
     <string name="import_vat_rate_percent">VAT (%)</string>
