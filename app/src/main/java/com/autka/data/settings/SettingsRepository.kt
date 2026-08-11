@@ -18,8 +18,10 @@ import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 
@@ -65,10 +67,13 @@ class DataStoreSettingsRepository @Inject constructor(
         if (trimmedName.isEmpty() || !filter.hasFinitePriceBounds()) return
 
         dataStore.edit { prefs ->
-            val current = decodeSavedSearches(prefs[SAVED_SEARCHES])
-            val existingId = current.firstOrNull {
-                it.filter == filter && it.displayCurrency == displayCurrency
-            }?.id
+            val existingItems = rawSavedSearchItems(prefs[SAVED_SEARCHES])
+            val decoded = existingItems.map { element -> element to decodeSavedSearch(element) }
+            val existingId = decoded.firstNotNullOfOrNull { (_, saved) ->
+                saved?.takeIf {
+                    it.filter == filter && it.displayCurrency == displayCurrency
+                }?.id
+            }
             val saved = SavedSearch(
                 id = existingId ?: UUID.randomUUID().toString(),
                 name = trimmedName,
@@ -76,44 +81,56 @@ class DataStoreSettingsRepository @Inject constructor(
                 displayCurrency = displayCurrency,
             )
             val updated = buildList {
-                add(saved)
-                current.filterNotTo(this) { it.id == saved.id }
+                add(encodeSavedSearch(saved))
+                decoded.forEach { (element, model) ->
+                    if (model?.id != saved.id) add(element)
+                }
             }
-            prefs[SAVED_SEARCHES] = encodeSavedSearches(updated)
+            prefs[SAVED_SEARCHES] = encodeRawItems(updated)
         }
     }
 
     override suspend fun deleteSavedSearch(id: String) {
         dataStore.edit { prefs ->
-            val updated = decodeSavedSearches(prefs[SAVED_SEARCHES])
-                .filterNot { it.id == id }
+            val existingItems = rawSavedSearchItems(prefs[SAVED_SEARCHES])
+            val updated = existingItems.filter { element ->
+                decodeSavedSearch(element)?.id != id
+            }
             if (updated.isEmpty()) {
                 prefs.remove(SAVED_SEARCHES)
             } else {
-                prefs[SAVED_SEARCHES] = encodeSavedSearches(updated)
+                prefs[SAVED_SEARCHES] = encodeRawItems(updated)
             }
         }
     }
 
-    private fun decodeSavedSearches(raw: String?): List<SavedSearch> {
-        if (raw.isNullOrBlank()) return emptyList()
-        val items = runCatching {
-            json.parseToJsonElement(raw).jsonObject["items"]?.jsonArray
-        }.getOrNull() ?: return emptyList()
+    private fun decodeSavedSearches(raw: String?): List<SavedSearch> =
+        rawSavedSearchItems(raw)
+            .mapNotNull(::decodeSavedSearch)
+            .distinctBy { it.id }
 
-        return items.mapNotNull { element ->
-            runCatching {
-                json.decodeFromJsonElement(SavedSearchPayload.serializer(), element)
-            }.getOrNull()?.toModelOrNull()
-        }
+    private fun rawSavedSearchItems(raw: String?): List<JsonElement> {
+        if (raw.isNullOrBlank()) return emptyList()
+        return runCatching {
+            json.parseToJsonElement(raw).jsonObject["items"]?.jsonArray?.toList()
+        }.getOrNull().orEmpty()
     }
 
-    private fun encodeSavedSearches(searches: List<SavedSearch>): String =
-        json.encodeToString(
-            SavedSearchStore(
-                items = searches.map { SavedSearchPayload.fromModel(it) },
+    private fun decodeSavedSearch(element: JsonElement): SavedSearch? =
+        runCatching {
+            json.decodeFromJsonElement(SavedSearchPayload.serializer(), element)
+        }.getOrNull()?.toModelOrNull()
+
+    private fun encodeSavedSearch(saved: SavedSearch): JsonElement =
+        json.parseToJsonElement(
+            json.encodeToString(
+                SavedSearchPayload.serializer(),
+                SavedSearchPayload.fromModel(saved),
             ),
         )
+
+    private fun encodeRawItems(items: List<JsonElement>): String =
+        JsonObject(mapOf("items" to JsonArray(items))).toString()
 
     private companion object {
         val DISPLAY_CURRENCY = stringPreferencesKey("display_currency")
@@ -121,11 +138,6 @@ class DataStoreSettingsRepository @Inject constructor(
         val DEFAULT_CURRENCY = Currency.PLN
     }
 }
-
-@Serializable
-private data class SavedSearchStore(
-    val items: List<SavedSearchPayload> = emptyList(),
-)
 
 @Serializable
 private data class SavedSearchPayload(
