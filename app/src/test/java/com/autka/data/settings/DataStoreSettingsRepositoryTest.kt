@@ -142,14 +142,18 @@ class DataStoreSettingsRepositoryTest {
     }
 
     @Test
-    fun `malformed saved search payload fails closed`() = runTest {
+    fun `malformed saved search payload recovers on the next save`() = runTest {
+        val key = stringPreferencesKey("saved_searches_v1")
         val dataStore = dataStore(backgroundScope)
-        dataStore.edit { prefs ->
-            prefs[stringPreferencesKey("saved_searches_v1")] = "{not-json"
-        }
+        dataStore.edit { prefs -> prefs[key] = "{not-json" }
         val repository = DataStoreSettingsRepository(dataStore)
 
         assertTrue(repository.savedSearches.first().isEmpty())
+        repository.saveSearch("BMW", SearchFilter(query = "BMW"), Currency.PLN)
+
+        val saved = repository.savedSearches.first().single()
+        assertEquals("BMW", saved.name)
+        assertEquals("BMW", saved.filter.query)
     }
 
     @Test
