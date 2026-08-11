@@ -26,6 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -65,7 +66,7 @@ private val CALCULATOR_FUELS = listOf(
     FuelType.LPG,
 )
 
-private const val RATE_COMPARISON_EPSILON = 0.0001
+private const val VALUE_COMPARISON_EPSILON = 0.0001
 
 @Composable
 fun ImportCalculatorRoute(
@@ -89,7 +90,8 @@ fun ImportCalculatorScreen(
 ) {
     val locale = LocalConfiguration.current.locales[0]
     val numberSymbols = remember(locale) { DecimalFormatSymbols.getInstance(locale) }
-    val defaultShippingUsd = ImportCostCalculator.DEFAULT_US_SHIPPING_USD.toLong()
+    val defaultShippingUsd = ImportCostCalculator.DEFAULT_US_SHIPPING_USD
+    val defaultShippingText = amountText(defaultShippingUsd, numberSymbols)
     val defaultCustomsPercent = ImportCostCalculator.DEFAULT_EU_CUSTOMS_DUTY_RATE * 100.0
     val defaultVatPercent = ImportCostCalculator.DEFAULT_PL_VAT_RATE * 100.0
     val defaultCustomsPercentText = ratePercentText(
@@ -104,12 +106,13 @@ fun ImportCalculatorScreen(
     var vehiclePriceText by rememberSaveable {
         mutableStateOf(ImportCostCalculator.DEFAULT_VEHICLE_PRICE_USD.toLong().toString())
     }
-    var shippingText by rememberSaveable { mutableStateOf(defaultShippingUsd.toString()) }
+    var shippingText by rememberSaveable { mutableStateOf(defaultShippingText) }
     var customsRateText by rememberSaveable { mutableStateOf(defaultCustomsPercentText) }
     var vatRateText by rememberSaveable { mutableStateOf(defaultVatPercentText) }
     var engineText by rememberSaveable { mutableStateOf("") }
     var fuelName by rememberSaveable { mutableStateOf(FuelType.PETROL.name) }
     var showAssumptions by rememberSaveable { mutableStateOf(false) }
+    var lastValidEstimate by remember { mutableStateOf<ImportCostEstimate?>(null) }
 
     val vehiclePrice = parseLocalizedNonNegativeAmount(vehiclePriceText, numberSymbols)
     val shipping = parseLocalizedNonNegativeAmount(shippingText, numberSymbols)
@@ -124,7 +127,7 @@ fun ImportCalculatorScreen(
     val vatRateInvalid = vatRateText.isBlank() || vatRatePercent == null &&
         !isIncompleteLocalizedPercentage(vatRateText, numberSymbols)
     val assumptionsReady = shipping != null && customsRatePercent != null && vatRatePercent != null
-    val assumptionsAreDefault = shipping == defaultShippingUsd.toDouble() &&
+    val assumptionsAreDefault = shipping.isNear(defaultShippingUsd) &&
         customsRatePercent.isNear(defaultCustomsPercent) &&
         vatRatePercent.isNear(defaultVatPercent)
     val fuel = FuelType.entries.firstOrNull { it.name == fuelName } ?: FuelType.PETROL
@@ -145,6 +148,13 @@ fun ImportCalculatorScreen(
         )
     } else {
         null
+    }
+
+    LaunchedEffect(estimate) {
+        if (estimate != null) lastValidEstimate = estimate
+    }
+    val displayedEstimate = estimate ?: lastValidEstimate?.takeIf {
+        showAssumptions && !assumptionsReady
     }
 
     Scaffold(
@@ -222,11 +232,12 @@ fun ImportCalculatorScreen(
                 )
             }
 
-            estimate?.let {
+            displayedEstimate?.let {
                 ImportEstimateBreakdown(
                     estimate = it,
                     displayCurrency = displayCurrency,
                     exchangeRates = exchangeRates,
+                    isPrevious = estimate == null,
                 )
             }
 
@@ -240,7 +251,7 @@ fun ImportCalculatorScreen(
                 shippingInvalid = shippingInvalid,
                 customsRateInvalid = customsRateInvalid,
                 vatRateInvalid = vatRateInvalid,
-                defaultShippingUsd = defaultShippingUsd,
+                defaultShippingText = defaultShippingText,
                 defaultCustomsPercentText = defaultCustomsPercentText,
                 defaultVatPercentText = defaultVatPercentText,
                 onExpandedChange = { showAssumptions = it },
@@ -248,7 +259,7 @@ fun ImportCalculatorScreen(
                 onCustomsRateChange = { customsRateText = it },
                 onVatRateChange = { vatRateText = it },
                 onReset = {
-                    shippingText = defaultShippingUsd.toString()
+                    shippingText = defaultShippingText
                     customsRateText = defaultCustomsPercentText
                     vatRateText = defaultVatPercentText
                 },
@@ -274,7 +285,7 @@ private fun AssumptionsCard(
     shippingInvalid: Boolean,
     customsRateInvalid: Boolean,
     vatRateInvalid: Boolean,
-    defaultShippingUsd: Long,
+    defaultShippingText: String,
     defaultCustomsPercentText: String,
     defaultVatPercentText: String,
     onExpandedChange: (Boolean) -> Unit,
@@ -300,10 +311,10 @@ private fun AssumptionsCard(
                     )
                     Text(
                         stringResource(
-                            if (assumptionsAreDefault) {
-                                R.string.import_assumptions_default
-                            } else {
-                                R.string.import_assumptions_custom
+                            when {
+                                !canCollapse -> R.string.import_assumptions_incomplete
+                                assumptionsAreDefault -> R.string.import_assumptions_default
+                                else -> R.string.import_assumptions_custom
                             },
                         ),
                         style = MaterialTheme.typography.bodySmall,
@@ -348,7 +359,7 @@ private fun AssumptionsCard(
                             if (shippingInvalid) {
                                 stringResource(R.string.import_invalid_amount)
                             } else {
-                                stringResource(R.string.import_default_shipping_usd, defaultShippingUsd)
+                                stringResource(R.string.import_default_shipping_usd, defaultShippingText)
                             },
                         )
                     },
@@ -407,6 +418,12 @@ private fun AssumptionsCard(
     }
 }
 
+private fun amountText(amount: Double, symbols: DecimalFormatSymbols): String =
+    BigDecimal.valueOf(amount)
+        .stripTrailingZeros()
+        .toPlainString()
+        .replace('.', symbols.decimalSeparator)
+
 private fun ratePercentText(rate: Double, symbols: DecimalFormatSymbols): String =
     BigDecimal.valueOf(rate)
         .movePointRight(2)
@@ -415,13 +432,14 @@ private fun ratePercentText(rate: Double, symbols: DecimalFormatSymbols): String
         .replace('.', symbols.decimalSeparator)
 
 private fun Double?.isNear(expected: Double): Boolean =
-    this != null && abs(this - expected) < RATE_COMPARISON_EPSILON
+    this != null && abs(this - expected) < VALUE_COMPARISON_EPSILON
 
 @Composable
 private fun ImportEstimateBreakdown(
     estimate: ImportCostEstimate,
     displayCurrency: Currency,
     exchangeRates: ExchangeRates?,
+    isPrevious: Boolean,
 ) {
     Card(Modifier.fillMaxWidth()) {
         Column(
@@ -429,7 +447,10 @@ private fun ImportEstimateBreakdown(
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             Text(
-                stringResource(R.string.import_estimated_total),
+                stringResource(
+                    if (isPrevious) R.string.import_previous_estimate
+                    else R.string.import_estimated_total,
+                ),
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
