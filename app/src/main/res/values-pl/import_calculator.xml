@@ -5,9 +5,11 @@
     <string name="import_invalid_amount">Wpisz nieujemną kwotę.</string>
     <string name="import_invalid_engine_cc">Wpisz dodatnią pojemność silnika albo pozostaw pole puste.</string>
     <string name="import_estimated_total">Szacowany koszt po sprowadzeniu</string>
+    <string name="import_previous_estimate">Poprzedni szacunek</string>
     <string name="import_assumptions">Założenia</string>
     <string name="import_assumptions_default">Używane są domyślne wartości transportu, cła i VAT.</string>
     <string name="import_assumptions_custom">Używane są własne wartości transportu, cła lub VAT.</string>
+    <string name="import_assumptions_incomplete">Część wartości jest jeszcze edytowana.</string>
     <string name="import_assumptions_adjust">Dostosuj</string>
     <string name="import_assumptions_done">Gotowe</string>
     <string name="import_assumptions_finish">Dokończ wartości poniżej, zanim zamkniesz te ustawienia.</string>
@@ -15,7 +17,7 @@
     <string name="import_customs_rate_percent">Cło (%)</string>
     <string name="import_vat_rate_percent">VAT (%)</string>
     <string name="import_default_percent">Domyślne / reset: %1$s%%</string>
-    <string name="import_default_shipping_usd">Domyślne / reset: %1$d USD</string>
+    <string name="import_default_shipping_usd">Domyślne / reset: %1$s USD</string>
     <string name="import_invalid_rate">Wpisz prawidłową stawkę od 0 do 100, maksymalnie z 2 miejscami po przecinku.</string>
     <string name="import_reset_assumptions">Przywróć domyślne</string>
     <string name="import_vat_result">VAT</string>
