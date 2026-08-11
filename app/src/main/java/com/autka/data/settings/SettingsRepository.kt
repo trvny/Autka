@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.autka.core.model.Currency
 import com.autka.core.model.FuelType
+import com.autka.core.model.MAX_SAVED_SEARCH_NAME_LENGTH
 import com.autka.core.model.Region
 import com.autka.core.model.SavedSearch
 import com.autka.core.model.SearchFilter
@@ -115,7 +116,6 @@ class DataStoreSettingsRepository @Inject constructor(
         val SAVED_SEARCHES = stringPreferencesKey("saved_searches_v1")
         val DEFAULT_CURRENCY = Currency.PLN
         const val MAX_SAVED_SEARCHES = 20
-        const val MAX_SAVED_SEARCH_NAME_LENGTH = 80
     }
 }
 
@@ -147,6 +147,8 @@ private data class SavedSearchPayload(
         if (id.isBlank() || name.isBlank()) return null
 
         val decodedRegions = regions.mapNotNull { enumOrNull<Region>(it) }.toSet()
+        if (regions.isNotEmpty() && decodedRegions.isEmpty()) return null
+
         return SavedSearch(
             id = id,
             name = name,
