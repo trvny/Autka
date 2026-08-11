@@ -44,6 +44,22 @@ class MarketplaceWebSearchTest {
     }
 
     @Test
+    fun `search syntax tokens cannot replace marketplace site scope`() {
+        val link = MarketplaceWebSearch.all(
+            SearchFilter(
+                query = "site:example.com -site:otomoto.pl filetype:pdf \"BMW X5\"",
+                regions = setOf(Region.POLAND),
+            ),
+        ).single()
+        val query = decodedQuery(link.url)
+
+        assertTrue(query.startsWith("BMW X5 site:otomoto.pl"))
+        assertFalse(query.contains("example.com"))
+        assertFalse(query.contains("filetype:"))
+        assertFalse(query.contains("\""))
+    }
+
+    @Test
     fun `USA web search excludes Poland-only marketplace domains`() {
         val link = MarketplaceWebSearch.all(
             SearchFilter(
@@ -86,6 +102,20 @@ class MarketplaceWebSearchTest {
 
         assertTrue(query.startsWith("BMW X5 site:copart.com"))
         assertFalse(query.contains(longToken))
+    }
+
+    @Test
+    fun `word cap is applied after oversized tokens are skipped`() {
+        val oversized = (1..6).joinToString(" ") { "x".repeat(50 + it) }
+        val link = MarketplaceWebSearch.all(
+            SearchFilter(
+                query = "$oversized BMW X5",
+                regions = setOf(Region.USA),
+            ),
+        ).single()
+        val query = decodedQuery(link.url)
+
+        assertTrue(query.startsWith("BMW X5 site:copart.com"))
     }
 
     @Test
