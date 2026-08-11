@@ -44,10 +44,13 @@ object MarketplaceWebSearch {
         val terms = boundedTerms(filter)
         if (terms.isEmpty()) return emptyList()
 
+        val usedDomains = mutableSetOf<String>()
         return Region.entries
             .filter { it in filter.regions }
             .mapNotNull { region ->
-                val domains = targets[region].orEmpty()
+                // A domain appears only in the first selected regional chip that owns it,
+                // avoiding near-duplicate Poland/Europe searches in the default state.
+                val domains = targets[region].orEmpty().filter { usedDomains.add(it) }
                 if (domains.isEmpty()) return@mapNotNull null
 
                 // Repeat sanitized terms in every OR branch so neither operator
@@ -91,7 +94,11 @@ object MarketplaceWebSearch {
     }
 
     private fun sanitizeSearchTerm(word: String): String? {
-        val literal = word.trim('"', '(', ')')
+        val literal = word
+            .replace("\"", "")
+            .replace("(", "")
+            .replace(")", "")
+            .replace("|", "")
         if (literal.isEmpty() || ':' in literal || literal.startsWith('-')) return null
         return if (literal in setOf("AND", "OR", "NOT")) {
             literal.lowercase(Locale.ROOT)
