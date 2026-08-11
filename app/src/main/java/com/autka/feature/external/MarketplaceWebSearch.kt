@@ -77,13 +77,17 @@ object MarketplaceWebSearch {
             .take(6)
 
         val accepted = mutableListOf<String>()
+        var oversizedFallback: String? = null
         for (word in words) {
-            val candidate = if (accepted.isEmpty() && word.length > 40) word.take(40) else word
-            val nextLength = accepted.sumOf { it.length } + accepted.size + candidate.length
+            if (word.length > 40) {
+                if (oversizedFallback == null) oversizedFallback = word.take(40)
+                continue
+            }
+            val nextLength = accepted.sumOf { it.length } + accepted.size + word.length
             if (nextLength > 40) continue
-            accepted += candidate
+            accepted += word
         }
-        return accepted.joinToString(" ")
+        return accepted.joinToString(" ").ifEmpty { oversizedFallback.orEmpty() }
     }
 
     private fun neutralizeLogicalOperator(word: String): String =
