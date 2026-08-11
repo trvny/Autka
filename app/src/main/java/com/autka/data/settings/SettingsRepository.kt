@@ -116,10 +116,14 @@ class DataStoreSettingsRepository @Inject constructor(
         }.getOrNull().orEmpty()
     }
 
-    private fun decodeSavedSearch(element: JsonElement): SavedSearch? =
-        runCatching {
-            json.decodeFromJsonElement(SavedSearchPayload.serializer(), element)
+    private fun decodeSavedSearch(element: JsonElement): SavedSearch? {
+        val payloadObject = element as? JsonObject ?: return null
+        if (!SavedSearchPayload.knownKeys.containsAll(payloadObject.keys)) return null
+
+        return runCatching {
+            json.decodeFromJsonElement(SavedSearchPayload.serializer(), payloadObject)
         }.getOrNull()?.toModelOrNull()
+    }
 
     private fun encodeSavedSearch(saved: SavedSearch): JsonElement =
         json.parseToJsonElement(
@@ -190,6 +194,13 @@ private data class SavedSearchPayload(
     }
 
     companion object {
+        val knownKeys: Set<String> by lazy {
+            val descriptor = serializer().descriptor
+            buildSet {
+                repeat(descriptor.elementsCount) { index -> add(descriptor.getElementName(index)) }
+            }
+        }
+
         fun fromModel(saved: SavedSearch): SavedSearchPayload = with(saved.filter) {
             SavedSearchPayload(
                 id = saved.id,
