@@ -95,6 +95,24 @@ class DataStoreSettingsRepositoryTest {
     }
 
     @Test
+    fun `non-finite price bounds are not serialized`() = runTest {
+        val repository = repository(backgroundScope)
+
+        repository.saveSearch(
+            "NaN price",
+            SearchFilter(minPrice = Double.NaN),
+            Currency.PLN,
+        )
+        repository.saveSearch(
+            "Infinite price",
+            SearchFilter(maxPrice = Double.POSITIVE_INFINITY),
+            Currency.PLN,
+        )
+
+        assertTrue(repository.savedSearches.first().isEmpty())
+    }
+
+    @Test
     fun `malformed saved search payload fails closed`() = runTest {
         val dataStore = dataStore(backgroundScope)
         dataStore.edit { prefs ->
