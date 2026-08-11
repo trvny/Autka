@@ -117,7 +117,11 @@ class ListingsViewModel @Inject constructor(
 
     fun refresh() {
         viewModelScope.launch {
-            transient.value = transient.value.copy(isRefreshing = true, errorMessage = null)
+            transient.value = transient.value.copy(
+                isRefreshing = true,
+                errorMessage = null,
+                failedSources = emptyList(),
+            )
             val failed = runCatching { repository.refresh(filter.value) }
                 .getOrElse {
                     transient.value = transient.value.copy(
