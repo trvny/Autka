@@ -235,7 +235,11 @@ private data class SavedSearchPayload(
                 maxMileageKm = maxMileageKm,
                 fuelTypes = fuelTypes.sortedBy { it.ordinal }.map { it.name },
                 transmissions = transmissions.sortedBy { it.ordinal }.map { it.name },
-                regions = regions.sortedBy { it.ordinal }.map { it.name },
+                regions = regions
+                    .takeUnless { it == Region.entries.toSet() }
+                    ?.sortedBy { it.ordinal }
+                    ?.map { it.name }
+                    .orEmpty(),
                 sourceIds = sourceIds.sorted(),
                 sort = sort.name,
                 displayCurrency = saved.displayCurrency.name,
