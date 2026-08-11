@@ -61,7 +61,7 @@ class DataStoreSettingsRepository @Inject constructor(
         displayCurrency: Currency,
     ) {
         val trimmedName = name.trim().take(MAX_SAVED_SEARCH_NAME_LENGTH)
-        if (trimmedName.isEmpty()) return
+        if (trimmedName.isEmpty() || !filter.hasFinitePriceBounds()) return
 
         dataStore.edit { prefs ->
             val current = decodeSavedSearches(prefs[SAVED_SEARCHES])
@@ -194,6 +194,9 @@ private data class SavedSearchPayload(
         }
     }
 }
+
+private fun SearchFilter.hasFinitePriceBounds(): Boolean =
+    (minPrice == null || minPrice.isFinite()) && (maxPrice == null || maxPrice.isFinite())
 
 private inline fun <reified T : Enum<T>> enumOrNull(name: String): T? =
     enumValues<T>().firstOrNull { it.name == name }
