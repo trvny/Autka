@@ -153,6 +153,41 @@ class DataStoreSettingsRepositoryTest {
     }
 
     @Test
+    fun `opaque entries survive saving another search`() = runTest {
+        val key = stringPreferencesKey("saved_searches_v1")
+        val dataStore = dataStore(backgroundScope)
+        dataStore.edit { prefs ->
+            prefs[key] =
+                """{"items":[
+                    {"id":"good","name":"Good","query":"BMW"},
+                    {"id":"future","name":"Future","fuelTypes":["HYDROGEN"]}
+                ]}""".trimIndent()
+        }
+        val repository = DataStoreSettingsRepository(dataStore, json())
+
+        repository.saveSearch("Audi", SearchFilter(query = "Audi"), Currency.PLN)
+
+        assertEquals(listOf("Audi", "Good"), repository.savedSearches.first().map { it.name })
+        assertTrue(dataStore.data.first()[key].orEmpty().contains("HYDROGEN"))
+    }
+
+    @Test
+    fun `duplicate stored ids expose only one saved search`() = runTest {
+        val dataStore = dataStore(backgroundScope)
+        dataStore.edit { prefs ->
+            prefs[stringPreferencesKey("saved_searches_v1")] =
+                """{"items":[
+                    {"id":"same","name":"First","query":"BMW"},
+                    {"id":"same","name":"Second","query":"Audi"}
+                ]}""".trimIndent()
+        }
+        val repository = DataStoreSettingsRepository(dataStore, json())
+
+        val saved = repository.savedSearches.first().single()
+        assertEquals("First", saved.name)
+    }
+
+    @Test
     fun `unsupported enum values fail closed instead of widening or reinterpreting scope`() = runTest {
         val dataStore = dataStore(backgroundScope)
         dataStore.edit { prefs ->
