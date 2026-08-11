@@ -20,6 +20,8 @@ data class ListingsUiState(
     val exchangeRates: ExchangeRates? = null,
 ) {
     val activeFilterCount: Int get() = filter.activeCount()
-    val canSaveSearch: Boolean get() = filter.query.isNotBlank() || activeFilterCount > 0
+    val canSaveSearch: Boolean
+        get() = (filter.query.isNotBlank() || activeFilterCount > 0) &&
+            savedSearches.none { it.filter == filter && it.displayCurrency == displayCurrency }
     val ratesAreStale: Boolean get() = exchangeRates?.isStale ?: true
 }
