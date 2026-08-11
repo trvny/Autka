@@ -16,7 +16,7 @@ data/local        Room database, DAO, entities and mappers; local offer cache is
 data/remote       Backend API, live BackendCarOfferSource and debug MockCarOfferSource
 data/repository   Cached offers, exchange rates, settings and source-health repositories
 data/imports      Import-service catalogue and backend/default fallback
-data/settings     App-wide persisted settings such as display currency
+data/settings     App-wide Preferences DataStore settings and lightweight saved-search snapshots
 feature/listings  Search, filters and result list
 feature/detail    Cache-backed offer detail and inline US import estimate
 feature/importcalc Standalone USA -> Poland import calculator
@@ -88,7 +88,7 @@ in the UI rather than silently assuming a lower excise rate.
 Duty, VAT edge cases, customs classification/origin relief and shipping defaults remain
 indicative inputs. The result is an estimate, not a customs quote.
 
-## Currency
+## Currency and local preferences
 
 Offers may arrive in PLN, EUR or USD. `ExchangeRates` converts through a PLN base so price
 filtering and sorting can compare mixed-currency results in the user's selected display
@@ -96,8 +96,10 @@ currency.
 
 `ExchangeRateRepository` is offline-first. It can seed from persisted or built-in rates and
 refreshes from the NBP public API. Cached/fallback rates remain marked stale until a fresh
-NBP request succeeds. The selected display currency is persisted through Preferences
-DataStore and shared across listings, detail and import-calculator screens.
+NBP request succeeds. Preferences DataStore persists the selected display currency plus
+small local saved-search snapshots. A saved search includes the complete `SearchFilter`
+and its display currency so numeric price bounds retain their meaning when restored. These
+snapshots remain separate from the Room offer cache and contain no marketplace listing data.
 
 Large live catalogues will eventually need server-side normalized prices and cursor
 pagination; until then Android requests one atomic complete set and performs price

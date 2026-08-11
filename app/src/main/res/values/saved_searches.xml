@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="saved_searches">Saved searches</string>
+    <string name="save_search">Save search</string>
+    <string name="saved_search_name">Search name</string>
+    <string name="saved_search_default_name">Saved search</string>
+    <string name="saved_search_delete">Delete saved search %1$s</string>
+    <string name="saved_search_save">Save</string>
+    <string name="saved_search_cancel">Cancel</string>
+</resources>
