@@ -26,10 +26,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -46,6 +47,7 @@ import com.autka.core.model.ExchangeRates
 import com.autka.core.model.FuelType
 import com.autka.core.model.ImportCostCalculator
 import com.autka.core.model.ImportCostEstimate
+import com.autka.core.model.Money
 import com.autka.ui.components.formatted
 import com.autka.ui.components.isIncompleteLocalizedAmount
 import com.autka.ui.components.isIncompleteLocalizedPercentage
@@ -67,6 +69,41 @@ private val CALCULATOR_FUELS = listOf(
 )
 
 private const val VALUE_COMPARISON_EPSILON = 0.0001
+
+private val ImportCostEstimateSaver = listSaver<ImportCostEstimate, Any>(
+    save = { estimate ->
+        listOf(
+            estimate.vehiclePrice.amount,
+            estimate.vehiclePrice.currency.name,
+            estimate.shipping.amount,
+            estimate.shipping.currency.name,
+            estimate.customsDuty.amount,
+            estimate.customsDuty.currency.name,
+            estimate.exciseDuty.amount,
+            estimate.exciseDuty.currency.name,
+            estimate.vat.amount,
+            estimate.vat.currency.name,
+            estimate.total.amount,
+            estimate.total.currency.name,
+            estimate.usesConservativeExcise,
+        )
+    },
+    restore = { values ->
+        fun moneyAt(index: Int) = Money(
+            amount = values[index] as Double,
+            currency = Currency.valueOf(values[index + 1] as String),
+        )
+        ImportCostEstimate(
+            vehiclePrice = moneyAt(0),
+            shipping = moneyAt(2),
+            customsDuty = moneyAt(4),
+            exciseDuty = moneyAt(6),
+            vat = moneyAt(8),
+            total = moneyAt(10),
+            usesConservativeExcise = values[12] as Boolean,
+        )
+    },
+)
 
 @Composable
 fun ImportCalculatorRoute(
@@ -112,7 +149,6 @@ fun ImportCalculatorScreen(
     var engineText by rememberSaveable { mutableStateOf("") }
     var fuelName by rememberSaveable { mutableStateOf(FuelType.PETROL.name) }
     var showAssumptions by rememberSaveable { mutableStateOf(false) }
-    var lastValidEstimate by remember { mutableStateOf<ImportCostEstimate?>(null) }
 
     val vehiclePrice = parseLocalizedNonNegativeAmount(vehiclePriceText, numberSymbols)
     val shipping = parseLocalizedNonNegativeAmount(shippingText, numberSymbols)
@@ -150,12 +186,23 @@ fun ImportCalculatorScreen(
         null
     }
 
-    LaunchedEffect(estimate) {
-        if (estimate != null) lastValidEstimate = estimate
+    val fallbackEstimate = remember {
+        ImportCostCalculator.estimate(
+            vehiclePriceUsd = ImportCostCalculator.DEFAULT_VEHICLE_PRICE_USD,
+            shippingUsd = ImportCostCalculator.DEFAULT_US_SHIPPING_USD,
+            engineCapacityCc = null,
+            fuelType = FuelType.PETROL,
+        )
     }
-    val displayedEstimate = estimate ?: lastValidEstimate?.takeIf {
-        showAssumptions && !assumptionsReady
+    var lastValidEstimate by rememberSaveable(stateSaver = ImportCostEstimateSaver) {
+        mutableStateOf(estimate ?: fallbackEstimate)
     }
+    SideEffect {
+        if (estimate != null && estimate != lastValidEstimate) {
+            lastValidEstimate = estimate
+        }
+    }
+    val displayedEstimate = estimate ?: lastValidEstimate
 
     Scaffold(
         topBar = {
@@ -232,14 +279,12 @@ fun ImportCalculatorScreen(
                 )
             }
 
-            displayedEstimate?.let {
-                ImportEstimateBreakdown(
-                    estimate = it,
-                    displayCurrency = displayCurrency,
-                    exchangeRates = exchangeRates,
-                    isPrevious = estimate == null,
-                )
-            }
+            ImportEstimateBreakdown(
+                estimate = displayedEstimate,
+                displayCurrency = displayCurrency,
+                exchangeRates = exchangeRates,
+                isPrevious = estimate == null,
+            )
 
             AssumptionsCard(
                 expanded = showAssumptions,
