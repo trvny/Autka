@@ -91,15 +91,13 @@ object MarketplaceWebSearch {
     }
 
     private fun sanitizeSearchTerm(word: String): String? {
-        if (word.startsWith('!')) return null
-
         val dequoted = word
             .replace("\"", "")
             .replace("(", "")
             .replace(")", "")
             .replace("|", "")
             .trimStart('-')
-        if (dequoted.isEmpty()) return null
+        if (dequoted.isEmpty() || dequoted.startsWith('!')) return null
 
         val colonPrefix = dequoted.substringBefore(':', missingDelimiterValue = "")
         if (':' in dequoted && colonPrefix.isNotEmpty() && colonPrefix.all(Char::isLetter)) return null
