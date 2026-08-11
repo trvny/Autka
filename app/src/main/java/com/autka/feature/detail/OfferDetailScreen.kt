@@ -55,6 +55,7 @@ import com.autka.feature.external.ImportServicesSection
 import com.autka.ui.components.EmptyState
 import com.autka.ui.components.LoadingIndicator
 import com.autka.ui.components.OfferImage
+import com.autka.ui.components.displayLabel
 import com.autka.ui.components.formatted
 import com.autka.ui.components.isIncompleteLocalizedAmount
 import com.autka.ui.components.kmOrDash
@@ -137,9 +138,12 @@ fun OfferDetailScreen(
                 ListingActions(title = o.title, listingUrl = o.listingUrl)
                 SpecRow(stringResource(R.string.spec_year), o.year?.toString() ?: "--")
                 SpecRow(stringResource(R.string.spec_mileage), o.mileageKm.kmOrDash())
-                SpecRow(stringResource(R.string.spec_fuel), o.fuelType.name)
-                SpecRow(stringResource(R.string.spec_transmission), o.transmission.name)
-                SpecRow(stringResource(R.string.spec_power), o.powerHp?.let { "$it hp" } ?: "--")
+                SpecRow(stringResource(R.string.spec_fuel), o.fuelType.displayLabel())
+                SpecRow(stringResource(R.string.spec_transmission), o.transmission.displayLabel())
+                SpecRow(
+                    stringResource(R.string.spec_power),
+                    o.powerHp?.let { stringResource(R.string.spec_power_hp, it) } ?: "--",
+                )
                 SpecRow(stringResource(R.string.spec_location), o.location ?: "--")
                 uiState.importEstimate?.let { est ->
                     ImportBreakdown(
