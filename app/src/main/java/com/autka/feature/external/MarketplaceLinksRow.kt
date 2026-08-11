@@ -48,6 +48,7 @@ fun MarketplaceLinksRow(
         MarketplaceSearchLinks.all(filter, affiliateId)
     }
     val webSearchLinks = remember(filter) { MarketplaceWebSearch.all(filter) }
+    if (links.isEmpty() && webSearchLinks.isEmpty()) return
 
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
