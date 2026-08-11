@@ -41,7 +41,6 @@ interface SettingsRepository {
 @Singleton
 class DataStoreSettingsRepository @Inject constructor(
     private val dataStore: DataStore<Preferences>,
-    private val json: Json,
 ) : SettingsRepository {
 
     override val displayCurrency: Flow<Currency> =
@@ -112,7 +111,7 @@ class DataStoreSettingsRepository @Inject constructor(
     private fun rawSavedSearchItems(raw: String?): List<JsonElement> {
         if (raw.isNullOrBlank()) return emptyList()
         return runCatching {
-            json.parseToJsonElement(raw).jsonObject["items"]?.jsonArray?.toList()
+            SAVED_SEARCH_JSON.parseToJsonElement(raw).jsonObject["items"]?.jsonArray?.toList()
         }.getOrNull().orEmpty()
     }
 
@@ -121,16 +120,14 @@ class DataStoreSettingsRepository @Inject constructor(
         if (!SavedSearchPayload.knownKeys.containsAll(payloadObject.keys)) return null
 
         return runCatching {
-            json.decodeFromJsonElement(SavedSearchPayload.serializer(), payloadObject)
+            SAVED_SEARCH_JSON.decodeFromJsonElement(SavedSearchPayload.serializer(), payloadObject)
         }.getOrNull()?.toModelOrNull()
     }
 
     private fun encodeSavedSearch(saved: SavedSearch): JsonElement =
-        json.parseToJsonElement(
-            json.encodeToString(
-                SavedSearchPayload.serializer(),
-                SavedSearchPayload.fromModel(saved),
-            ),
+        SAVED_SEARCH_JSON.encodeToJsonElement(
+            SavedSearchPayload.serializer(),
+            SavedSearchPayload.fromModel(saved),
         )
 
     private fun encodeRawItems(items: List<JsonElement>): String =
@@ -140,6 +137,11 @@ class DataStoreSettingsRepository @Inject constructor(
         val DISPLAY_CURRENCY = stringPreferencesKey("display_currency")
         val SAVED_SEARCHES = stringPreferencesKey("saved_searches_v1")
         val DEFAULT_CURRENCY = Currency.PLN
+        val SAVED_SEARCH_JSON = Json {
+            ignoreUnknownKeys = false
+            coerceInputValues = false
+            encodeDefaults = false
+        }
     }
 }
 
