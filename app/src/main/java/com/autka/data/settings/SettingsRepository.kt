@@ -30,7 +30,7 @@ interface SettingsRepository {
     val savedSearches: Flow<List<SavedSearch>>
 
     suspend fun setDisplayCurrency(currency: Currency)
-    suspend fun saveSearch(name: String, filter: SearchFilter)
+    suspend fun saveSearch(name: String, filter: SearchFilter, displayCurrency: Currency)
     suspend fun deleteSavedSearch(id: String)
 }
 
@@ -54,17 +54,24 @@ class DataStoreSettingsRepository @Inject constructor(
         dataStore.edit { prefs -> prefs[DISPLAY_CURRENCY] = currency.name }
     }
 
-    override suspend fun saveSearch(name: String, filter: SearchFilter) {
+    override suspend fun saveSearch(
+        name: String,
+        filter: SearchFilter,
+        displayCurrency: Currency,
+    ) {
         val trimmedName = name.trim().take(MAX_SAVED_SEARCH_NAME_LENGTH)
         if (trimmedName.isEmpty()) return
 
         dataStore.edit { prefs ->
             val current = decodeSavedSearches(prefs[SAVED_SEARCHES])
-            val existingId = current.firstOrNull { it.filter == filter }?.id
+            val existingId = current.firstOrNull {
+                it.filter == filter && it.displayCurrency == displayCurrency
+            }?.id
             val saved = SavedSearch(
                 id = existingId ?: UUID.randomUUID().toString(),
                 name = trimmedName,
                 filter = filter,
+                displayCurrency = displayCurrency,
             )
             val updated = buildList {
                 add(saved)
@@ -92,14 +99,14 @@ class DataStoreSettingsRepository @Inject constructor(
     private fun decodeSavedSearches(raw: String?): List<SavedSearch> {
         if (raw.isNullOrBlank()) return emptyList()
         return runCatching {
-            json.decodeFromString<SavedSearchStore>(raw).items.mapNotNull(SavedSearchPayload::toModelOrNull)
+            json.decodeFromString<SavedSearchStore>(raw).items.mapNotNull { it.toModelOrNull() }
         }.getOrDefault(emptyList())
     }
 
     private fun encodeSavedSearches(searches: List<SavedSearch>): String =
         json.encodeToString(
             SavedSearchStore(
-                items = searches.map(SavedSearchPayload::fromModel),
+                items = searches.map { SavedSearchPayload.fromModel(it) },
             ),
         )
 
@@ -134,6 +141,7 @@ private data class SavedSearchPayload(
     val regions: List<String> = emptyList(),
     val sourceIds: List<String> = emptyList(),
     val sort: String = SortOrder.NEWEST.name,
+    val displayCurrency: String = Currency.PLN.name,
 ) {
     fun toModelOrNull(): SavedSearch? {
         if (id.isBlank() || name.isBlank()) return null
@@ -157,6 +165,7 @@ private data class SavedSearchPayload(
                 sourceIds = sourceIds.toSet(),
                 sort = enumOrNull<SortOrder>(sort) ?: SortOrder.NEWEST,
             ),
+            displayCurrency = enumOrNull<Currency>(displayCurrency) ?: Currency.PLN,
         )
     }
 
@@ -178,6 +187,7 @@ private data class SavedSearchPayload(
                 regions = regions.sortedBy { it.ordinal }.map { it.name },
                 sourceIds = sourceIds.sorted(),
                 sort = sort.name,
+                displayCurrency = saved.displayCurrency.name,
             )
         }
     }
