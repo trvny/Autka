@@ -18,7 +18,6 @@ import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.decodeFromJsonElement
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
@@ -103,9 +102,9 @@ class DataStoreSettingsRepository @Inject constructor(
         }.getOrNull() ?: return emptyList()
 
         return items.mapNotNull { element ->
-            runCatching { json.decodeFromJsonElement<SavedSearchPayload>(element) }
-                .getOrNull()
-                ?.toModelOrNull()
+            runCatching {
+                json.decodeFromJsonElement(SavedSearchPayload.serializer(), element)
+            }.getOrNull()?.toModelOrNull()
         }
     }
 
