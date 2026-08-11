@@ -196,6 +196,7 @@ class DataStoreSettingsRepositoryTest {
                     {"id":"fuel","name":"Fuel","fuelTypes":["FUTURE_FUEL"]},
                     {"id":"gearbox","name":"Gearbox","transmissions":["CVT_FUTURE"]},
                     {"id":"region","name":"Region","regions":["MARS"]},
+                    {"id":"sort","name":"Sort","sort":"FUTURE_SORT"},
                     {"id":"currency","name":"Currency","displayCurrency":"CHF_FUTURE"}
                 ]}""".trimIndent()
         }
