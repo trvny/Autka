@@ -47,7 +47,7 @@ class MarketplaceWebSearchTest {
     fun `search syntax tokens cannot replace marketplace site scope`() {
         val link = MarketplaceWebSearch.all(
             SearchFilter(
-                query = "site:example.com -site:otomoto.pl filetype:pdf \"BMW X5\"",
+                query = "site:example.com -site:otomoto.pl filetype:pdf \"BM\"W X5 |",
                 regions = setOf(Region.POLAND),
             ),
         ).single()
@@ -57,6 +57,7 @@ class MarketplaceWebSearchTest {
         assertFalse(query.contains("example.com"))
         assertFalse(query.contains("filetype:"))
         assertFalse(query.contains("\""))
+        assertFalse(query.contains(" | "))
     }
 
     @Test
@@ -72,6 +73,25 @@ class MarketplaceWebSearchTest {
         assertTrue(query.contains("Mustang Mach-E site:cars.com"))
         assertTrue(query.contains("Mustang Mach-E site:autotrader.com"))
         assertFalse(query.contains("site:otomoto.pl"))
+    }
+
+    @Test
+    fun `overlapping regional domains appear in only one web chip`() {
+        val links = MarketplaceWebSearch.all(
+            SearchFilter(
+                query = "BMW X5",
+                regions = setOf(Region.POLAND, Region.EUROPE),
+            ),
+        )
+
+        assertEquals(2, links.size)
+        val polandQuery = decodedQuery(links.single { it.region == Region.POLAND }.url)
+        val europeQuery = decodedQuery(links.single { it.region == Region.EUROPE }.url)
+        assertTrue(polandQuery.contains("site:autouncle.pl"))
+        assertTrue(polandQuery.contains("site:autoscout24.pl"))
+        assertFalse(europeQuery.contains("site:autouncle.pl"))
+        assertFalse(europeQuery.contains("site:autoscout24.pl"))
+        assertTrue(europeQuery.contains("site:mobile.de"))
     }
 
     @Test
