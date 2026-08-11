@@ -13,6 +13,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.Card
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -25,9 +26,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -44,6 +47,7 @@ import com.autka.core.model.ExchangeRates
 import com.autka.core.model.FuelType
 import com.autka.core.model.ImportCostCalculator
 import com.autka.core.model.ImportCostEstimate
+import com.autka.core.model.Money
 import com.autka.ui.components.formatted
 import com.autka.ui.components.isIncompleteLocalizedAmount
 import com.autka.ui.components.isIncompleteLocalizedPercentage
@@ -52,6 +56,7 @@ import com.autka.ui.components.parseLocalizedPercentage
 import com.autka.ui.components.parsePositiveInteger
 import java.math.BigDecimal
 import java.text.DecimalFormatSymbols
+import kotlin.math.abs
 
 private val CALCULATOR_FUELS = listOf(
     FuelType.PETROL,
@@ -61,6 +66,43 @@ private val CALCULATOR_FUELS = listOf(
     FuelType.ELECTRIC,
     FuelType.HYDROGEN,
     FuelType.LPG,
+)
+
+private const val VALUE_COMPARISON_EPSILON = 0.0001
+
+private val ImportCostEstimateSaver = listSaver<ImportCostEstimate, Any>(
+    save = { estimate ->
+        listOf(
+            estimate.vehiclePrice.amount,
+            estimate.vehiclePrice.currency.name,
+            estimate.shipping.amount,
+            estimate.shipping.currency.name,
+            estimate.customsDuty.amount,
+            estimate.customsDuty.currency.name,
+            estimate.exciseDuty.amount,
+            estimate.exciseDuty.currency.name,
+            estimate.vat.amount,
+            estimate.vat.currency.name,
+            estimate.total.amount,
+            estimate.total.currency.name,
+            estimate.usesConservativeExcise,
+        )
+    },
+    restore = { values ->
+        fun moneyAt(index: Int) = Money(
+            amount = values[index] as Double,
+            currency = Currency.valueOf(values[index + 1] as String),
+        )
+        ImportCostEstimate(
+            vehiclePrice = moneyAt(0),
+            shipping = moneyAt(2),
+            customsDuty = moneyAt(4),
+            exciseDuty = moneyAt(6),
+            vat = moneyAt(8),
+            total = moneyAt(10),
+            usesConservativeExcise = values[12] as Boolean,
+        )
+    },
 )
 
 @Composable
@@ -85,7 +127,10 @@ fun ImportCalculatorScreen(
 ) {
     val locale = LocalConfiguration.current.locales[0]
     val numberSymbols = remember(locale) { DecimalFormatSymbols.getInstance(locale) }
-    val defaultShippingUsd = ImportCostCalculator.DEFAULT_US_SHIPPING_USD.toLong()
+    val defaultShippingUsd = ImportCostCalculator.DEFAULT_US_SHIPPING_USD
+    val defaultShippingText = amountText(defaultShippingUsd, numberSymbols)
+    val defaultCustomsPercent = ImportCostCalculator.DEFAULT_EU_CUSTOMS_DUTY_RATE * 100.0
+    val defaultVatPercent = ImportCostCalculator.DEFAULT_PL_VAT_RATE * 100.0
     val defaultCustomsPercentText = ratePercentText(
         ImportCostCalculator.DEFAULT_EU_CUSTOMS_DUTY_RATE,
         numberSymbols,
@@ -98,11 +143,12 @@ fun ImportCalculatorScreen(
     var vehiclePriceText by rememberSaveable {
         mutableStateOf(ImportCostCalculator.DEFAULT_VEHICLE_PRICE_USD.toLong().toString())
     }
-    var shippingText by rememberSaveable { mutableStateOf(defaultShippingUsd.toString()) }
+    var shippingText by rememberSaveable { mutableStateOf(defaultShippingText) }
     var customsRateText by rememberSaveable { mutableStateOf(defaultCustomsPercentText) }
     var vatRateText by rememberSaveable { mutableStateOf(defaultVatPercentText) }
     var engineText by rememberSaveable { mutableStateOf("") }
     var fuelName by rememberSaveable { mutableStateOf(FuelType.PETROL.name) }
+    var showAssumptions by rememberSaveable { mutableStateOf(false) }
 
     val vehiclePrice = parseLocalizedNonNegativeAmount(vehiclePriceText, numberSymbols)
     val shipping = parseLocalizedNonNegativeAmount(shippingText, numberSymbols)
@@ -116,6 +162,10 @@ fun ImportCalculatorScreen(
         !isIncompleteLocalizedPercentage(customsRateText, numberSymbols)
     val vatRateInvalid = vatRateText.isBlank() || vatRatePercent == null &&
         !isIncompleteLocalizedPercentage(vatRateText, numberSymbols)
+    val assumptionsReady = shipping != null && customsRatePercent != null && vatRatePercent != null
+    val assumptionsAreDefault = shipping.isNear(defaultShippingUsd) &&
+        customsRatePercent.isNear(defaultCustomsPercent) &&
+        vatRatePercent.isNear(defaultVatPercent)
     val fuel = FuelType.entries.firstOrNull { it.name == fuelName } ?: FuelType.PETROL
     val engineRequired = fuel != FuelType.ELECTRIC && fuel != FuelType.HYDROGEN
     val engineCc = if (engineRequired) parsePositiveInteger(engineText, numberSymbols) else null
@@ -135,6 +185,24 @@ fun ImportCalculatorScreen(
     } else {
         null
     }
+
+    val fallbackEstimate = remember {
+        ImportCostCalculator.estimate(
+            vehiclePriceUsd = ImportCostCalculator.DEFAULT_VEHICLE_PRICE_USD,
+            shippingUsd = ImportCostCalculator.DEFAULT_US_SHIPPING_USD,
+            engineCapacityCc = null,
+            fuelType = FuelType.PETROL,
+        )
+    }
+    var lastValidEstimate by rememberSaveable(stateSaver = ImportCostEstimateSaver) {
+        mutableStateOf(estimate ?: fallbackEstimate)
+    }
+    SideEffect {
+        if (estimate != null && estimate != lastValidEstimate) {
+            lastValidEstimate = estimate
+        }
+    }
+    val displayedEstimate = estimate ?: lastValidEstimate
 
     Scaffold(
         topBar = {
@@ -176,90 +244,6 @@ fun ImportCalculatorScreen(
 
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    stringResource(R.string.import_assumptions),
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                )
-                Text(
-                    stringResource(R.string.import_assumptions_hint),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                OutlinedTextField(
-                    value = shippingText,
-                    onValueChange = { shippingText = it },
-                    label = { Text(stringResource(R.string.import_shipping_usd)) },
-                    singleLine = true,
-                    isError = shippingInvalid,
-                    supportingText = {
-                        Text(
-                            if (shippingInvalid) {
-                                stringResource(R.string.import_invalid_amount)
-                            } else {
-                                stringResource(R.string.import_default_shipping_usd, defaultShippingUsd)
-                            },
-                        )
-                    },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    OutlinedTextField(
-                        value = customsRateText,
-                        onValueChange = { customsRateText = it },
-                        label = { Text(stringResource(R.string.import_customs_rate_percent)) },
-                        singleLine = true,
-                        isError = customsRateInvalid,
-                        supportingText = {
-                            Text(
-                                if (customsRateInvalid) {
-                                    stringResource(R.string.import_invalid_rate)
-                                } else {
-                                    stringResource(
-                                        R.string.import_default_percent,
-                                        defaultCustomsPercentText,
-                                    )
-                                },
-                            )
-                        },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        modifier = Modifier.weight(1f),
-                    )
-                    OutlinedTextField(
-                        value = vatRateText,
-                        onValueChange = { vatRateText = it },
-                        label = { Text(stringResource(R.string.import_vat_rate_percent)) },
-                        singleLine = true,
-                        isError = vatRateInvalid,
-                        supportingText = {
-                            Text(
-                                if (vatRateInvalid) {
-                                    stringResource(R.string.import_invalid_rate)
-                                } else {
-                                    stringResource(
-                                        R.string.import_default_percent,
-                                        defaultVatPercentText,
-                                    )
-                                },
-                            )
-                        },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-                TextButton(
-                    onClick = {
-                        shippingText = defaultShippingUsd.toString()
-                        customsRateText = defaultCustomsPercentText
-                        vatRateText = defaultVatPercentText
-                    },
-                ) {
-                    Text(stringResource(R.string.import_reset_assumptions))
-                }
-            }
-
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
                     stringResource(R.string.import_fuel_type),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
@@ -295,13 +279,36 @@ fun ImportCalculatorScreen(
                 )
             }
 
-            estimate?.let {
-                ImportEstimateBreakdown(
-                    estimate = it,
-                    displayCurrency = displayCurrency,
-                    exchangeRates = exchangeRates,
-                )
-            }
+            ImportEstimateBreakdown(
+                estimate = displayedEstimate,
+                displayCurrency = displayCurrency,
+                exchangeRates = exchangeRates,
+                isPrevious = estimate == null,
+            )
+
+            AssumptionsCard(
+                expanded = showAssumptions,
+                assumptionsAreDefault = assumptionsAreDefault,
+                canCollapse = assumptionsReady,
+                shippingText = shippingText,
+                customsRateText = customsRateText,
+                vatRateText = vatRateText,
+                shippingInvalid = shippingInvalid,
+                customsRateInvalid = customsRateInvalid,
+                vatRateInvalid = vatRateInvalid,
+                defaultShippingText = defaultShippingText,
+                defaultCustomsPercentText = defaultCustomsPercentText,
+                defaultVatPercentText = defaultVatPercentText,
+                onExpandedChange = { showAssumptions = it },
+                onShippingChange = { shippingText = it },
+                onCustomsRateChange = { customsRateText = it },
+                onVatRateChange = { vatRateText = it },
+                onReset = {
+                    shippingText = defaultShippingText
+                    customsRateText = defaultCustomsPercentText
+                    vatRateText = defaultVatPercentText
+                },
+            )
 
             Text(
                 stringResource(R.string.import_calculator_disclaimer),
@@ -312,6 +319,156 @@ fun ImportCalculatorScreen(
     }
 }
 
+@Composable
+private fun AssumptionsCard(
+    expanded: Boolean,
+    assumptionsAreDefault: Boolean,
+    canCollapse: Boolean,
+    shippingText: String,
+    customsRateText: String,
+    vatRateText: String,
+    shippingInvalid: Boolean,
+    customsRateInvalid: Boolean,
+    vatRateInvalid: Boolean,
+    defaultShippingText: String,
+    defaultCustomsPercentText: String,
+    defaultVatPercentText: String,
+    onExpandedChange: (Boolean) -> Unit,
+    onShippingChange: (String) -> Unit,
+    onCustomsRateChange: (String) -> Unit,
+    onVatRateChange: (String) -> Unit,
+    onReset: () -> Unit,
+) {
+    Card(Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        stringResource(R.string.import_assumptions),
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        stringResource(
+                            when {
+                                !canCollapse -> R.string.import_assumptions_incomplete
+                                assumptionsAreDefault -> R.string.import_assumptions_default
+                                else -> R.string.import_assumptions_custom
+                            },
+                        ),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                TextButton(
+                    enabled = !expanded || canCollapse,
+                    onClick = { onExpandedChange(!expanded) },
+                ) {
+                    Text(
+                        stringResource(
+                            if (expanded) R.string.import_assumptions_done
+                            else R.string.import_assumptions_adjust,
+                        ),
+                    )
+                }
+            }
+
+            if (expanded && !canCollapse) {
+                Text(
+                    stringResource(R.string.import_assumptions_finish),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
+
+            if (expanded) {
+                Text(
+                    stringResource(R.string.import_assumptions_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                OutlinedTextField(
+                    value = shippingText,
+                    onValueChange = onShippingChange,
+                    label = { Text(stringResource(R.string.import_shipping_usd)) },
+                    singleLine = true,
+                    isError = shippingInvalid,
+                    supportingText = {
+                        Text(
+                            if (shippingInvalid) {
+                                stringResource(R.string.import_invalid_amount)
+                            } else {
+                                stringResource(R.string.import_default_shipping_usd, defaultShippingText)
+                            },
+                        )
+                    },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedTextField(
+                        value = customsRateText,
+                        onValueChange = onCustomsRateChange,
+                        label = { Text(stringResource(R.string.import_customs_rate_percent)) },
+                        singleLine = true,
+                        isError = customsRateInvalid,
+                        supportingText = {
+                            Text(
+                                if (customsRateInvalid) {
+                                    stringResource(R.string.import_invalid_rate)
+                                } else {
+                                    stringResource(
+                                        R.string.import_default_percent,
+                                        defaultCustomsPercentText,
+                                    )
+                                },
+                            )
+                        },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        modifier = Modifier.weight(1f),
+                    )
+                    OutlinedTextField(
+                        value = vatRateText,
+                        onValueChange = onVatRateChange,
+                        label = { Text(stringResource(R.string.import_vat_rate_percent)) },
+                        singleLine = true,
+                        isError = vatRateInvalid,
+                        supportingText = {
+                            Text(
+                                if (vatRateInvalid) {
+                                    stringResource(R.string.import_invalid_rate)
+                                } else {
+                                    stringResource(
+                                        R.string.import_default_percent,
+                                        defaultVatPercentText,
+                                    )
+                                },
+                            )
+                        },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                TextButton(onClick = onReset) {
+                    Text(stringResource(R.string.import_reset_assumptions))
+                }
+            }
+        }
+    }
+}
+
+private fun amountText(amount: Double, symbols: DecimalFormatSymbols): String =
+    BigDecimal.valueOf(amount)
+        .stripTrailingZeros()
+        .toPlainString()
+        .replace('.', symbols.decimalSeparator)
+
 private fun ratePercentText(rate: Double, symbols: DecimalFormatSymbols): String =
     BigDecimal.valueOf(rate)
         .movePointRight(2)
@@ -319,52 +476,70 @@ private fun ratePercentText(rate: Double, symbols: DecimalFormatSymbols): String
         .toPlainString()
         .replace('.', symbols.decimalSeparator)
 
+private fun Double?.isNear(expected: Double): Boolean =
+    this != null && abs(this - expected) < VALUE_COMPARISON_EPSILON
+
 @Composable
 private fun ImportEstimateBreakdown(
     estimate: ImportCostEstimate,
     displayCurrency: Currency,
     exchangeRates: ExchangeRates?,
+    isPrevious: Boolean,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        if (estimate.usesConservativeExcise) {
+    Card(Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
             Text(
-                stringResource(R.string.import_unknown_engine_warning),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.error,
+                stringResource(
+                    if (isPrevious) R.string.import_previous_estimate
+                    else R.string.import_estimated_total,
+                ),
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-        }
-        CostRow(stringResource(R.string.import_vehicle), estimate.vehiclePrice.formatted())
-        CostRow(stringResource(R.string.import_shipping), estimate.shipping.formatted())
-        CostRow(stringResource(R.string.import_customs), estimate.customsDuty.formatted())
-        CostRow(stringResource(R.string.import_excise), estimate.exciseDuty.formatted())
-        CostRow(stringResource(R.string.import_vat_result), estimate.vat.formatted())
-        Divider()
-        CostRow(stringResource(R.string.import_total), estimate.total.formatted(), emphasized = true)
-        if (exchangeRates != null && estimate.total.currency != displayCurrency) {
-            CostRow(
-                stringResource(R.string.import_total_in, displayCurrency.name),
-                exchangeRates.convert(estimate.total, displayCurrency).formatted(),
-                emphasized = true,
+            Text(
+                estimate.total.formatted(),
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
             )
-            if (exchangeRates.isStale) {
+            if (exchangeRates != null && estimate.total.currency != displayCurrency) {
+                CostRow(
+                    stringResource(R.string.import_total_in, displayCurrency.name),
+                    exchangeRates.convert(estimate.total, displayCurrency).formatted(),
+                )
+                if (exchangeRates.isStale) {
+                    Text(
+                        stringResource(R.string.listing_rates_stale),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+            if (estimate.usesConservativeExcise) {
                 Text(
-                    stringResource(R.string.listing_rates_stale),
+                    stringResource(R.string.import_unknown_engine_warning),
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = MaterialTheme.colorScheme.error,
                 )
             }
+            Divider(Modifier.padding(vertical = 4.dp))
+            CostRow(stringResource(R.string.import_vehicle), estimate.vehiclePrice.formatted())
+            CostRow(stringResource(R.string.import_shipping), estimate.shipping.formatted())
+            CostRow(stringResource(R.string.import_customs), estimate.customsDuty.formatted())
+            CostRow(stringResource(R.string.import_excise), estimate.exciseDuty.formatted())
+            CostRow(stringResource(R.string.import_vat_result), estimate.vat.formatted())
         }
     }
 }
 
 @Composable
-private fun CostRow(label: String, value: String, emphasized: Boolean = false) {
+private fun CostRow(label: String, value: String) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
         Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(
-            value,
-            fontWeight = if (emphasized) FontWeight.Bold else FontWeight.Medium,
-        )
+        Text(value, fontWeight = FontWeight.Medium)
     }
 }
 
