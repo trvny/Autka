@@ -69,6 +69,9 @@ extend those tests whenever another parameter is confirmed.
   if the lists grow, centralize index-search metadata instead of maintaining parallel lists.
 - If web-search recall starts suffering, deduplicate overlapping make/model/free-text terms
   before the six-word Brave bound so repeated terms do not consume the query budget.
+- Keep saved searches in lightweight DataStore storage while the list stays small; if usage
+  grows materially, move to structured storage or an explicit user-visible limit rather than
+  silently evicting saved searches.
 - Add Room schema export plus a real migration test in CI before the next non-trivial DB
   migration; do not manufacture historical schema JSON by hand.
 - Add normalized-price pagination tests when that backend work lands.
