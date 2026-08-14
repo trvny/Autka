@@ -138,7 +138,7 @@ license. See [THIRD_PARTY_NOTICES](docs/THIRD_PARTY_NOTICES).
 ---
 ## Other stuff
 
-[![feeds](https://github.com/trvny/.github/blob/main/assets/profile/pin_feeds.svg)](https://github.com/trvny/feeds) [![tvpi](https://github.com/trvny/.github/blob/main/assets/profile/pin_tvpi.svg)](https://github.com/trvny/tvpi)
+[![feeds](https://github.com/trvny/.github/blob/main/assets/profile/pin-feeds.svg)](https://github.com/trvny/feeds) [![tvpi](https://github.com/trvny/.github/blob/main/assets/profile/pin-tvpi.svg)](https://github.com/trvny/tvpi)
 
 ## 💬 Cytat z szuflady
 
