@@ -31,6 +31,7 @@ class VinDecoderViewModel @Inject constructor(
     private var decodeJob: Job? = null
 
     fun onVinChange(value: String) {
+        decodeJob?.cancel()
         _uiState.value = VinDecoderUiState(vin = normalizeVinInput(value))
     }
 
