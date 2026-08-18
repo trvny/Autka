@@ -173,9 +173,10 @@ object MarketplaceSearchLinks {
     //
     // Verified live:
     //   /pl/samochody-uzywane/f-<fuel>/mp-do-<N>-pln ? s[min_price]=<N> & s[min_km]=<N>
-    // Confirmed: f-benzyna, f-diesel, f-hybryda, f-elektryczny, mp-do-<N>-pln (max price),
-    // s[min_price], s[max_km] (max mileage). make/model are case-sensitive path segments
-    // (e.g. /Lexus/IS-Series) we can't derive reliably; lpg/plug-in fuel values TODO(verify).
+    // Confirmed: f-benzyna, f-diesel, f-hybryda, f-elektryczny, f-lpg,
+    // mp-do-<N>-pln (max price), s[min_price], s[max_km] (max mileage). make/model are
+    // case-sensitive path segments (e.g. /Lexus/IS-Series) we can't derive reliably;
+    // plug-in fuel value TODO(verify).
 
     private fun autoUncle(f: SearchFilter): String {
         val path = buildString {
@@ -190,11 +191,12 @@ object MarketplaceSearchLinks {
     }
 
     private fun autoUncleFuel(t: FuelType?): String? = when (t) {
-        FuelType.PETROL -> "benzyna"      // verified live
-        FuelType.DIESEL -> "diesel"       // verified live (f-diesel)
-        FuelType.HYBRID -> "hybryda"      // verified live
-        FuelType.ELECTRIC -> "elektryczny" // verified (live autouncle /pl/ f-elektryczny URL)
-        else -> null                      // TODO(verify) lpg/plugin-hybrid
+        FuelType.PETROL -> "benzyna"       // verified live
+        FuelType.DIESEL -> "diesel"        // verified live (f-diesel)
+        FuelType.HYBRID -> "hybryda"       // verified live
+        FuelType.ELECTRIC -> "elektryczny" // verified live
+        FuelType.LPG -> "lpg"              // verified live/indexed
+        else -> null                         // TODO(verify) plugin-hybrid
     }
 
     // --- AutoScout24 (.pl) — host + atype/ustate/cy/damaged/fuel/reg/mileage/sort/kwd VERIFIED ---

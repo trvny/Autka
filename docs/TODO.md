@@ -47,7 +47,7 @@ boundary, partner paths and source acceptance checklist.
 `TODO(verify)`. Do not guess parameters that silently degrade to an unfiltered page.
 
 - Otomoto affiliate parameter after programme access.
-- AutoUncle LPG / plug-in hybrid fuel values.
+- AutoUncle plug-in hybrid fuel value.
 - AutoTrader.pl LPG / plug-in hybrid fuel values.
 - Autoplac plug-in hybrid fuel value.
 - Remaining parity-only transmission/fuel values where the code still says `TODO(verify)`.

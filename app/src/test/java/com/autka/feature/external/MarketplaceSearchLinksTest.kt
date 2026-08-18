@@ -95,6 +95,23 @@ class MarketplaceSearchLinksTest {
     }
 
     @Test
+    fun `autouncle keeps verified LPG path slug`() {
+        val url = urlFor(
+            "autouncle",
+            SearchFilter(
+                maxPrice = 10_000.0,
+                fuelTypes = setOf(FuelType.LPG),
+                regions = setOf(Region.POLAND),
+            ),
+        )
+
+        assertEquals(
+            "https://www.autouncle.pl/pl/samochody-uzywane/f-lpg/mp-do-10000-pln",
+            url,
+        )
+    }
+
+    @Test
     fun `USA filter exposes US providers and hides Poland-only providers`() {
         val ids = MarketplaceSearchLinks.all(SearchFilter(regions = setOf(Region.USA)))
             .map { it.sourceId }
