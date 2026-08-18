@@ -1,0 +1,26 @@
+<resources>
+    <string name="vin_decoder_title">Dekoder VIN</string>
+    <string name="vin_decoder_input">Numer identyfikacyjny pojazdu (VIN)</string>
+    <string name="vin_decoder_hint">17-znakowy VIN. Spacje i znaki interpunkcyjne są pomijane.</string>
+    <string name="vin_decoder_invalid">Wpisz prawidłowy 17-znakowy VIN. Litery I, O i Q nie są używane.</string>
+    <string name="vin_decoder_action">Dekoduj VIN</string>
+    <string name="vin_decoder_error">Nie udało się sprawdzić VIN-u. Sprawdź połączenie i spróbuj ponownie.</string>
+    <string name="vin_decoder_source_note">Źródło: NHTSA vPIC. Brak pola oznacza brak danych NHTSA dla tej zmiennej, a nie dowód, że pojazd nie ma danej cechy.</string>
+    <string name="vin_decoder_warning">Uwaga dekodera: %1$s</string>
+    <string name="vin_decoder_vin">VIN</string>
+    <string name="vin_decoder_year">Rok modelowy</string>
+    <string name="vin_decoder_trim">Wersja</string>
+    <string name="vin_decoder_series">Seria</string>
+    <string name="vin_decoder_vehicle_type">Typ pojazdu</string>
+    <string name="vin_decoder_body">Nadwozie</string>
+    <string name="vin_decoder_fuel">Paliwo</string>
+    <string name="vin_decoder_electrification">Elektryfikacja</string>
+    <string name="vin_decoder_displacement">Pojemność</string>
+    <string name="vin_decoder_cylinders">Cylindry</string>
+    <string name="vin_decoder_power">Moc silnika</string>
+    <string name="vin_decoder_drive">Napęd</string>
+    <string name="vin_decoder_transmission">Skrzynia biegów</string>
+    <string name="vin_decoder_plant">Miejsce produkcji</string>
+    <string name="vin_decoder_liters">%1$s l</string>
+    <string name="vin_decoder_hp">%1$s KM</string>
+</resources>
