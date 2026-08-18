@@ -3,6 +3,7 @@ package com.autka.di
 import com.autka.BuildConfig
 import com.autka.data.remote.backend.BackendApi
 import com.autka.data.remote.rates.NbpApi
+import com.autka.data.remote.vin.VpicApi
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import dagger.Module
 import dagger.Provides
@@ -66,4 +67,14 @@ object NetworkModule {
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
             .build()
             .create(BackendApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideVpicApi(client: OkHttpClient, json: Json): VpicApi =
+        Retrofit.Builder()
+            .baseUrl("https://vpic.nhtsa.dot.gov/api/")
+            .client(client)
+            .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
+            .build()
+            .create(VpicApi::class.java)
 }
