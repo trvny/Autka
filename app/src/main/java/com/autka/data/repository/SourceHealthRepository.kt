@@ -8,11 +8,6 @@ import javax.inject.Singleton
 
 private const val SOURCE_HEALTH_CACHE_TTL_MS = 5 * 60 * 1000L
 
-interface SourceHealthRepository {
-    suspend fun getSources(): List<SourceHealth>
-    fun cachedSources(): List<SourceHealth>
-}
-
 @Singleton
 class DefaultSourceHealthRepository @Inject constructor(
     private val api: BackendApi,
