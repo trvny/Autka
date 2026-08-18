@@ -13,12 +13,14 @@ import com.autka.feature.listings.ListingsRoute
 import com.autka.feature.listings.ListingsViewModel
 import com.autka.feature.map.MapRoute
 import com.autka.feature.sourcehealth.SourceHealthRoute
+import com.autka.feature.vin.VinDecoderRoute
 
 private object Routes {
     const val LISTINGS = "listings"
     const val DETAIL = "detail/{offerId}"
     const val MAP = "map"
     const val IMPORT_CALCULATOR = "import-calculator"
+    const val VIN_DECODER = "vin-decoder"
     const val SOURCE_HEALTH = "source-health"
     fun detail(offerId: String) = "detail/$offerId"
 }
@@ -34,6 +36,7 @@ fun AutkaApp() {
                 onOfferClick = { id -> navController.navigate(Routes.detail(id)) },
                 onMapClick = { navController.navigate(Routes.MAP) },
                 onImportCalculatorClick = { navController.navigate(Routes.IMPORT_CALCULATOR) },
+                onVinDecoderClick = { navController.navigate(Routes.VIN_DECODER) },
                 onSourceHealthClick = { navController.navigate(Routes.SOURCE_HEALTH) },
                 viewModel = listingsViewModel,
             )
@@ -53,6 +56,9 @@ fun AutkaApp() {
         }
         composable(Routes.IMPORT_CALCULATOR) {
             ImportCalculatorRoute(onBack = { navController.popBackStack() })
+        }
+        composable(Routes.VIN_DECODER) {
+            VinDecoderRoute(onBack = { navController.popBackStack() })
         }
         composable(Routes.SOURCE_HEALTH) {
             SourceHealthRoute(onBack = { navController.popBackStack() })

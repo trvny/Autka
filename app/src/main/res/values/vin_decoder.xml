@@ -1,0 +1,28 @@
+<resources>
+    <string name="vin_decoder_title">VIN decoder</string>
+    <string name="vin_decoder_input">Vehicle Identification Number (VIN)</string>
+    <string name="vin_decoder_hint">17-character VIN. Spaces and punctuation are ignored.</string>
+    <string name="vin_decoder_invalid">Enter a valid 17-character VIN. Letters I, O and Q are not used.</string>
+    <string name="vin_decoder_action">Decode VIN</string>
+    <string name="vin_decoder_error">VIN lookup failed. Check your connection and try again.</string>
+    <string name="vin_decoder_source_note">Source: NHTSA vPIC. Missing fields mean NHTSA has no data for that variable; they do not prove that a feature is absent.</string>
+    <string name="vin_decoder_warning">Decoder note: %1$s</string>
+    <string name="vin_decoder_vin">VIN</string>
+    <string name="vin_decoder_make">Make</string>
+    <string name="vin_decoder_model">Model</string>
+    <string name="vin_decoder_year">Model year</string>
+    <string name="vin_decoder_trim">Trim</string>
+    <string name="vin_decoder_series">Series</string>
+    <string name="vin_decoder_vehicle_type">Vehicle type</string>
+    <string name="vin_decoder_body">Body</string>
+    <string name="vin_decoder_fuel">Fuel</string>
+    <string name="vin_decoder_electrification">Electrification</string>
+    <string name="vin_decoder_displacement">Displacement</string>
+    <string name="vin_decoder_cylinders">Cylinders</string>
+    <string name="vin_decoder_power">Engine power</string>
+    <string name="vin_decoder_drive">Drive</string>
+    <string name="vin_decoder_transmission">Transmission</string>
+    <string name="vin_decoder_plant">Assembly plant</string>
+    <string name="vin_decoder_liters">%1$s L</string>
+    <string name="vin_decoder_hp">%1$s hp</string>
+</resources>

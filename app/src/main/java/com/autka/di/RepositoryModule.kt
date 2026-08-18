@@ -3,9 +3,11 @@ package com.autka.di
 import com.autka.data.repository.CarOfferRepository
 import com.autka.data.repository.DefaultExchangeRateRepository
 import com.autka.data.repository.DefaultSourceHealthRepository
+import com.autka.data.repository.DefaultVinDecoderRepository
 import com.autka.data.repository.ExchangeRateRepository
 import com.autka.data.repository.OfflineFirstCarOfferRepository
 import com.autka.data.repository.SourceHealthRepository
+import com.autka.data.repository.VinDecoderRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -33,4 +35,10 @@ abstract class RepositoryModule {
     abstract fun bindSourceHealthRepository(
         impl: DefaultSourceHealthRepository,
     ): SourceHealthRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindVinDecoderRepository(
+        impl: DefaultVinDecoderRepository,
+    ): VinDecoderRepository
 }

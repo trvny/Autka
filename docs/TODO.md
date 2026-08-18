@@ -30,8 +30,6 @@ boundary, partner paths and source acceptance checklist.
   lightweight results from a licensed search API behind the backend: title, source, URL and
   snippet only. Keep them separate from `CarOffer`, never crawl listing pages, and treat the
   original marketplace as authoritative.
-- **VIN helper.** Explore a provider-independent VIN decode flow for US import candidates,
-  preferring an official/authorized decoder and keeping decoded data separate from listings.
 - **Import assumption presets.** If repeated calculator use makes it worthwhile, persist
   named local presets for shipping/customs/VAT assumptions while keeping the documented
   defaults and one-tap reset available.

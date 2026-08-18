@@ -13,13 +13,14 @@ Compose, Hilt, Room and Kotlin Flow.
 core/model        Normalized domain model and pure calculation/value objects
 core/util         Small shared utility/result helpers
 data/local        Room database, DAO, entities and mappers; local offer cache is the app source of truth
-data/remote       Backend API, live BackendCarOfferSource and debug MockCarOfferSource
-data/repository   Cached offers, exchange rates, settings and source-health repositories
+data/remote       Backend, NBP and official NHTSA vPIC APIs plus debug MockCarOfferSource
+data/repository   Cached offers, exchange rates, settings, source-health and VIN repositories
 data/imports      Import-service catalogue and backend/default fallback
 data/settings     App-wide Preferences DataStore settings and lightweight saved-search snapshots
 feature/listings  Search, filters and result list
 feature/detail    Cache-backed offer detail and inline US import estimate
 feature/importcalc Standalone USA -> Poland import calculator
+feature/vin       Provider-independent VIN decoding through NHTSA vPIC
 feature/map       Offer locations and map interaction
 feature/sourcehealth Public-safe backend source diagnostics
 feature/external  Marketplace deep-links and import-service UI
@@ -32,8 +33,11 @@ Per-marketplace aggregation happens server-side: adding a real marketplace means
 backend ingestion adapter, not another Android `CarOfferSource`.
 
 Anything that produces catalogue `CarOffer` data goes through the backend. Marketplace
-hand-offs that only produce URLs stay in `feature/external`. See
-[`DATA_SOURCES.md`](DATA_SOURCES.md) for the maintained policy and partner checklist.
+hand-offs that only produce URLs stay in `feature/external`. VIN decoding is also kept
+outside the catalogue model: it is an explicit user-requested lookup against the official
+NHTSA vPIC API and returns a separate `VinDecodeResult`. See
+[`DATA_SOURCES.md`](DATA_SOURCES.md) for the maintained catalogue policy and partner
+checklist.
 
 ## Backend boundary
 
@@ -87,6 +91,18 @@ in the UI rather than silently assuming a lower excise rate.
 
 Duty, VAT edge cases, customs classification/origin relief and shipping defaults remain
 indicative inputs. The result is an estimate, not a customs quote.
+
+## VIN decoding
+
+The standalone VIN helper accepts a full 17-character VIN and performs a user-triggered
+lookup against NHTSA's public vPIC `DecodeVinValues` endpoint. Input is normalized locally;
+letters I, O and Q are rejected before any request is made. Requests are never fired while
+the user is merely typing.
+
+Decoded VIN data stays separate from `CarOffer` and is not persisted as history. The UI
+shows only fields returned by vPIC and keeps NHTSA decoder warnings visible alongside any
+partial result. A missing decoded field is treated as missing NHTSA data, not proof that the
+vehicle lacks that feature.
 
 ## Currency and local preferences
 
@@ -157,8 +173,9 @@ stale faster than they become useful.
 ## CI/CD
 
 `.github/workflows/android-ci.yml` runs Android lint, debug assembly and unit tests. The
-unit suite covers import calculations and parsing, listings behavior, repository failure
-isolation, exchange-rate paths and source-health refresh semantics.
+unit suite covers import calculations and parsing, VIN input/response handling, listings
+behavior, repository failure isolation, exchange-rate paths and source-health refresh
+semantics.
 
 For pull requests, `.github/workflows/backend-ci.yml` regenerates Wrangler configuration
 types, runs TypeScript checking and executes backend tests. On pushes to `main`, the same
