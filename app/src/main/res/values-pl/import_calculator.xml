@@ -20,6 +20,13 @@
     <string name="import_default_shipping_usd">Domyślne / reset: %1$s USD</string>
     <string name="import_invalid_rate">Wpisz prawidłową stawkę od 0 do 100, maksymalnie z 2 miejscami po przecinku.</string>
     <string name="import_reset_assumptions">Przywróć domyślne</string>
+    <string name="import_presets">Zapisane presety</string>
+    <string name="import_preset_delete">Usuń</string>
+    <string name="import_preset_save">Zapisz bieżące jako preset</string>
+    <string name="import_preset_dialog_title">Zapisz założenia</string>
+    <string name="import_preset_name">Nazwa presetu</string>
+    <string name="import_preset_save_action">Zapisz</string>
+    <string name="import_preset_cancel">Anuluj</string>
     <string name="import_vat_result">VAT</string>
     <string name="import_share">Udostępnij wycenę</string>
     <string name="import_share_title">Autka - szacunek importu</string>

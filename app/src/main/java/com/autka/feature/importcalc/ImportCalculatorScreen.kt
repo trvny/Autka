@@ -49,6 +49,7 @@ import com.autka.R
 import com.autka.core.model.Currency
 import com.autka.core.model.ExchangeRates
 import com.autka.core.model.FuelType
+import com.autka.core.model.ImportAssumptionPreset
 import com.autka.core.model.ImportCostCalculator
 import com.autka.core.model.ImportCostEstimate
 import com.autka.core.model.Money
@@ -112,6 +113,9 @@ fun ImportCalculatorRoute(
         onBack = onBack,
         displayCurrency = uiState.displayCurrency,
         exchangeRates = uiState.exchangeRates,
+        presets = uiState.presets,
+        onSavePreset = viewModel::savePreset,
+        onDeletePreset = viewModel::deletePreset,
     )
 }
 
@@ -121,6 +125,9 @@ fun ImportCalculatorScreen(
     onBack: () -> Unit,
     displayCurrency: Currency,
     exchangeRates: ExchangeRates?,
+    presets: List<ImportAssumptionPreset>,
+    onSavePreset: (String, Double, Double, Double) -> Unit,
+    onDeletePreset: (String) -> Unit,
 ) {
     val context = LocalContext.current
     val locale = LocalConfiguration.current.locales[0]
@@ -328,10 +335,26 @@ fun ImportCalculatorScreen(
                 defaultShippingText = defaultShippingText,
                 defaultCustomsPercentText = defaultCustomsPercentText,
                 defaultVatPercentText = defaultVatPercentText,
+                presets = presets,
+                canSavePreset = input.assumptionsReady,
                 onExpandedChange = { showAssumptions = it },
                 onShippingChange = { shippingText = it },
                 onCustomsRateChange = { customsRateText = it },
                 onVatRateChange = { vatRateText = it },
+                onApplyPreset = { preset ->
+                    shippingText = amountText(preset.shippingUsd, numberSymbols)
+                    customsRateText = ratePercentText(preset.customsDutyRate, numberSymbols)
+                    vatRateText = ratePercentText(preset.vatRate, numberSymbols)
+                },
+                onSavePreset = { name ->
+                    val shippingUsd = input.shippingUsd
+                    val customsDutyRate = input.customsDutyRate
+                    val vatRate = input.vatRate
+                    if (shippingUsd != null && customsDutyRate != null && vatRate != null) {
+                        onSavePreset(name, shippingUsd, customsDutyRate, vatRate)
+                    }
+                },
+                onDeletePreset = onDeletePreset,
                 onReset = {
                     shippingText = defaultShippingText
                     customsRateText = defaultCustomsPercentText
@@ -362,10 +385,15 @@ private fun AssumptionsCard(
     defaultShippingText: String,
     defaultCustomsPercentText: String,
     defaultVatPercentText: String,
+    presets: List<ImportAssumptionPreset>,
+    canSavePreset: Boolean,
     onExpandedChange: (Boolean) -> Unit,
     onShippingChange: (String) -> Unit,
     onCustomsRateChange: (String) -> Unit,
     onVatRateChange: (String) -> Unit,
+    onApplyPreset: (ImportAssumptionPreset) -> Unit,
+    onSavePreset: (String) -> Unit,
+    onDeletePreset: (String) -> Unit,
     onReset: () -> Unit,
 ) {
     Card(Modifier.fillMaxWidth()) {
@@ -484,6 +512,13 @@ private fun AssumptionsCard(
                         modifier = Modifier.weight(1f),
                     )
                 }
+                ImportPresetControls(
+                    presets = presets,
+                    canSave = canSavePreset,
+                    onApply = onApplyPreset,
+                    onSave = onSavePreset,
+                    onDelete = onDeletePreset,
+                )
                 TextButton(onClick = onReset) {
                     Text(stringResource(R.string.import_reset_assumptions))
                 }

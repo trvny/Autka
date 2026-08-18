@@ -30,6 +30,7 @@ internal fun ImportPresetControls(
 ) {
     var showSaveDialog by rememberSaveable { mutableStateOf(false) }
     var presetName by rememberSaveable { mutableStateOf("") }
+    val normalizedPresetName = presetName.trim().take(MAX_IMPORT_PRESET_NAME_LENGTH)
 
     if (presets.isNotEmpty()) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -74,9 +75,9 @@ internal fun ImportPresetControls(
             },
             confirmButton = {
                 TextButton(
-                    enabled = presetName.isNotBlank(),
+                    enabled = normalizedPresetName.isNotEmpty(),
                     onClick = {
-                        onSave(presetName)
+                        onSave(normalizedPresetName)
                         showSaveDialog = false
                     },
                 ) {

@@ -30,9 +30,6 @@ boundary, partner paths and source acceptance checklist.
   lightweight results from a licensed search API behind the backend: title, source, URL and
   snippet only. Keep them separate from `CarOffer`, never crawl listing pages, and treat the
   original marketplace as authoritative.
-- **Import assumption presets.** If repeated calculator use makes it worthwhile, persist
-  named local presets for shipping/customs/VAT assumptions while keeping the documented
-  defaults and one-tap reset available.
 - **Saved-search alerts.** Once a live catalogue provides meaningful changes to watch, add
   opt-in price-drop and new-listing alerts on top of the local saved searches.
 
