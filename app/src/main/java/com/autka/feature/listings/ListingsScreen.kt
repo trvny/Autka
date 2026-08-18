@@ -18,6 +18,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.MoreVert
@@ -74,6 +75,7 @@ fun ListingsRoute(
     onOfferClick: (String) -> Unit,
     onMapClick: () -> Unit,
     onImportCalculatorClick: () -> Unit,
+    onVinDecoderClick: () -> Unit,
     onSourceHealthClick: () -> Unit,
     viewModel: ListingsViewModel = hiltViewModel(),
 ) {
@@ -91,6 +93,7 @@ fun ListingsRoute(
         onOfferClick = onOfferClick,
         onMapClick = onMapClick,
         onImportCalculatorClick = onImportCalculatorClick,
+        onVinDecoderClick = onVinDecoderClick,
         onSourceHealthClick = onSourceHealthClick,
     )
 }
@@ -110,6 +113,7 @@ fun ListingsScreen(
     onOfferClick: (String) -> Unit,
     onMapClick: () -> Unit,
     onImportCalculatorClick: () -> Unit,
+    onVinDecoderClick: () -> Unit,
     onSourceHealthClick: () -> Unit,
 ) {
     var showFilters by remember { mutableStateOf(false) }
@@ -139,6 +143,11 @@ fun ListingsScreen(
                                 text = { Text(stringResource(R.string.import_calculator)) },
                                 leadingIcon = { Icon(Icons.Default.Calculate, contentDescription = null) },
                                 onClick = { showMore = false; onImportCalculatorClick() },
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.vin_decoder_title)) },
+                                leadingIcon = { Icon(Icons.Default.DirectionsCar, contentDescription = null) },
+                                onClick = { showMore = false; onVinDecoderClick() },
                             )
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.source_health_title)) },
