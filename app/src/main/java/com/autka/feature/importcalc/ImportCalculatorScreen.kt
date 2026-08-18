@@ -2,6 +2,7 @@ package com.autka.feature.importcalc
 
 import android.content.Context
 import android.content.Intent
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -179,10 +180,29 @@ fun ImportCalculatorScreen(
     val shareText = if (estimate != null) {
         val engineSummary = when {
             !input.engineRequired -> stringResource(R.string.import_share_engine_not_applicable)
-            engineText.isBlank() -> stringResource(R.string.import_share_engine_unknown)
-            else -> stringResource(R.string.import_share_engine_cc, engineText)
+            input.engineCapacityCc != null -> stringResource(
+                R.string.import_share_engine_cc,
+                input.engineCapacityCc.toString(),
+            )
+            else -> stringResource(R.string.import_share_engine_unknown)
         }
-        listOf(
+        val convertedTotalSummary = if (
+            exchangeRates != null && estimate.total.currency != displayCurrency
+        ) {
+            stringResource(
+                R.string.import_share_converted_total,
+                displayCurrency.name,
+                exchangeRates.convert(estimate.total, displayCurrency).formatted(),
+            )
+        } else {
+            null
+        }
+        val staleRatesSummary = if (convertedTotalSummary != null && exchangeRates?.isStale == true) {
+            stringResource(R.string.listing_rates_stale)
+        } else {
+            null
+        }
+        listOfNotNull(
             stringResource(R.string.import_share_title),
             stringResource(
                 R.string.import_share_breakdown,
@@ -193,6 +213,8 @@ fun ImportCalculatorScreen(
                 estimate.vat.formatted(),
                 estimate.total.formatted(),
             ),
+            convertedTotalSummary,
+            staleRatesSummary,
             stringResource(
                 R.string.import_share_assumptions,
                 shippingText,
@@ -206,8 +228,8 @@ fun ImportCalculatorScreen(
     } else {
         null
     }
-    val shareAction = shareText?.let { text ->
-        { shareImportEstimate(context, text) }
+    val shareAction = remember(context, shareText) {
+        shareText?.let { text -> { shareImportEstimate(context, text) } }
     }
 
     Scaffold(
@@ -558,5 +580,9 @@ private fun shareImportEstimate(context: Context, text: String) {
         type = "text/plain"
         putExtra(Intent.EXTRA_TEXT, text)
     }
-    runCatching { context.startActivity(Intent.createChooser(send, null)) }
+    runCatching {
+        context.startActivity(Intent.createChooser(send, null))
+    }.onFailure {
+        Toast.makeText(context, R.string.import_share_failed, Toast.LENGTH_SHORT).show()
+    }
 }
