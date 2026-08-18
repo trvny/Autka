@@ -123,12 +123,15 @@ result with listing/source counts. `?dedup=false` returns raw rows for diagnosti
 ## Source-health diagnostics
 
 The source-status screen reads `GET /sources` and shows public-safe state such as enabled
-status, offer count and the latest completed ingest. It preserves the previous in-memory
-snapshot if a manual refresh fails and does not expose raw provider exceptions.
+status, offer count and the latest completed ingest. The singleton repository keeps the
+last successful response in memory for up to five minutes. A new screen instance renders
+that snapshot immediately while starting a real network refresh, and manual refresh always
+hits the backend. If a refresh fails, the visible snapshot is preserved alongside the error
+state.
 
-The repository intentionally does not persist source-health history yet. A short-lived
-cache and explicit backend health-availability/cadence fields are tracked as possible
-follow-ups in [`TODO.md`](TODO.md).
+The cache is deliberately process-local, time-bounded and never persisted as source-health
+history. Explicit backend health-availability/cadence fields remain possible follow-ups in
+[`TODO.md`](TODO.md).
 
 ## Localization
 
