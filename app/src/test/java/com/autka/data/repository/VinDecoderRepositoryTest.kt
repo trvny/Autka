@@ -48,6 +48,27 @@ class VinDecoderRepositoryTest {
     }
 
     @Test
+    fun `composite zero decoder codes stay clean`() = runTest {
+        val repository = DefaultVinDecoderRepository(
+            FakeApi(
+                VpicResponse(
+                    results = listOf(
+                        VpicResult(
+                            vin = "1M8GDM9AXKP042788",
+                            errorCode = "0, 0",
+                            errorText = "0 - VIN decoded clean.",
+                        ),
+                    ),
+                ),
+            ),
+        )
+
+        val decoded = repository.decode("1M8GDM9AXKP042788")
+
+        assertNull(decoded.decoderWarning)
+    }
+
+    @Test
     fun `decoder keeps NHTSA warning alongside decoded values`() = runTest {
         val repository = DefaultVinDecoderRepository(
             FakeApi(
