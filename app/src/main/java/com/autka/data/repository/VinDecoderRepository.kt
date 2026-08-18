@@ -39,7 +39,14 @@ private fun VpicResult.toModel(fallbackVin: String): VinDecodeResult = VinDecode
     transmissionStyle = transmissionStyle.clean(),
     plantCountry = plantCountry.clean(),
     plantCity = plantCity.clean(),
-    decoderWarning = errorText.clean().takeIf { errorCode.trim() != "0" },
+    decoderWarning = if (errorCode.isCleanVpicCode()) null else errorText.clean(),
 )
 
-private fun String.clean(): String? = trim().takeIf(String::isNotEmpty)
+private fun String?.clean(): String? = this?.trim()?.takeIf(String::isNotEmpty)
+
+private fun String?.isCleanVpicCode(): Boolean =
+    clean()
+        ?.split(',')
+        ?.map(String::trim)
+        ?.takeIf(List<String>::isNotEmpty)
+        ?.all { it == "0" } == true
