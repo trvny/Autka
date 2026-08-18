@@ -74,6 +74,7 @@ object MarketplaceWebSearch {
             .split(Regex("\\s+"))
             .filter { it.isNotEmpty() }
             .mapNotNull(::sanitizeSearchTerm)
+            .distinctBy { it.lowercase(Locale.ROOT) }
 
         val accepted = mutableListOf<String>()
         var oversizedFallback: String? = null

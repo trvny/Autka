@@ -67,8 +67,6 @@ extend those tests whenever another parameter is confirmed.
   adding more fields; editable assumptions now trigger MegaLinter's detekt complexity warning.
 - Keep `MarketplaceWebSearch` targets aligned with the external-marketplace provider intent;
   if the lists grow, centralize index-search metadata instead of maintaining parallel lists.
-- If web-search recall starts suffering, deduplicate overlapping make/model/free-text terms
-  before the six-word Brave bound so repeated terms do not consume the query budget.
 - Keep saved searches in lightweight DataStore storage while the list stays small; if usage
   grows materially, move to structured storage or an explicit user-visible limit rather than
   silently evicting saved searches.
