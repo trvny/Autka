@@ -32,6 +32,7 @@ class VinDecoderViewModel @Inject constructor(
 
     fun onVinChange(value: String) {
         decodeJob?.cancel()
+        decodeJob = null
         _uiState.value = VinDecoderUiState(vin = normalizeVinInput(value))
     }
 
@@ -58,7 +59,7 @@ class VinDecoderViewModel @Inject constructor(
 }
 
 internal fun normalizeVinInput(value: String): String = value
-    .filter(Char::isLetterOrDigit)
+    .filter { it in '0'..'9' || it in 'a'..'z' || it in 'A'..'Z' }
     .uppercase(Locale.ROOT)
     .take(17)
 
