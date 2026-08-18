@@ -8,6 +8,8 @@
     <string name="vin_decoder_source_note">Source: NHTSA vPIC. Missing fields mean NHTSA has no data for that variable; they do not prove that a feature is absent.</string>
     <string name="vin_decoder_warning">Decoder note: %1$s</string>
     <string name="vin_decoder_vin">VIN</string>
+    <string name="vin_decoder_make">Make</string>
+    <string name="vin_decoder_model">Model</string>
     <string name="vin_decoder_year">Model year</string>
     <string name="vin_decoder_trim">Trim</string>
     <string name="vin_decoder_series">Series</string>
