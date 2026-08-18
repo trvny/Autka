@@ -21,3 +21,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "Autka"
 include(":app")
+include(":shared")
