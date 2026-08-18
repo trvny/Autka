@@ -75,6 +75,34 @@ class VinDecoderViewModelTest {
     }
 
     @Test
+    fun `editing VIN cancels stale decode result`() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        Dispatchers.setMain(dispatcher)
+        try {
+            val gate = CompletableDeferred<Unit>()
+            val repository = FakeRepository(
+                result = Result.success(VinDecodeResult(vin = "1M8GDM9AXKP042788", make = "OLD")),
+                gate = gate,
+            )
+            val viewModel = VinDecoderViewModel(repository)
+            viewModel.onVinChange("1M8GDM9AXKP042788")
+
+            viewModel.decode()
+            runCurrent()
+            viewModel.onVinChange("1HGCM82633A004352")
+            gate.complete(Unit)
+            advanceUntilIdle()
+
+            assertEquals(1, repository.callCount)
+            assertEquals("1HGCM82633A004352", viewModel.uiState.value.vin)
+            assertFalse(viewModel.uiState.value.isLoading)
+            assertNull(viewModel.uiState.value.result)
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
+    @Test
     fun `decode failure becomes retryable error`() = runTest {
         val dispatcher = StandardTestDispatcher(testScheduler)
         Dispatchers.setMain(dispatcher)
