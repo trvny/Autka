@@ -1,5 +1,7 @@
 package com.autka.feature.importcalc
 
+import android.content.Context
+import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -35,6 +37,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -118,6 +121,7 @@ fun ImportCalculatorScreen(
     displayCurrency: Currency,
     exchangeRates: ExchangeRates?,
 ) {
+    val context = LocalContext.current
     val locale = LocalConfiguration.current.locales[0]
     val numberSymbols = remember(locale) { DecimalFormatSymbols.getInstance(locale) }
     val defaultShippingUsd = ImportCostCalculator.DEFAULT_US_SHIPPING_USD
@@ -172,6 +176,39 @@ fun ImportCalculatorScreen(
         }
     }
     val displayedEstimate = estimate ?: lastValidEstimate
+    val shareText = if (estimate != null) {
+        val engineSummary = when {
+            !input.engineRequired -> stringResource(R.string.import_share_engine_not_applicable)
+            engineText.isBlank() -> stringResource(R.string.import_share_engine_unknown)
+            else -> stringResource(R.string.import_share_engine_cc, engineText)
+        }
+        listOf(
+            stringResource(R.string.import_share_title),
+            stringResource(
+                R.string.import_share_breakdown,
+                estimate.vehiclePrice.formatted(),
+                estimate.shipping.formatted(),
+                estimate.customsDuty.formatted(),
+                estimate.exciseDuty.formatted(),
+                estimate.vat.formatted(),
+                estimate.total.formatted(),
+            ),
+            stringResource(
+                R.string.import_share_assumptions,
+                shippingText,
+                customsRateText,
+                vatRateText,
+                fuel.displayLabel(),
+                engineSummary,
+            ),
+            stringResource(R.string.import_calculator_disclaimer),
+        ).joinToString("\n\n")
+    } else {
+        null
+    }
+    val shareAction = shareText?.let { text ->
+        { shareImportEstimate(context, text) }
+    }
 
     Scaffold(
         topBar = {
@@ -253,6 +290,7 @@ fun ImportCalculatorScreen(
                 displayCurrency = displayCurrency,
                 exchangeRates = exchangeRates,
                 isPrevious = estimate == null,
+                onShare = shareAction,
             )
 
             AssumptionsCard(
@@ -451,6 +489,7 @@ private fun ImportEstimateBreakdown(
     displayCurrency: Currency,
     exchangeRates: ExchangeRates?,
     isPrevious: Boolean,
+    onShare: (() -> Unit)?,
 ) {
     Card(Modifier.fillMaxWidth()) {
         Column(
@@ -497,6 +536,11 @@ private fun ImportEstimateBreakdown(
             CostRow(stringResource(R.string.import_customs), estimate.customsDuty.formatted())
             CostRow(stringResource(R.string.import_excise), estimate.exciseDuty.formatted())
             CostRow(stringResource(R.string.import_vat_result), estimate.vat.formatted())
+            if (onShare != null) {
+                TextButton(onClick = onShare) {
+                    Text(stringResource(R.string.import_share))
+                }
+            }
         }
     }
 }
@@ -507,4 +551,12 @@ private fun CostRow(label: String, value: String) {
         Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(value, fontWeight = FontWeight.Medium)
     }
+}
+
+private fun shareImportEstimate(context: Context, text: String) {
+    val send = Intent(Intent.ACTION_SEND).apply {
+        type = "text/plain"
+        putExtra(Intent.EXTRA_TEXT, text)
+    }
+    runCatching { context.startActivity(Intent.createChooser(send, null)) }
 }
