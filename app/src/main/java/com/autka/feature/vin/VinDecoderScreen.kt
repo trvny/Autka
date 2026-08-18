@@ -148,7 +148,8 @@ fun VinDecoderScreen(
 
 @Composable
 private fun VinResultCard(result: VinDecodeResult) {
-    val title = listOfNotNull(result.make, result.model).joinToString(" ").ifBlank { result.vin }
+    val vehicleSummary = listOfNotNull(result.modelYear, result.make, result.model).joinToString(" ")
+    val title = vehicleSummary.ifBlank { result.vin }
     val plant = listOfNotNull(result.plantCity, result.plantCountry).joinToString(", ").ifBlank { null }
 
     Card(Modifier.fillMaxWidth()) {
@@ -168,7 +169,11 @@ private fun VinResultCard(result: VinDecodeResult) {
                     color = MaterialTheme.colorScheme.error,
                 )
             }
-            VinRow(stringResource(R.string.vin_decoder_vin), result.vin)
+            if (vehicleSummary.isNotBlank()) {
+                VinRow(stringResource(R.string.vin_decoder_vin), result.vin)
+            }
+            result.make?.let { VinRow(stringResource(R.string.vin_decoder_make), it) }
+            result.model?.let { VinRow(stringResource(R.string.vin_decoder_model), it) }
             result.modelYear?.let { VinRow(stringResource(R.string.vin_decoder_year), it) }
             result.trim?.let { VinRow(stringResource(R.string.vin_decoder_trim), it) }
             result.series?.let { VinRow(stringResource(R.string.vin_decoder_series), it) }
