@@ -6,6 +6,8 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.autka.core.model.Currency
 import com.autka.core.model.FuelType
+import com.autka.core.model.ImportAssumptionPreset
+import com.autka.core.model.MAX_IMPORT_PRESET_NAME_LENGTH
 import com.autka.core.model.MAX_SAVED_SEARCH_NAME_LENGTH
 import com.autka.core.model.Region
 import com.autka.core.model.SavedSearch
@@ -18,6 +20,7 @@ import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
@@ -25,15 +28,23 @@ import kotlinx.serialization.json.JsonObject
 
 /**
  * App-wide user settings and small local preferences persisted via Preferences DataStore,
- * so choices and saved searches survive process death without requiring a Room migration.
+ * so choices, saved searches and calculator presets survive process death without a Room migration.
  */
 interface SettingsRepository {
     val displayCurrency: Flow<Currency>
     val savedSearches: Flow<List<SavedSearch>>
+    val importAssumptionPresets: Flow<List<ImportAssumptionPreset>>
 
     suspend fun setDisplayCurrency(currency: Currency)
     suspend fun saveSearch(name: String, filter: SearchFilter, displayCurrency: Currency)
     suspend fun deleteSavedSearch(id: String)
+    suspend fun saveImportAssumptionPreset(
+        name: String,
+        shippingUsd: Double,
+        customsDutyRate: Double,
+        vatRate: Double,
+    )
+    suspend fun deleteImportAssumptionPreset(id: String)
 }
 
 @Singleton
@@ -50,6 +61,9 @@ class DataStoreSettingsRepository @Inject constructor(
 
     override val savedSearches: Flow<List<SavedSearch>> =
         dataStore.data.map { prefs -> decodeSavedSearches(prefs[SAVED_SEARCHES]) }
+
+    override val importAssumptionPresets: Flow<List<ImportAssumptionPreset>> =
+        dataStore.data.map { prefs -> decodeImportPresets(prefs[IMPORT_PRESETS]) }
 
     override suspend fun setDisplayCurrency(currency: Currency) {
         dataStore.edit { prefs -> prefs[DISPLAY_CURRENCY] = currency.name }
@@ -104,6 +118,51 @@ class DataStoreSettingsRepository @Inject constructor(
         }
     }
 
+    override suspend fun saveImportAssumptionPreset(
+        name: String,
+        shippingUsd: Double,
+        customsDutyRate: Double,
+        vatRate: Double,
+    ) {
+        val trimmedName = name.trim().take(MAX_IMPORT_PRESET_NAME_LENGTH)
+        if (
+            trimmedName.isEmpty() || !shippingUsd.isFinite() || shippingUsd < 0.0 ||
+            !customsDutyRate.isFinite() || customsDutyRate !in 0.0..1.0 ||
+            !vatRate.isFinite() || vatRate !in 0.0..1.0
+        ) {
+            return
+        }
+
+        dataStore.edit { prefs ->
+            val current = decodeImportPresets(prefs[IMPORT_PRESETS])
+            val existingId = current.firstOrNull {
+                it.shippingUsd == shippingUsd &&
+                    it.customsDutyRate == customsDutyRate &&
+                    it.vatRate == vatRate
+            }?.id
+            val preset = ImportAssumptionPreset(
+                id = existingId ?: UUID.randomUUID().toString(),
+                name = trimmedName,
+                shippingUsd = shippingUsd,
+                customsDutyRate = customsDutyRate,
+                vatRate = vatRate,
+            )
+            val updated = listOf(preset) + current.filterNot { it.id == preset.id }
+            prefs[IMPORT_PRESETS] = encodeImportPresets(updated)
+        }
+    }
+
+    override suspend fun deleteImportAssumptionPreset(id: String) {
+        dataStore.edit { prefs ->
+            val updated = decodeImportPresets(prefs[IMPORT_PRESETS]).filterNot { it.id == id }
+            if (updated.isEmpty()) {
+                prefs.remove(IMPORT_PRESETS)
+            } else {
+                prefs[IMPORT_PRESETS] = encodeImportPresets(updated)
+            }
+        }
+    }
+
     private fun decodeSavedSearches(raw: String?): List<SavedSearch> =
         parseSavedSearchDocument(raw)
             ?.items
@@ -151,13 +210,37 @@ class DataStoreSettingsRepository @Inject constructor(
         document.envelope + (ITEMS_KEY to JsonArray(items)),
     ).toString()
 
+    private fun decodeImportPresets(raw: String?): List<ImportAssumptionPreset> {
+        if (raw.isNullOrBlank()) return emptyList()
+        return runCatching {
+            IMPORT_PRESET_JSON.decodeFromString(
+                ListSerializer(ImportAssumptionPresetPayload.serializer()),
+                raw,
+            )
+        }.getOrDefault(emptyList())
+            .mapNotNull(ImportAssumptionPresetPayload::toModelOrNull)
+            .distinctBy { it.id }
+    }
+
+    private fun encodeImportPresets(presets: List<ImportAssumptionPreset>): String =
+        IMPORT_PRESET_JSON.encodeToString(
+            ListSerializer(ImportAssumptionPresetPayload.serializer()),
+            presets.map(ImportAssumptionPresetPayload::fromModel),
+        )
+
     private companion object {
         const val ITEMS_KEY = "items"
         val DISPLAY_CURRENCY = stringPreferencesKey("display_currency")
         val SAVED_SEARCHES = stringPreferencesKey("saved_searches_v1")
+        val IMPORT_PRESETS = stringPreferencesKey("import_assumption_presets_v1")
         val DEFAULT_CURRENCY = Currency.PLN
         val SAVED_SEARCH_JSON = Json {
             ignoreUnknownKeys = false
+            coerceInputValues = false
+            encodeDefaults = false
+        }
+        val IMPORT_PRESET_JSON = Json {
+            ignoreUnknownKeys = true
             coerceInputValues = false
             encodeDefaults = false
         }
@@ -170,6 +253,42 @@ private data class SavedSearchDocument(
 ) {
     val hasNoMetadata: Boolean
         get() = envelope.keys.all { it == "items" }
+}
+
+@Serializable
+private data class ImportAssumptionPresetPayload(
+    val id: String,
+    val name: String,
+    val shippingUsd: Double,
+    val customsDutyRate: Double,
+    val vatRate: Double,
+) {
+    fun toModelOrNull(): ImportAssumptionPreset? {
+        if (
+            id.isBlank() || name.isBlank() || !shippingUsd.isFinite() || shippingUsd < 0.0 ||
+            !customsDutyRate.isFinite() || customsDutyRate !in 0.0..1.0 ||
+            !vatRate.isFinite() || vatRate !in 0.0..1.0
+        ) {
+            return null
+        }
+        return ImportAssumptionPreset(
+            id = id,
+            name = name.take(MAX_IMPORT_PRESET_NAME_LENGTH),
+            shippingUsd = shippingUsd,
+            customsDutyRate = customsDutyRate,
+            vatRate = vatRate,
+        )
+    }
+
+    companion object {
+        fun fromModel(preset: ImportAssumptionPreset) = ImportAssumptionPresetPayload(
+            id = preset.id,
+            name = preset.name,
+            shippingUsd = preset.shippingUsd,
+            customsDutyRate = preset.customsDutyRate,
+            vatRate = preset.vatRate,
+        )
+    }
 }
 
 @Serializable
