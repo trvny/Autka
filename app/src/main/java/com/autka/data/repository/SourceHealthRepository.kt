@@ -27,9 +27,15 @@ class DefaultSourceHealthRepository @Inject constructor(
 
     override fun cachedSources(): List<SourceHealth> {
         val snapshot = cache ?: return emptyList()
-        val ageMs = System.currentTimeMillis() - snapshot.storedAtEpochMs
-        return snapshot.sources.takeIf { ageMs in 0..SOURCE_HEALTH_CACHE_TTL_MS }.orEmpty()
+        return snapshot.sources.takeIf {
+            isSourceHealthCacheFresh(snapshot.storedAtEpochMs, System.currentTimeMillis())
+        }.orEmpty()
     }
+}
+
+internal fun isSourceHealthCacheFresh(storedAtEpochMs: Long, nowEpochMs: Long): Boolean {
+    val ageMs = nowEpochMs - storedAtEpochMs
+    return ageMs in 0..SOURCE_HEALTH_CACHE_TTL_MS
 }
 
 private data class CachedSourceHealth(
