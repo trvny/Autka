@@ -35,9 +35,6 @@ boundary, partner paths and source acceptance checklist.
 - **Import assumption presets.** If repeated calculator use makes it worthwhile, persist
   named local presets for shipping/customs/VAT assumptions while keeping the documented
   defaults and one-tap reset available.
-- **Shareable import summary.** Let the calculator copy/share a compact landed-cost
-  breakdown with the active assumptions and an explicit estimate disclaimer, without
-  requiring an account or backend state.
 - **Saved-search alerts.** Once a live catalogue provides meaningful changes to watch, add
   opt-in price-drop and new-listing alerts on top of the local saved searches.
 

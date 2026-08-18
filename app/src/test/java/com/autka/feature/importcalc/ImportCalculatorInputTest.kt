@@ -3,6 +3,7 @@ package com.autka.feature.importcalc
 import com.autka.core.model.FuelType
 import java.text.DecimalFormatSymbols
 import java.util.Locale
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -30,6 +31,16 @@ class ImportCalculatorInputTest {
         assertTrue(state.assumptionsAreDefault)
         assertTrue(state.engineRequired)
         assertFalse(state.engineInvalid)
+        assertEquals(1800, state.engineCapacityCc)
+        assertNotNull(state.estimate)
+    }
+
+    @Test
+    fun `grouped engine capacity is normalized for downstream use`() {
+        val state = evaluate(engine = "1,800")
+
+        assertFalse(state.engineInvalid)
+        assertEquals(1800, state.engineCapacityCc)
         assertNotNull(state.estimate)
     }
 
@@ -64,6 +75,7 @@ class ImportCalculatorInputTest {
 
         assertTrue(state.engineRequired)
         assertFalse(state.engineInvalid)
+        assertNull(state.engineCapacityCc)
         assertTrue(state.estimate?.usesConservativeExcise == true)
     }
 
@@ -72,6 +84,7 @@ class ImportCalculatorInputTest {
         val state = evaluate(engine = "nope")
 
         assertTrue(state.engineInvalid)
+        assertNull(state.engineCapacityCc)
         assertNull(state.estimate)
     }
 
@@ -81,6 +94,7 @@ class ImportCalculatorInputTest {
 
         assertFalse(state.engineRequired)
         assertFalse(state.engineInvalid)
+        assertNull(state.engineCapacityCc)
         assertNotNull(state.estimate)
         assertTrue(state.estimate?.exciseDuty?.amount == 0.0)
     }
