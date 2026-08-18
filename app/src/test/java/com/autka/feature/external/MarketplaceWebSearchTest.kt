@@ -123,6 +123,37 @@ class MarketplaceWebSearchTest {
     }
 
     @Test
+    fun `duplicate make and model terms do not consume the query budget`() {
+        val link = MarketplaceWebSearch.all(
+            SearchFilter(
+                make = "BMW",
+                model = "X5",
+                query = "BMW X5 xDrive M Sport",
+                regions = setOf(Region.EUROPE),
+            ),
+        ).single()
+        val query = decodedQuery(link.url)
+
+        assertTrue(query.startsWith("BMW X5 xDrive M Sport site:autouncle.pl"))
+        assertFalse(query.startsWith("BMW X5 BMW X5"))
+    }
+
+    @Test
+    fun `term deduplication is case insensitive and keeps the first spelling`() {
+        val link = MarketplaceWebSearch.all(
+            SearchFilter(
+                make = "BMW",
+                query = "bmw BmW touring",
+                regions = setOf(Region.USA),
+            ),
+        ).single()
+        val query = decodedQuery(link.url)
+
+        assertTrue(query.startsWith("BMW touring site:copart.com"))
+        assertFalse(query.contains("BMW bmw"))
+    }
+
+    @Test
     fun `all-region search produces one bounded query per region`() {
         val longQuery = (1..80).joinToString(" ") { "term$it" }
         val links = MarketplaceWebSearch.all(SearchFilter(query = longQuery))
