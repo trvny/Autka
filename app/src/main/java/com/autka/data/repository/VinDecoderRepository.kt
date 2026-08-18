@@ -48,5 +48,5 @@ private fun String?.isCleanVpicCode(): Boolean =
     clean()
         ?.split(',')
         ?.map(String::trim)
-        ?.takeIf(List<String>::isNotEmpty)
+        ?.takeIf { it.isNotEmpty() }
         ?.all { it == "0" } == true
