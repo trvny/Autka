@@ -16,7 +16,7 @@ class ImportCalculatorInputTest {
     fun `valid defaults produce a current estimate`() {
         val state = evaluate(
             vehiclePrice = "20000",
-            shipping = "2000",
+            shipping = "2400",
             customs = "10",
             vat = "23",
             engine = "1800",
@@ -87,7 +87,7 @@ class ImportCalculatorInputTest {
 
     private fun evaluate(
         vehiclePrice: String = "20000",
-        shipping: String = "2000",
+        shipping: String = "2400",
         customs: String = "10",
         vat: String = "23",
         engine: String = "1800",
