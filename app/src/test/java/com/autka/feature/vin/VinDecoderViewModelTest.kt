@@ -23,6 +23,7 @@ class VinDecoderViewModelTest {
     @Test
     fun `VIN input is normalized and capped at 17 characters`() {
         assertEquals("1M8GDM9AXKP042788", normalizeVinInput("1m8g-dm9a xkp042788-extra"))
+        assertEquals("1M8GDM9AXKP042788", normalizeVinInput("Ł1m8g-dm9a xkp042788"))
     }
 
     @Test
