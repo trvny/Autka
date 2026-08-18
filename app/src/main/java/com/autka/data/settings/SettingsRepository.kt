@@ -376,8 +376,11 @@ private data class SavedSearchPayload(
     }
 }
 
-private fun SearchFilter.hasFinitePriceBounds(): Boolean =
-    (minPrice == null || minPrice.isFinite()) && (maxPrice == null || maxPrice.isFinite())
+private fun SearchFilter.hasFinitePriceBounds(): Boolean {
+    val min = minPrice
+    val max = maxPrice
+    return (min == null || min.isFinite()) && (max == null || max.isFinite())
+}
 
 private inline fun <reified T : Enum<T>> decodeEnumSetOrNull(names: List<String>): Set<T>? {
     val decoded = names.map { enumOrNull<T>(it) }

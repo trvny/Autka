@@ -20,17 +20,22 @@ fun List<CarOffer>.applyFilter(
     comparisonCurrency: Currency,
 ): List<CarOffer> = filter { o ->
     val price = rates.convert(o.price, comparisonCurrency).amount
+    val minPrice = f.minPrice
+    val maxPrice = f.maxPrice
+    val minYear = f.minYear
+    val maxYear = f.maxYear
+    val maxMileageKm = f.maxMileageKm
     (f.query.isBlank() ||
         o.title.contains(f.query, ignoreCase = true) ||
         o.make.contains(f.query, ignoreCase = true) ||
         o.model.contains(f.query, ignoreCase = true)) &&
         (f.make == null || o.make.equals(f.make, ignoreCase = true)) &&
         (f.model == null || o.model.equals(f.model, ignoreCase = true)) &&
-        (f.minPrice == null || price >= f.minPrice) &&
-        (f.maxPrice == null || price <= f.maxPrice) &&
-        (f.minYear == null || (o.year ?: Int.MIN_VALUE) >= f.minYear) &&
-        (f.maxYear == null || (o.year ?: Int.MAX_VALUE) <= f.maxYear) &&
-        (f.maxMileageKm == null || (o.mileageKm ?: Int.MAX_VALUE) <= f.maxMileageKm) &&
+        (minPrice == null || price >= minPrice) &&
+        (maxPrice == null || price <= maxPrice) &&
+        (minYear == null || (o.year ?: Int.MIN_VALUE) >= minYear) &&
+        (maxYear == null || (o.year ?: Int.MAX_VALUE) <= maxYear) &&
+        (maxMileageKm == null || (o.mileageKm ?: Int.MAX_VALUE) <= maxMileageKm) &&
         (f.fuelTypes.isEmpty() || o.fuelType in f.fuelTypes) &&
         (f.transmissions.isEmpty() || o.transmission in f.transmissions) &&
         (o.region in f.regions) &&
