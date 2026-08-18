@@ -15,6 +15,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import com.autka.R
 import com.autka.core.model.ImportAssumptionPreset
 import com.autka.core.model.MAX_IMPORT_PRESET_NAME_LENGTH
