@@ -50,14 +50,8 @@ import com.autka.core.model.ImportCostEstimate
 import com.autka.core.model.Money
 import com.autka.ui.components.displayLabel
 import com.autka.ui.components.formatted
-import com.autka.ui.components.isIncompleteLocalizedAmount
-import com.autka.ui.components.isIncompleteLocalizedPercentage
-import com.autka.ui.components.parseLocalizedNonNegativeAmount
-import com.autka.ui.components.parseLocalizedPercentage
-import com.autka.ui.components.parsePositiveInteger
 import java.math.BigDecimal
 import java.text.DecimalFormatSymbols
-import kotlin.math.abs
 
 private val CALCULATOR_FUELS = listOf(
     FuelType.PETROL,
@@ -68,8 +62,6 @@ private val CALCULATOR_FUELS = listOf(
     FuelType.HYDROGEN,
     FuelType.LPG,
 )
-
-private const val VALUE_COMPARISON_EPSILON = 0.0001
 
 private val ImportCostEstimateSaver = listSaver<ImportCostEstimate, Any>(
     save = { estimate ->
@@ -130,8 +122,6 @@ fun ImportCalculatorScreen(
     val numberSymbols = remember(locale) { DecimalFormatSymbols.getInstance(locale) }
     val defaultShippingUsd = ImportCostCalculator.DEFAULT_US_SHIPPING_USD
     val defaultShippingText = amountText(defaultShippingUsd, numberSymbols)
-    val defaultCustomsPercent = ImportCostCalculator.DEFAULT_EU_CUSTOMS_DUTY_RATE * 100.0
-    val defaultVatPercent = ImportCostCalculator.DEFAULT_PL_VAT_RATE * 100.0
     val defaultCustomsPercentText = ratePercentText(
         ImportCostCalculator.DEFAULT_EU_CUSTOMS_DUTY_RATE,
         numberSymbols,
@@ -151,41 +141,19 @@ fun ImportCalculatorScreen(
     var fuelName by rememberSaveable { mutableStateOf(FuelType.PETROL.name) }
     var showAssumptions by rememberSaveable { mutableStateOf(false) }
 
-    val vehiclePrice = parseLocalizedNonNegativeAmount(vehiclePriceText, numberSymbols)
-    val shipping = parseLocalizedNonNegativeAmount(shippingText, numberSymbols)
-    val customsRatePercent = parseLocalizedPercentage(customsRateText, numberSymbols)
-    val vatRatePercent = parseLocalizedPercentage(vatRateText, numberSymbols)
-    val vehiclePriceInvalid = vehiclePriceText.isBlank() || vehiclePrice == null &&
-        !isIncompleteLocalizedAmount(vehiclePriceText, numberSymbols)
-    val shippingInvalid = shippingText.isBlank() || shipping == null &&
-        !isIncompleteLocalizedAmount(shippingText, numberSymbols)
-    val customsRateInvalid = customsRateText.isBlank() || customsRatePercent == null &&
-        !isIncompleteLocalizedPercentage(customsRateText, numberSymbols)
-    val vatRateInvalid = vatRateText.isBlank() || vatRatePercent == null &&
-        !isIncompleteLocalizedPercentage(vatRateText, numberSymbols)
-    val assumptionsReady = shipping != null && customsRatePercent != null && vatRatePercent != null
-    val assumptionsAreDefault = shipping.isNear(defaultShippingUsd) &&
-        customsRatePercent.isNear(defaultCustomsPercent) &&
-        vatRatePercent.isNear(defaultVatPercent)
     val fuel = FuelType.entries.firstOrNull { it.name == fuelName } ?: FuelType.PETROL
-    val engineRequired = fuel != FuelType.ELECTRIC && fuel != FuelType.HYDROGEN
-    val engineCc = if (engineRequired) parsePositiveInteger(engineText, numberSymbols) else null
-    val engineInvalid = engineRequired && engineText.isNotBlank() && engineCc == null
-    val estimate = if (
-        vehiclePrice != null && shipping != null && customsRatePercent != null &&
-        vatRatePercent != null && !engineInvalid
-    ) {
-        ImportCostCalculator.estimate(
-            vehiclePriceUsd = vehiclePrice,
-            shippingUsd = shipping,
-            engineCapacityCc = engineCc,
-            fuelType = fuel,
-            customsDutyRate = customsRatePercent / 100.0,
-            vatRate = vatRatePercent / 100.0,
-        )
-    } else {
-        null
-    }
+    val input = evaluateImportCalculatorInput(
+        fields = ImportCalculatorFields(
+            vehiclePriceText = vehiclePriceText,
+            shippingText = shippingText,
+            customsRateText = customsRateText,
+            vatRateText = vatRateText,
+            engineText = engineText,
+            fuel = fuel,
+        ),
+        numberSymbols = numberSymbols,
+    )
+    val estimate = input.estimate
 
     val fallbackEstimate = remember {
         ImportCostCalculator.estimate(
@@ -233,8 +201,8 @@ fun ImportCalculatorScreen(
                 onValueChange = { vehiclePriceText = it },
                 label = { Text(stringResource(R.string.import_vehicle_price_usd)) },
                 singleLine = true,
-                isError = vehiclePriceInvalid,
-                supportingText = if (vehiclePriceInvalid) {
+                isError = input.vehiclePriceInvalid,
+                supportingText = if (input.vehiclePriceInvalid) {
                     { Text(stringResource(R.string.import_invalid_amount)) }
                 } else {
                     null
@@ -263,14 +231,14 @@ fun ImportCalculatorScreen(
                 }
             }
 
-            if (engineRequired) {
+            if (input.engineRequired) {
                 OutlinedTextField(
                     value = engineText,
                     onValueChange = { engineText = it },
                     label = { Text(stringResource(R.string.import_engine_cc)) },
                     singleLine = true,
-                    isError = engineInvalid,
-                    supportingText = if (engineInvalid) {
+                    isError = input.engineInvalid,
+                    supportingText = if (input.engineInvalid) {
                         { Text(stringResource(R.string.import_invalid_engine_cc)) }
                     } else {
                         null
@@ -289,14 +257,14 @@ fun ImportCalculatorScreen(
 
             AssumptionsCard(
                 expanded = showAssumptions,
-                assumptionsAreDefault = assumptionsAreDefault,
-                canCollapse = assumptionsReady,
+                assumptionsAreDefault = input.assumptionsAreDefault,
+                canCollapse = input.assumptionsReady,
                 shippingText = shippingText,
                 customsRateText = customsRateText,
                 vatRateText = vatRateText,
-                shippingInvalid = shippingInvalid,
-                customsRateInvalid = customsRateInvalid,
-                vatRateInvalid = vatRateInvalid,
+                shippingInvalid = input.shippingInvalid,
+                customsRateInvalid = input.customsRateInvalid,
+                vatRateInvalid = input.vatRateInvalid,
                 defaultShippingText = defaultShippingText,
                 defaultCustomsPercentText = defaultCustomsPercentText,
                 defaultVatPercentText = defaultVatPercentText,
@@ -476,9 +444,6 @@ private fun ratePercentText(rate: Double, symbols: DecimalFormatSymbols): String
         .stripTrailingZeros()
         .toPlainString()
         .replace('.', symbols.decimalSeparator)
-
-private fun Double?.isNear(expected: Double): Boolean =
-    this != null && abs(this - expected) < VALUE_COMPARISON_EPSILON
 
 @Composable
 private fun ImportEstimateBreakdown(
