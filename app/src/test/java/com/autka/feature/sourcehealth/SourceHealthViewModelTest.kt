@@ -50,7 +50,61 @@ class SourceHealthViewModelTest {
     }
 
     @Test
-    fun `failed refresh preserves the previous snapshot`() = runTest {
+    fun `cached snapshot is visible while initial refresh runs`() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        Dispatchers.setMain(dispatcher)
+        try {
+            val gate = CompletableDeferred<Unit>()
+            val repository = FakeRepository(
+                responses = ArrayDeque(listOf(Result.success(listOf(source(id = "network"))))),
+                cached = listOf(
+                    source(id = "disabled", enabled = false),
+                    source(id = "beta"),
+                    source(id = "alpha"),
+                ),
+                gate = gate,
+            )
+
+            val viewModel = SourceHealthViewModel(repository)
+            runCurrent()
+
+            assertEquals(listOf("alpha", "beta", "disabled"), viewModel.uiState.value.sources.map { it.id })
+            assertTrue(viewModel.uiState.value.isLoading)
+            assertEquals(1, repository.callCount)
+
+            gate.complete(Unit)
+            advanceUntilIdle()
+
+            assertEquals(listOf("network"), viewModel.uiState.value.sources.map { it.id })
+            assertFalse(viewModel.uiState.value.isLoading)
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
+    @Test
+    fun `cached snapshot survives failed initial refresh`() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        Dispatchers.setMain(dispatcher)
+        try {
+            val repository = FakeRepository(
+                responses = ArrayDeque(listOf(Result.failure(IllegalStateException("offline")))),
+                cached = listOf(source(id = "alpha")),
+            )
+
+            val viewModel = SourceHealthViewModel(repository)
+            advanceUntilIdle()
+
+            assertEquals(listOf("alpha"), viewModel.uiState.value.sources.map { it.id })
+            assertTrue(viewModel.uiState.value.loadFailed)
+            assertFalse(viewModel.uiState.value.isLoading)
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
+    @Test
+    fun `failed refresh preserves the previous snapshot and still hits network`() = runTest {
         val dispatcher = StandardTestDispatcher(testScheduler)
         Dispatchers.setMain(dispatcher)
         try {
@@ -68,6 +122,7 @@ class SourceHealthViewModelTest {
             viewModel.refresh()
             advanceUntilIdle()
 
+            assertEquals(2, repository.callCount)
             assertEquals(listOf("alpha"), viewModel.uiState.value.sources.map { it.id })
             assertTrue(viewModel.uiState.value.loadFailed)
             assertFalse(viewModel.uiState.value.isLoading)
@@ -103,6 +158,7 @@ class SourceHealthViewModelTest {
 
     private class FakeRepository(
         private val responses: ArrayDeque<Result<List<SourceHealth>>>,
+        private val cached: List<SourceHealth> = emptyList(),
         private val gate: CompletableDeferred<Unit>? = null,
     ) : SourceHealthRepository {
         var callCount = 0
@@ -112,6 +168,8 @@ class SourceHealthViewModelTest {
             gate?.await()
             return responses.removeFirst().getOrThrow()
         }
+
+        override fun cachedSources(): List<SourceHealth> = cached
     }
 
     private companion object {
