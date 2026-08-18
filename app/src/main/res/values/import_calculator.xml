@@ -24,9 +24,11 @@
     <string name="import_share">Share estimate</string>
     <string name="import_share_title">Autka — import estimate</string>
     <string name="import_share_breakdown">Vehicle: %1$s\nShipping: %2$s\nCustoms: %3$s\nExcise: %4$s\nVAT: %5$s\nTotal: %6$s</string>
+    <string name="import_share_converted_total">Total in %1$s: %2$s</string>
     <string name="import_share_assumptions">Assumptions: shipping %1$s USD; customs %2$s%%; VAT %3$s%%; fuel %4$s; engine %5$s</string>
     <string name="import_share_engine_unknown">unknown (conservative excise)</string>
     <string name="import_share_engine_not_applicable">not applicable</string>
     <string name="import_share_engine_cc">%1$s cc</string>
+    <string name="import_share_failed">Couldn’t open sharing.</string>
     <string name="import_calculator_disclaimer">Estimate only. Editable assumptions are not official rates; actual customs valuation, taxes, fees and shipping may vary.</string>
 </resources>
