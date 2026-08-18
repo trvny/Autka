@@ -1,31 +1,34 @@
 # Architecture
 
-This document describes how the current Android app and backend fit together. Data-source
+This document describes how the current multiplatform app and backend fit together. Data-source
 licensing, partner onboarding and the deep-link boundary live in
 [`DATA_SOURCES.md`](DATA_SOURCES.md).
 
 ## App layers
 
-Single-module Android app organized around UI and data layers, using Kotlin, Jetpack
-Compose, Hilt, Room and Kotlin Flow.
+The app is migrating incrementally to Kotlin Multiplatform. `shared` owns platform-neutral
+models and contracts used by Android and future iOS code; `app` remains the Android host and
+owns Android-specific UI, persistence, networking implementations and DI.
 
 ```text
-core/model        Normalized domain model and pure calculation/value objects
-core/util         Small shared utility/result helpers
-data/local        Room database, DAO, entities and mappers; local offer cache is the app source of truth
-data/remote       Backend, NBP and official NHTSA vPIC APIs plus debug MockCarOfferSource
-data/repository   Cached offers, exchange rates, settings, source-health and VIN repositories
-data/imports      Import-service catalogue and backend/default fallback
-data/settings     App-wide Preferences DataStore settings and lightweight saved-search snapshots
-feature/listings  Search, filters and result list
-feature/detail    Cache-backed offer detail and inline US import estimate
-feature/importcalc Standalone USA -> Poland import calculator
-feature/vin       Provider-independent VIN decoding through NHTSA vPIC
-feature/map       Offer locations and map interaction
-feature/sourcehealth Public-safe backend source diagnostics
-feature/external  Marketplace deep-links and import-service UI
-di                Hilt modules and source/repository bindings
-ui                Theme, navigation host and shared components
+shared/core/model        Normalized domain models and pure calculation/value objects
+shared/data/remote       Source identifiers and CarOfferSource contract
+shared/data/repository   CarOfferRepository/SourceInfo contract
+app/core/util            Small Android-side utility/result helpers
+app/data/local           Room database, DAO, entities and mappers; local offer cache is the Android source of truth
+app/data/remote          Backend, NBP and official NHTSA vPIC API implementations plus debug MockCarOfferSource
+app/data/repository      Android repository implementations for cached offers, rates, source health and VIN
+app/data/imports         Import-service catalogue and backend/default fallback
+app/data/settings        App-wide Preferences DataStore settings and lightweight saved-search snapshots
+app/feature/listings     Search, filters and result list
+app/feature/detail       Cache-backed offer detail and inline US import estimate
+app/feature/importcalc   Standalone USA -> Poland import calculator
+app/feature/vin          Provider-independent VIN decoding through NHTSA vPIC
+app/feature/map          Offer locations and map interaction
+app/feature/sourcehealth Public-safe backend source diagnostics
+app/feature/external     Marketplace deep-links and import-service UI
+app/di                   Hilt modules and source/repository bindings
+app/ui                   Theme, navigation host and shared Android components
 ```
 
 Android consumes one backend catalogue source, plus the optional debug mock source.
@@ -48,11 +51,11 @@ offer from the Room-backed `CarOfferRepository`, keeping detail consistent with 
 catalogue. The backend still exposes `GET /offers/:id` as an API endpoint, but the current
 Android `BackendApi` does not consume it.
 
-The offer model in `backend/src/lib/types.ts` mirrors the Android `CarOffer` model and
-should change in lockstep. `/sources` exposes enabled state, offer count and latest
-completed-ingest metadata without sending raw provider errors to the device. Android
-deliberately does not invent its own provider-specific freshness thresholds; a future
-stale/degraded state should be driven by explicit backend cadence/failure metadata.
+The offer model in `backend/src/lib/types.ts` mirrors the shared `CarOffer` model and should
+change in lockstep. `/sources` exposes enabled state, offer count and latest completed-ingest
+metadata without sending raw provider errors to the device. Android deliberately does not
+invent its own provider-specific freshness thresholds; a future stale/degraded state should
+be driven by explicit backend cadence/failure metadata.
 
 The Android backend URL is a `BACKEND_BASE_URL` build config field in
 `app/build.gradle.kts`. Debug points at emulator loopback for local `wrangler dev`;
@@ -80,9 +83,9 @@ be trusted.
 
 ## US import cost
 
-`core/model/ImportCostEstimate.kt` estimates landed cost into Poland using shipping, EU
-customs duty, Polish excise and VAT. Excise is drivetrain- and engine-capacity-aware; EV
-and hydrogen paths are modeled separately.
+`shared/src/commonMain/kotlin/com/autka/core/model/ImportCostEstimate.kt` estimates landed
+cost into Poland using shipping, EU customs duty, Polish excise and VAT. Excise is
+drivetrain- and engine-capacity-aware; EV and hydrogen paths are modeled separately.
 
 The calculator is available both from offer details and as a standalone tool. Both paths
 reuse the same calculation logic, defaults and localized numeric parsing. Missing engine
@@ -164,7 +167,8 @@ Do not duplicate exact dependency versions in documentation. The maintained sour
 truth are:
 
 - `gradle/libs.versions.toml` for Android/Kotlin libraries and plugins;
-- `app/build.gradle.kts` for SDK levels, app version and build-type configuration;
+- `shared/build.gradle.kts` for shared Android/iOS targets and common dependencies;
+- `app/build.gradle.kts` for Android SDK levels, app version and build-type configuration;
 - `backend/package.json` for Worker dependencies.
 
 Dependabot and CI keep these moving frequently, so hard-coded version tables in docs become
@@ -172,10 +176,10 @@ stale faster than they become useful.
 
 ## CI/CD
 
-`.github/workflows/android-ci.yml` runs Android lint, debug assembly and unit tests. The
-unit suite covers import calculations and parsing, VIN input/response handling, listings
-behavior, repository failure isolation, exchange-rate paths and source-health refresh
-semantics.
+`.github/workflows/android-ci.yml` runs Android lint, debug assembly and unit tests plus the
+shared Android-host test suite. The unit suites cover import calculations and parsing, VIN
+input/response handling, listings behavior, repository failure isolation, exchange-rate
+paths and source-health refresh semantics.
 
 For pull requests, `.github/workflows/backend-ci.yml` regenerates Wrangler configuration
 types, runs TypeScript checking and executes backend tests. On pushes to `main`, the same
