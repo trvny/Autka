@@ -31,6 +31,7 @@ internal data class ImportCalculatorInputState(
     val assumptionsAreDefault: Boolean,
     val engineRequired: Boolean,
     val engineInvalid: Boolean,
+    val engineCapacityCc: Int?,
     val estimate: ImportCostEstimate?,
 )
 
@@ -86,6 +87,7 @@ internal fun evaluateImportCalculatorInput(
         assumptionsAreDefault = assumptionsAreDefault,
         engineRequired = engineRequired,
         engineInvalid = engineInvalid,
+        engineCapacityCc = engineCc,
         estimate = estimate,
     )
 }
