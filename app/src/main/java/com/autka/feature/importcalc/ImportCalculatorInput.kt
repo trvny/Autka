@@ -29,6 +29,9 @@ internal data class ImportCalculatorInputState(
     val vatRateInvalid: Boolean,
     val assumptionsReady: Boolean,
     val assumptionsAreDefault: Boolean,
+    val shippingUsd: Double?,
+    val customsDutyRate: Double?,
+    val vatRate: Double?,
     val engineRequired: Boolean,
     val engineInvalid: Boolean,
     val engineCapacityCc: Int?,
@@ -43,6 +46,8 @@ internal fun evaluateImportCalculatorInput(
     val shipping = parseLocalizedNonNegativeAmount(fields.shippingText, numberSymbols)
     val customsRatePercent = parseLocalizedPercentage(fields.customsRateText, numberSymbols)
     val vatRatePercent = parseLocalizedPercentage(fields.vatRateText, numberSymbols)
+    val customsDutyRate = customsRatePercent?.div(100.0)
+    val vatRate = vatRatePercent?.div(100.0)
 
     val vehiclePriceInvalid = fields.vehiclePriceText.isBlank() ||
         (vehiclePrice == null && !isIncompleteLocalizedAmount(fields.vehiclePriceText, numberSymbols))
@@ -53,7 +58,7 @@ internal fun evaluateImportCalculatorInput(
     val vatRateInvalid = fields.vatRateText.isBlank() ||
         (vatRatePercent == null && !isIncompleteLocalizedPercentage(fields.vatRateText, numberSymbols))
 
-    val assumptionsReady = shipping != null && customsRatePercent != null && vatRatePercent != null
+    val assumptionsReady = shipping != null && customsDutyRate != null && vatRate != null
     val assumptionsAreDefault = shipping.isNear(ImportCostCalculator.DEFAULT_US_SHIPPING_USD) &&
         customsRatePercent.isNear(ImportCostCalculator.DEFAULT_EU_CUSTOMS_DUTY_RATE * 100.0) &&
         vatRatePercent.isNear(ImportCostCalculator.DEFAULT_PL_VAT_RATE * 100.0)
@@ -63,16 +68,16 @@ internal fun evaluateImportCalculatorInput(
     val engineInvalid = engineRequired && fields.engineText.isNotBlank() && engineCc == null
 
     val estimate = if (
-        vehiclePrice != null && shipping != null && customsRatePercent != null &&
-        vatRatePercent != null && !engineInvalid
+        vehiclePrice != null && shipping != null && customsDutyRate != null &&
+        vatRate != null && !engineInvalid
     ) {
         ImportCostCalculator.estimate(
             vehiclePriceUsd = vehiclePrice,
             shippingUsd = shipping,
             engineCapacityCc = engineCc,
             fuelType = fields.fuel,
-            customsDutyRate = customsRatePercent / 100.0,
-            vatRate = vatRatePercent / 100.0,
+            customsDutyRate = customsDutyRate,
+            vatRate = vatRate,
         )
     } else {
         null
@@ -85,6 +90,9 @@ internal fun evaluateImportCalculatorInput(
         vatRateInvalid = vatRateInvalid,
         assumptionsReady = assumptionsReady,
         assumptionsAreDefault = assumptionsAreDefault,
+        shippingUsd = shipping,
+        customsDutyRate = customsDutyRate,
+        vatRate = vatRate,
         engineRequired = engineRequired,
         engineInvalid = engineInvalid,
         engineCapacityCc = engineCc,
