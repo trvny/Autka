@@ -68,7 +68,7 @@ internal fun ImportPresetControls(
             text = {
                 OutlinedTextField(
                     value = presetName,
-                    onValueChange = { presetName = it.take(MAX_IMPORT_PRESET_NAME_LENGTH + 2) },
+                    onValueChange = { presetName = it.take(MAX_IMPORT_PRESET_NAME_LENGTH) },
                     label = { Text(stringResource(R.string.import_preset_name)) },
                     singleLine = true,
                 )
