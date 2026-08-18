@@ -8,6 +8,8 @@
     <string name="vin_decoder_source_note">Źródło: NHTSA vPIC. Brak pola oznacza brak danych NHTSA dla tej zmiennej, a nie dowód, że pojazd nie ma danej cechy.</string>
     <string name="vin_decoder_warning">Uwaga dekodera: %1$s</string>
     <string name="vin_decoder_vin">VIN</string>
+    <string name="vin_decoder_make">Marka</string>
+    <string name="vin_decoder_model">Model</string>
     <string name="vin_decoder_year">Rok modelowy</string>
     <string name="vin_decoder_trim">Wersja</string>
     <string name="vin_decoder_series">Seria</string>
