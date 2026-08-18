@@ -61,8 +61,6 @@ extend those tests whenever another parameter is confirmed.
   status from those server fields rather than guessing provider-specific thresholds on Android.
 - If `/sources` payload semantics broaden, add an explicit health-availability field instead
   of inferring backend health-query failure from `offerCount == null`.
-- Consider a short-lived source-health cache if diagnostics should remain useful offline
-  or across navigation; keep manual refresh network-backed.
 - Split import-calculator input parsing/validation out of `ImportCalculatorScreen` before
   adding more fields; editable assumptions now trigger MegaLinter's detekt complexity warning.
 - Keep `MarketplaceWebSearch` targets aligned with the external-marketplace provider intent;

@@ -23,7 +23,9 @@ data class SourceHealthUiState(
 class SourceHealthViewModel @Inject constructor(
     private val repository: SourceHealthRepository,
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(SourceHealthUiState())
+    private val _uiState = MutableStateFlow(
+        SourceHealthUiState(sources = repository.cachedSources().sortedForDisplay()),
+    )
     val uiState = _uiState.asStateFlow()
     private var refreshJob: Job? = null
 
@@ -38,9 +40,7 @@ class SourceHealthViewModel @Inject constructor(
             try {
                 val sources = repository.getSources()
                 _uiState.value = SourceHealthUiState(
-                    sources = sources.sortedWith(
-                        compareByDescending<SourceHealth> { it.enabled }.thenBy { it.id },
-                    ),
+                    sources = sources.sortedForDisplay(),
                     isLoading = false,
                 )
             } catch (cancelled: CancellationException) {
@@ -51,3 +51,6 @@ class SourceHealthViewModel @Inject constructor(
         }
     }
 }
+
+private fun List<SourceHealth>.sortedForDisplay(): List<SourceHealth> =
+    sortedWith(compareByDescending<SourceHealth> { it.enabled }.thenBy { it.id })
