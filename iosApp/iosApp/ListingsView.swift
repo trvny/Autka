@@ -9,6 +9,7 @@ struct ListingsView: View {
     @State private var region = SearchRegion.all
     @State private var filters = ListingsFilters()
     @State private var offers: [CarOffer] = []
+    @State private var availableSources: [SourceHealth] = []
     @State private var isLoading = false
     @State private var loadFailed = false
     @State private var reachedEnd = false
@@ -137,7 +138,10 @@ struct ListingsView: View {
                 OffersMapView(offers: offers)
             }
             .sheet(isPresented: $showFilters) {
-                ListingsFiltersView(filters: filters) { updated in
+                ListingsFiltersView(
+                    filters: filters,
+                    availableSources: availableSources
+                ) { updated in
                     filters = updated
                     Task { await refresh() }
                 }
@@ -149,7 +153,19 @@ struct ListingsView: View {
                 guard !hasLoaded else { return }
                 hasLoaded = true
                 await refresh()
+                await loadSources()
             }
+        }
+    }
+
+    @MainActor
+    private func loadSources() async {
+        guard let decoded = await SourceCatalog.fetch() else { return }
+        availableSources = decoded.sorted { lhs, rhs in
+            if lhs.enabled != rhs.enabled {
+                return lhs.enabled && !rhs.enabled
+            }
+            return lhs.displayName.localizedCaseInsensitiveCompare(rhs.displayName) == .orderedAscending
         }
     }
 
@@ -250,6 +266,11 @@ struct ListingsView: View {
                     name: "transmissions",
                     value: filters.transmissions.sorted().joined(separator: ",")
                 )
+            )
+        }
+        if !filters.sourceIds.isEmpty {
+            items.append(
+                URLQueryItem(name: "sources", value: filters.sourceIds.sorted().joined(separator: ","))
             )
         }
         components?.queryItems = items
