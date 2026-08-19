@@ -13,7 +13,7 @@ owns Android-specific UI, persistence, networking implementations and DI.
 ```text
 shared/core/model        Normalized domain models and pure calculation/value objects
 shared/data/remote       Source identifiers and CarOfferSource contract
-shared/data/repository   CarOfferRepository/SourceInfo contract
+shared/data/repository   Shared repository contracts and cross-platform cache policies
 app/core/util            Small Android-side utility/result helpers
 app/data/local           Room database, DAO, entities and mappers; local offer cache is the Android source of truth
 app/data/remote          Backend, NBP and official NHTSA vPIC API implementations plus debug MockCarOfferSource
