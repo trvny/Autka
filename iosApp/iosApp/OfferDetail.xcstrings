@@ -1,0 +1,15 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Automatic" : { "localizations" : { "pl" : { "stringUnit" : { "state" : "translated", "value" : "Automatyczna" } } } },
+    "Details" : { "localizations" : { "pl" : { "stringUnit" : { "state" : "translated", "value" : "Szczegóły" } } } },
+    "Location" : { "localizations" : { "pl" : { "stringUnit" : { "state" : "translated", "value" : "Lokalizacja" } } } },
+    "Manual" : { "localizations" : { "pl" : { "stringUnit" : { "state" : "translated", "value" : "Manualna" } } } },
+    "Mileage" : { "localizations" : { "pl" : { "stringUnit" : { "state" : "translated", "value" : "Przebieg" } } } },
+    "Offer" : { "localizations" : { "pl" : { "stringUnit" : { "state" : "translated", "value" : "Ogłoszenie" } } } },
+    "Posted" : { "localizations" : { "pl" : { "stringUnit" : { "state" : "translated", "value" : "Dodano" } } } },
+    "Share" : { "localizations" : { "pl" : { "stringUnit" : { "state" : "translated", "value" : "Udostępnij" } } } },
+    "Source" : { "localizations" : { "pl" : { "stringUnit" : { "state" : "translated", "value" : "Źródło" } } } }
+  },
+  "version" : "1.0"
+}
