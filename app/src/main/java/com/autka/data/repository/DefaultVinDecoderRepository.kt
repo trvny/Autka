@@ -6,10 +6,6 @@ import com.autka.data.remote.vin.VpicResult
 import javax.inject.Inject
 import javax.inject.Singleton
 
-interface VinDecoderRepository {
-    suspend fun decode(vin: String): VinDecodeResult
-}
-
 @Singleton
 class DefaultVinDecoderRepository @Inject constructor(
     private val api: VpicApi,
