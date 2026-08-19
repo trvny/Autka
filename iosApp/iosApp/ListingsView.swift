@@ -116,6 +116,7 @@ struct ListingsView: View {
     private func refresh() async {
         requestGeneration += 1
         let generation = requestGeneration
+        isLoading = false
         nextOffset = 0
         reachedEnd = false
         await loadPage(offset: 0, generation: generation, replacing: true)
