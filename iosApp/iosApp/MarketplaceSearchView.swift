@@ -19,7 +19,7 @@ struct MarketplaceSearchView: View {
             maxMileageKm: nil,
             fuelTypes: Set<FuelType>(),
             transmissions: Set<Transmission>(),
-            regions: Set<Region>([region.kotlinValue]),
+            regions: region.kotlinValues,
             sourceIds: Set<String>(),
             sort: SortOrder.newest
         )
@@ -77,30 +77,6 @@ struct MarketplaceSearchView: View {
             .onChange(of: make) { _ in refreshLinks() }
             .onChange(of: model) { _ in refreshLinks() }
             .onChange(of: region) { _ in refreshLinks() }
-        }
-    }
-}
-
-private enum SearchRegion: String, CaseIterable, Identifiable {
-    case poland
-    case europe
-    case usa
-
-    var id: String { rawValue }
-
-    var title: LocalizedStringKey {
-        switch self {
-        case .poland: "Poland"
-        case .europe: "Europe"
-        case .usa: "USA"
-        }
-    }
-
-    var kotlinValue: Region {
-        switch self {
-        case .poland: Region.poland
-        case .europe: Region.europe
-        case .usa: Region.usa
         }
     }
 }
