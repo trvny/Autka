@@ -1,0 +1,53 @@
+name: Shared iOS CI
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'shared/**'
+      - 'build.gradle.kts'
+      - 'settings.gradle.kts'
+      - 'gradle/**'
+      - '.github/workflows/shared-ios-ci.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'shared/**'
+      - 'build.gradle.kts'
+      - 'settings.gradle.kts'
+      - 'gradle/**'
+      - '.github/workflows/shared-ios-ci.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: shared-ios-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build & test shared iOS
+    runs-on: macos-15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6.3.0
+
+      - name: Build frameworks and run iOS tests
+        run: >-
+          ./gradlew --no-daemon --stacktrace
+          :shared:linkDebugFrameworkIosArm64
+          :shared:linkDebugFrameworkIosSimulatorArm64
+          :shared:iosSimulatorArm64Test
