@@ -85,6 +85,11 @@ struct ListingsView: View {
             .onSubmit(of: .search) {
                 Task { await refresh() }
             }
+            .onChange(of: query) { _ in
+                requestGeneration += 1
+                isLoading = false
+                loadFailed = false
+            }
             .onChange(of: region) { _ in
                 Task { await refresh() }
             }
