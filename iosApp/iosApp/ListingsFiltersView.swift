@@ -1,3 +1,4 @@
+import AutkaShared
 import Foundation
 import SwiftUI
 
@@ -31,6 +32,7 @@ struct ListingsFilters: Equatable {
     var maxMileageKm: Int?
     var fuelTypes: Set<String> = []
     var transmissions: Set<String> = []
+    var sourceIds: Set<String> = []
     var sort = ListingsSortOption.newest
 
     var activeCount: Int {
@@ -40,6 +42,7 @@ struct ListingsFilters: Equatable {
         if maxMileageKm != nil { count += 1 }
         if !fuelTypes.isEmpty { count += 1 }
         if !transmissions.isEmpty { count += 1 }
+        if !sourceIds.isEmpty { count += 1 }
         if sort != .newest { count += 1 }
         return count
     }
@@ -64,13 +67,19 @@ struct ListingsFiltersView: View {
     @State private var maxYearText: String
     @State private var maxMileageText: String
 
+    let availableSources: [SourceHealth]
     let onApply: (ListingsFilters) -> Void
 
-    init(filters: ListingsFilters, onApply: @escaping (ListingsFilters) -> Void) {
+    init(
+        filters: ListingsFilters,
+        availableSources: [SourceHealth],
+        onApply: @escaping (ListingsFilters) -> Void
+    ) {
         _draft = State(initialValue: filters)
         _minYearText = State(initialValue: filters.minYear.map(String.init) ?? "")
         _maxYearText = State(initialValue: filters.maxYear.map(String.init) ?? "")
         _maxMileageText = State(initialValue: filters.maxMileageKm.map(String.init) ?? "")
+        self.availableSources = availableSources
         self.onApply = onApply
     }
 
@@ -104,6 +113,20 @@ struct ListingsFiltersView: View {
                             selected: draft.transmissions.contains(value)
                         ) {
                             draft.transmissions = toggled(value, in: draft.transmissions)
+                        }
+                    }
+                }
+
+                if !availableSources.isEmpty {
+                    Section(String(localized: "Sources")) {
+                        ForEach(availableSources, id: \.id) { source in
+                            SelectionRow(
+                                title: source.displayName,
+                                selected: draft.sourceIds.contains(source.id),
+                                enabled: source.enabled
+                            ) {
+                                draft.sourceIds = toggled(source.id, in: draft.sourceIds)
+                            }
                         }
                     }
                 }
@@ -197,13 +220,14 @@ struct ListingsFiltersView: View {
 private struct SelectionRow: View {
     let title: String
     let selected: Bool
+    var enabled = true
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             HStack {
                 Text(title)
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(enabled ? .primary : .secondary)
                 Spacer()
                 if selected {
                     Image(systemName: "checkmark")
@@ -211,5 +235,6 @@ private struct SelectionRow: View {
                 }
             }
         }
+        .disabled(!enabled)
     }
 }

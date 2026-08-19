@@ -77,20 +77,11 @@ struct SourceHealthView: View {
         loadFailed = false
         defer { isLoading = false }
 
-        let url = AppConfiguration.backendBaseURL.appendingPathComponent("sources")
-        do {
-            let (data, response) = try await URLSession.shared.data(from: url)
-            guard let httpResponse = response as? HTTPURLResponse,
-                  (200...299).contains(httpResponse.statusCode),
-                  let payload = String(data: data, encoding: .utf8),
-                  let decoded = SourceHealthDecoder.shared.decodeJsonOrNull(payload: payload) else {
-                loadFailed = true
-                return
-            }
-            sources = decoded.sortedForDisplay
-        } catch {
+        guard let decoded = await SourceCatalog.fetch() else {
             loadFailed = true
+            return
         }
+        sources = decoded.sortedForDisplay
     }
 }
 
