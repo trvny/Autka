@@ -7,6 +7,7 @@ struct ListingsView: View {
 
     @State private var query = ""
     @State private var region = SearchRegion.all
+    @State private var filters = ListingsFilters()
     @State private var offers: [CarOffer] = []
     @State private var isLoading = false
     @State private var loadFailed = false
@@ -16,6 +17,7 @@ struct ListingsView: View {
     @State private var hasLoaded = false
     @State private var showMarketplaces = false
     @State private var showMap = false
+    @State private var showFilters = false
 
     var body: some View {
         NavigationStack {
@@ -106,10 +108,22 @@ struct ListingsView: View {
                     Button {
                         showMap = true
                     } label: {
-                        Image(systemName: "map")
+                        Label(String(localized: "Map", table: "Map"), systemImage: "map")
+                            .labelStyle(.iconOnly)
                     }
                     .disabled(offers.isEmpty)
-                    .accessibilityLabel("Map")
+
+                    Button {
+                        showFilters = true
+                    } label: {
+                        Label(
+                            String(localized: "Filters", table: "Filters"),
+                            systemImage: filters.activeCount > 0
+                                ? "line.3.horizontal.decrease.circle.fill"
+                                : "line.3.horizontal.decrease.circle"
+                        )
+                        .labelStyle(.iconOnly)
+                    }
 
                     Button {
                         showMarketplaces = true
@@ -121,6 +135,12 @@ struct ListingsView: View {
             }
             .sheet(isPresented: $showMap) {
                 OffersMapView(offers: offers)
+            }
+            .sheet(isPresented: $showFilters) {
+                ListingsFiltersView(filters: filters) { updated in
+                    filters = updated
+                    Task { await refresh() }
+                }
             }
             .sheet(isPresented: $showMarketplaces) {
                 MarketplaceSearchView()
@@ -199,7 +219,7 @@ struct ListingsView: View {
             resolvingAgainstBaseURL: false
         )
         var items = [
-            URLQueryItem(name: "sort", value: "NEWEST"),
+            URLQueryItem(name: "sort", value: filters.sort.backendValue),
             URLQueryItem(name: "limit", value: String(Self.pageSize)),
             URLQueryItem(name: "offset", value: String(offset)),
         ]
@@ -209,6 +229,28 @@ struct ListingsView: View {
         }
         if let region = region.queryValue {
             items.append(URLQueryItem(name: "regions", value: region))
+        }
+        if let minYear = filters.minYear {
+            items.append(URLQueryItem(name: "minYear", value: String(minYear)))
+        }
+        if let maxYear = filters.maxYear {
+            items.append(URLQueryItem(name: "maxYear", value: String(maxYear)))
+        }
+        if let maxMileageKm = filters.maxMileageKm {
+            items.append(URLQueryItem(name: "maxMileageKm", value: String(maxMileageKm)))
+        }
+        if !filters.fuelTypes.isEmpty {
+            items.append(
+                URLQueryItem(name: "fuelTypes", value: filters.fuelTypes.sorted().joined(separator: ","))
+            )
+        }
+        if !filters.transmissions.isEmpty {
+            items.append(
+                URLQueryItem(
+                    name: "transmissions",
+                    value: filters.transmissions.sorted().joined(separator: ",")
+                )
+            )
         }
         components?.queryItems = items
         return components?.url

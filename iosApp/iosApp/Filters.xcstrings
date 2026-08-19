@@ -1,0 +1,22 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Apply" : { "localizations" : { "pl" : { "stringUnit" : { "state" : "translated", "value" : "Zastosuj" } } } },
+    "Automatic" : { "localizations" : { "pl" : { "stringUnit" : { "state" : "translated", "value" : "Automatyczna" } } } },
+    "Cancel" : { "localizations" : { "pl" : { "stringUnit" : { "state" : "translated", "value" : "Anuluj" } } } },
+    "Filters" : { "localizations" : { "pl" : { "stringUnit" : { "state" : "translated", "value" : "Filtry" } } } },
+    "Fuel" : { "localizations" : { "pl" : { "stringUnit" : { "state" : "translated", "value" : "Paliwo" } } } },
+    "Lowest mileage" : { "localizations" : { "pl" : { "stringUnit" : { "state" : "translated", "value" : "Najniższy przebieg" } } } },
+    "Manual" : { "localizations" : { "pl" : { "stringUnit" : { "state" : "translated", "value" : "Manualna" } } } },
+    "Maximum mileage (km)" : { "localizations" : { "pl" : { "stringUnit" : { "state" : "translated", "value" : "Maksymalny przebieg (km)" } } } },
+    "Maximum year" : { "localizations" : { "pl" : { "stringUnit" : { "state" : "translated", "value" : "Maksymalny rocznik" } } } },
+    "Minimum year" : { "localizations" : { "pl" : { "stringUnit" : { "state" : "translated", "value" : "Minimalny rocznik" } } } },
+    "Newest" : { "localizations" : { "pl" : { "stringUnit" : { "state" : "translated", "value" : "Najnowsze" } } } },
+    "Newest model year" : { "localizations" : { "pl" : { "stringUnit" : { "state" : "translated", "value" : "Najnowszy rocznik" } } } },
+    "Reset" : { "localizations" : { "pl" : { "stringUnit" : { "state" : "translated", "value" : "Wyczyść" } } } },
+    "Sort" : { "localizations" : { "pl" : { "stringUnit" : { "state" : "translated", "value" : "Sortowanie" } } } },
+    "Transmission" : { "localizations" : { "pl" : { "stringUnit" : { "state" : "translated", "value" : "Skrzynia biegów" } } } },
+    "Year and mileage" : { "localizations" : { "pl" : { "stringUnit" : { "state" : "translated", "value" : "Rocznik i przebieg" } } } }
+  },
+  "version" : "1.0"
+}
