@@ -2,14 +2,16 @@ import AutkaShared
 import SwiftUI
 
 struct MarketplaceSearchView: View {
-    @State private var query = ""
+    @State private var make = ""
+    @State private var model = ""
     @State private var region = SearchRegion.poland
+    @State private var links: [MarketplaceLink] = []
 
-    private var filter: SearchFilter {
-        SearchFilter(
-            query: query,
-            make: nil,
-            model: nil,
+    private func refreshLinks() {
+        let filter = SearchFilter(
+            query: "",
+            make: make.isEmpty ? nil : make,
+            model: model.isEmpty ? nil : model,
             minPrice: nil,
             maxPrice: nil,
             minYear: nil,
@@ -21,17 +23,18 @@ struct MarketplaceSearchView: View {
             sourceIds: Set<String>(),
             sort: SortOrder.newest
         )
-    }
-
-    private var links: [MarketplaceLink] {
-        MarketplaceSearchLinks.shared.all(filter: filter, affiliateId: nil)
+        links = MarketplaceSearchLinks.shared.all(filter: filter, affiliateId: nil)
     }
 
     var body: some View {
         NavigationStack {
             List {
                 Section {
-                    TextField("Make, model or keywords", text: $query)
+                    TextField("Make", text: $make)
+                        .textInputAutocapitalization(.words)
+                        .autocorrectionDisabled()
+
+                    TextField("Model", text: $model)
                         .textInputAutocapitalization(.words)
                         .autocorrectionDisabled()
 
@@ -56,11 +59,24 @@ struct MarketplaceSearchView: View {
                                         .foregroundStyle(.secondary)
                                 }
                             }
+                        } else {
+                            HStack {
+                                Text(link.displayName)
+                                Spacer()
+                                Image(systemName: "exclamationmark.triangle")
+                                    .foregroundStyle(.secondary)
+                                    .accessibilityLabel("Invalid link")
+                            }
+                            .foregroundStyle(.secondary)
                         }
                     }
                 }
             }
             .navigationTitle("Search cars")
+            .onAppear(perform: refreshLinks)
+            .onChange(of: make) { _ in refreshLinks() }
+            .onChange(of: model) { _ in refreshLinks() }
+            .onChange(of: region) { _ in refreshLinks() }
         }
     }
 }
