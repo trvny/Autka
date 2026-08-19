@@ -7,7 +7,6 @@ import com.autka.data.remote.backend.SourceHealthDto
 import com.autka.data.remote.backend.SourcesResponse
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -35,17 +34,6 @@ class SourceHealthRepositoryTest {
 
         assertTrue(result.isFailure)
         assertEquals(listOf("alpha"), repository.cachedSources().map { it.id })
-    }
-
-    @Test
-    fun `cache freshness expires after five minutes`() {
-        val storedAt = 1_000L
-        val fiveMinutesMs = 5 * 60 * 1000L
-
-        assertTrue(isSourceHealthCacheFresh(storedAt, storedAt))
-        assertTrue(isSourceHealthCacheFresh(storedAt, storedAt + fiveMinutesMs))
-        assertFalse(isSourceHealthCacheFresh(storedAt, storedAt + fiveMinutesMs + 1))
-        assertFalse(isSourceHealthCacheFresh(storedAt, storedAt - 1))
     }
 
     private class FakeApi : BackendApi {

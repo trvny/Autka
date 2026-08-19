@@ -6,13 +6,6 @@ import com.autka.data.remote.backend.SourceHealthDto
 import javax.inject.Inject
 import javax.inject.Singleton
 
-private const val SOURCE_HEALTH_CACHE_TTL_MS = 5 * 60 * 1000L
-
-interface SourceHealthRepository {
-    suspend fun getSources(): List<SourceHealth>
-    fun cachedSources(): List<SourceHealth>
-}
-
 @Singleton
 class DefaultSourceHealthRepository @Inject constructor(
     private val api: BackendApi,
@@ -31,11 +24,6 @@ class DefaultSourceHealthRepository @Inject constructor(
             isSourceHealthCacheFresh(snapshot.storedAtEpochMs, System.currentTimeMillis())
         }.orEmpty()
     }
-}
-
-internal fun isSourceHealthCacheFresh(storedAtEpochMs: Long, nowEpochMs: Long): Boolean {
-    val ageMs = nowEpochMs - storedAtEpochMs
-    return ageMs in 0..SOURCE_HEALTH_CACHE_TTL_MS
 }
 
 private data class CachedSourceHealth(
