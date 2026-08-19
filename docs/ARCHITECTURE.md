@@ -181,6 +181,10 @@ shared Android-host test suite. The unit suites cover import calculations and pa
 input/response handling, listings behavior, repository failure isolation, exchange-rate
 paths and source-health refresh semantics.
 
+`.github/workflows/shared-ios-ci.yml` links the shared framework for iOS devices and both
+ARM64 and x64 simulators, and runs the shared test suite on both simulator architectures.
+This keeps the common module honest before a dedicated iOS app host is introduced.
+
 For pull requests, `.github/workflows/backend-ci.yml` regenerates Wrangler configuration
 types, runs TypeScript checking and executes backend tests. On pushes to `main`, the same
 workflow additionally applies remote D1 migrations and deploys the Worker.
