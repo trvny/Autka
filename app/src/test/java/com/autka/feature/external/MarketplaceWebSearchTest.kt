@@ -116,7 +116,7 @@ class MarketplaceWebSearchTest {
         val polandQuery = decodedQuery(links.single { it.region == Region.POLAND }.url)
         val europeQuery = decodedQuery(links.single { it.region == Region.EUROPE }.url)
         assertTrue(polandQuery.contains("site:autouncle.pl"))
-        assertTrue(polandQuery.contains("site:autoscout24.pl"))
+        assertFalse(polandQuery.contains("site:autoscout24.pl"))
         assertTrue(europeQuery.contains("site:autouncle.pl"))
         assertTrue(europeQuery.contains("site:autoscout24.pl"))
         assertTrue(europeQuery.contains("site:mobile.de"))

@@ -139,6 +139,19 @@ class MarketplaceSearchLinksTest {
     }
 
     @Test
+    fun `AutoScout24 follows Europe region rather than Poland`() {
+        val polandIds = MarketplaceSearchLinks.all(SearchFilter(regions = setOf(Region.POLAND)))
+            .map { it.sourceId }
+            .toSet()
+        val europeIds = MarketplaceSearchLinks.all(SearchFilter(regions = setOf(Region.EUROPE)))
+            .map { it.sourceId }
+            .toSet()
+
+        assertFalse("autoscout24" in polandIds)
+        assertTrue("autoscout24" in europeIds)
+    }
+
+    @Test
     fun `default regions expose every provider exactly once`() {
         val links = MarketplaceSearchLinks.all(SearchFilter())
         assertEquals(links.size, links.map { it.sourceId }.toSet().size)

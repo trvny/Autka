@@ -45,7 +45,7 @@ object MarketplaceSearchLinks {
         // redirects to the original ad — so one chip covers far more than the single-
         // marketplace ones below. Listed first for that reason.
         MarketplaceProvider("autouncle", "AutoUncle", setOf(Region.POLAND, Region.EUROPE), { f, _ -> autoUncle(f) }),
-        MarketplaceProvider("autoscout24", "AutoScout24", setOf(Region.EUROPE, Region.POLAND), { f, _ -> autoScout24(f) }),
+        MarketplaceProvider("autoscout24", "AutoScout24", setOf(Region.EUROPE), { f, _ -> autoScout24(f) }),
         MarketplaceProvider("mobilede", "mobile.de", setOf(Region.EUROPE), { f, _ -> mobileDe(f) }),
         MarketplaceProvider("copart", "Copart (US)", setOf(Region.USA), { f, _ -> copart(f) }),
         MarketplaceProvider("iaai", "IAAI (US)", setOf(Region.USA), { f, _ -> iaai(f) }),
