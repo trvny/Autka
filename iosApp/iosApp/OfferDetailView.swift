@@ -51,10 +51,8 @@ struct OfferDetailView: View {
                             .clipShape(RoundedRectangle(cornerRadius: 14))
                     }
                 }
-                .scrollTargetLayout()
                 .padding(.horizontal)
             }
-            .scrollTargetBehavior(.viewAligned)
             .scrollIndicators(.hidden)
         }
     }
