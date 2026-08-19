@@ -21,13 +21,14 @@ struct OfferDetailView: View {
                     .font(.title3.weight(.semibold))
                     .foregroundStyle(.tint)
                 }
+                .padding(.horizontal)
 
                 actions
                 specifications
             }
             .padding(.bottom, 24)
         }
-        .navigationTitle("Offer")
+        .navigationTitle(String(localized: "Offer", table: "OfferDetail"))
         .navigationBarTitleDisplayMode(.inline)
     }
 
@@ -69,7 +70,7 @@ struct OfferDetailView: View {
                 .buttonStyle(.borderedProminent)
 
                 ShareLink(item: url, subject: Text(offer.title)) {
-                    Label("Share", systemImage: "square.and.arrow.up")
+                    Label(String(localized: "Share", table: "OfferDetail"), systemImage: "square.and.arrow.up")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
@@ -80,70 +81,76 @@ struct OfferDetailView: View {
 
     private var specifications: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text("Details")
+            Text(String(localized: "Details", table: "OfferDetail"))
                 .font(.headline)
                 .padding(.bottom, 8)
 
-            DetailRow("Make", offer.make)
-            DetailRow("Model", offer.model)
-            DetailRow("Year", offer.year.map { String($0.intValue) })
-            DetailRow("Mileage", offer.mileageKm.map { "\(Int($0.intValue).formatted()) km" })
-            DetailRow("Fuel", fuelLabel)
-            DetailRow("Transmission", transmissionLabel)
-            DetailRow("Power", offer.powerHp.map { "\($0.intValue) hp" })
-            DetailRow("Location", offer.location)
-            DetailRow("Region", regionLabel)
-            DetailRow("Source", offer.sourceId)
+            DetailRow(String(localized: "Make"), offer.make)
+            DetailRow(String(localized: "Model"), offer.model)
+            DetailRow(String(localized: "Year"), offer.year.map { String($0.intValue) })
+            DetailRow(
+                String(localized: "Mileage", table: "OfferDetail"),
+                offer.mileageKm.map { "\(Int($0.intValue).formatted()) km" }
+            )
+            DetailRow(String(localized: "Fuel"), fuelLabel)
+            DetailRow(String(localized: "Transmission"), transmissionLabel)
+            DetailRow(String(localized: "Power"), offer.powerHp.map { "\($0.intValue) hp" })
+            DetailRow(String(localized: "Location", table: "OfferDetail"), offer.location)
+            DetailRow(String(localized: "Region"), regionLabel)
+            DetailRow(String(localized: "Source", table: "OfferDetail"), offer.sourceId)
 
             if let listingCount = offer.listingCount?.intValue, listingCount > 1 {
-                DetailRow("Marketplaces", String(listingCount))
+                DetailRow(String(localized: "Marketplaces"), String(listingCount))
             }
 
             if let postedAt = offer.postedAtEpochMs {
                 let date = Date(timeIntervalSince1970: Double(postedAt.int64Value) / 1_000.0)
-                DetailRow("Posted", date.formatted(date: .abbreviated, time: .shortened))
+                DetailRow(
+                    String(localized: "Posted", table: "OfferDetail"),
+                    date.formatted(date: .abbreviated, time: .shortened)
+                )
             }
         }
         .padding(.horizontal)
     }
 
-    private var fuelLabel: LocalizedStringKey {
+    private var fuelLabel: String {
         switch offer.fuelType.name {
-        case "PETROL": "Petrol"
-        case "DIESEL": "Diesel"
-        case "HYBRID": "Hybrid"
-        case "PLUGIN_HYBRID": "Plug-in hybrid"
-        case "ELECTRIC": "Electric"
-        case "HYDROGEN": "Hydrogen"
-        case "LPG": "LPG"
-        case "OTHER": "Other"
-        default: "Unknown"
+        case "PETROL": String(localized: "Petrol")
+        case "DIESEL": String(localized: "Diesel")
+        case "HYBRID": String(localized: "Hybrid")
+        case "PLUGIN_HYBRID": String(localized: "Plug-in hybrid")
+        case "ELECTRIC": String(localized: "Electric")
+        case "HYDROGEN": String(localized: "Hydrogen")
+        case "LPG": String(localized: "LPG")
+        case "OTHER": String(localized: "Other")
+        default: String(localized: "Unknown")
         }
     }
 
-    private var transmissionLabel: LocalizedStringKey {
+    private var transmissionLabel: String {
         switch offer.transmission.name {
-        case "MANUAL": "Manual"
-        case "AUTOMATIC": "Automatic"
-        default: "Unknown"
+        case "MANUAL": String(localized: "Manual", table: "OfferDetail")
+        case "AUTOMATIC": String(localized: "Automatic", table: "OfferDetail")
+        default: String(localized: "Unknown")
         }
     }
 
-    private var regionLabel: LocalizedStringKey {
+    private var regionLabel: String {
         switch offer.region.name {
-        case "POLAND": "Poland"
-        case "EUROPE": "Europe"
-        case "USA": "USA"
-        default: "Unknown"
+        case "POLAND": String(localized: "Poland")
+        case "EUROPE": String(localized: "Europe")
+        case "USA": String(localized: "USA")
+        default: String(localized: "Unknown")
         }
     }
 }
 
 private struct DetailRow: View {
-    let label: LocalizedStringKey
+    let label: String
     let value: String?
 
-    init(_ label: LocalizedStringKey, _ value: String?) {
+    init(_ label: String, _ value: String?) {
         self.label = label
         self.value = value
     }
