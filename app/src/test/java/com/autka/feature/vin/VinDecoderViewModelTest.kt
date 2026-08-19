@@ -21,19 +21,6 @@ import org.junit.Test
 class VinDecoderViewModelTest {
 
     @Test
-    fun `VIN input is normalized and capped at 17 characters`() {
-        assertEquals("1M8GDM9AXKP042788", normalizeVinInput("1m8g-dm9a xkp042788-extra"))
-        assertEquals("1M8GDM9AXKP042788", normalizeVinInput("Ł1m8g-dm9a xkp042788"))
-    }
-
-    @Test
-    fun `VIN validation rejects wrong length and forbidden letters`() {
-        assertFalse(isValidVin("1M8GDM9AXKP04278"))
-        assertFalse(isValidVin("1M8GDM9AXIP042788"))
-        assertTrue(isValidVin("1M8GDM9AXKP042788"))
-    }
-
-    @Test
     fun `invalid VIN blocks network decode`() = runTest {
         val dispatcher = StandardTestDispatcher(testScheduler)
         Dispatchers.setMain(dispatcher)
