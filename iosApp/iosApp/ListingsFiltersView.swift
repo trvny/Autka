@@ -1,4 +1,3 @@
-import Foundation
 import SwiftUI
 
 enum ListingsSortOption: String, CaseIterable, Identifiable {
@@ -26,8 +25,6 @@ enum ListingsSortOption: String, CaseIterable, Identifiable {
 }
 
 struct ListingsFilters: Equatable {
-    var make = ""
-    var model = ""
     var minYear: Int?
     var maxYear: Int?
     var maxMileageKm: Int?
@@ -37,8 +34,6 @@ struct ListingsFilters: Equatable {
 
     var activeCount: Int {
         var count = 0
-        if !make.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { count += 1 }
-        if !model.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { count += 1 }
         if minYear != nil { count += 1 }
         if maxYear != nil { count += 1 }
         if maxMileageKm != nil { count += 1 }
@@ -81,15 +76,6 @@ struct ListingsFiltersView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section(String(localized: "Vehicle", table: "Filters")) {
-                    TextField(String(localized: "Make"), text: $draft.make)
-                        .textInputAutocapitalization(.words)
-                        .autocorrectionDisabled()
-                    TextField(String(localized: "Model"), text: $draft.model)
-                        .textInputAutocapitalization(.words)
-                        .autocorrectionDisabled()
-                }
-
                 Section(String(localized: "Year and mileage", table: "Filters")) {
                     TextField(String(localized: "Minimum year", table: "Filters"), text: $minYearText)
                         .keyboardType(.numberPad)
@@ -166,8 +152,6 @@ struct ListingsFiltersView: View {
             result.maxYear = parsedMax
         }
         result.maxMileageKm = parsePositiveInt(maxMileageText)
-        result.make = result.make.trimmingCharacters(in: .whitespacesAndNewlines)
-        result.model = result.model.trimmingCharacters(in: .whitespacesAndNewlines)
         onApply(result)
         dismiss()
     }
