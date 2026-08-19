@@ -20,13 +20,9 @@ DISABLE:
 # ACTION_ZIZMOR: now enabled and green (see below + .github/zizmor.yml).
 #   Runs offline; unpinned-uses waived to ref-pin; real findings fixed
 #   (persist-credentials, job-scoped permissions, release cache-disabled).
-# SQL_TSQLLINT: MegaLinter's only SQL linter defaults to T-SQL (MSSQL)
-#   dialect - these migrations are SQLite (D1), every "fix" it wants is
-#   wrong here (IF NOT EXISTS, ADD COLUMN, no SET ANSI_NULLS...).
 # TYPESCRIPT_STANDARD: can't locate backend/tsconfig.json from repo root;
 #   revisit with an explicit --project arg if you want this back.
 DISABLE_LINTERS:
-  - SQL_TSQLLINT
   - TYPESCRIPT_STANDARD
 
 # ACTION_ZIZMOR: run offline (no GitHub API -> no ref-confusion crash) and
