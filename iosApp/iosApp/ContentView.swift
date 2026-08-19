@@ -12,6 +12,11 @@ struct ContentView: View {
                 .tabItem {
                     Label("Import", systemImage: "shippingbox")
                 }
+
+            VinDecoderView()
+                .tabItem {
+                    Label("VIN", systemImage: "barcode.viewfinder")
+                }
         }
     }
 }
