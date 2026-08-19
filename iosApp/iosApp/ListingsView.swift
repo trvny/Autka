@@ -231,9 +231,12 @@ private struct OfferRow: View {
                 .foregroundStyle(.secondary)
 
                 if let listingCount = offer.listingCount?.intValue, listingCount > 1 {
-                    Text("Listed on \(listingCount) sites")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    HStack(spacing: 3) {
+                        Text(verbatim: "\(listingCount)×")
+                        Text("Marketplaces")
+                    }
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
                 }
 
                 if let url = URL(string: offer.listingUrl) {
