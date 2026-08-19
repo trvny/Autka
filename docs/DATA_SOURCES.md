@@ -13,10 +13,10 @@ There are two deliberately separate paths:
 
 1. **Catalogue data** comes from licensed, partner-provided, seller-authorised or
    otherwise permitted feeds. It is normalized by the Cloudflare backend and served to
-   Android as `CarOffer` data.
-2. **Marketplace deep-links** stay on the Android device. They translate the active
-   `SearchFilter` into the original marketplace's search URL and open that site. No
-   listing data is ingested by Autka.
+   client apps as `CarOffer` data.
+2. **Marketplace deep-links** stay on the client. The shared builder translates the active
+   `SearchFilter` into the original marketplace's search URL, and the platform UI opens
+   that site. No listing data is ingested by Autka.
 
 The implementation boundary is simple: anything that produces a `CarOffer` belongs in
 backend ingestion. Anything that only produces a URL belongs in `feature/external`.
@@ -67,7 +67,7 @@ explicit permission for any listing text or images Autka displays or caches.
 ### 2. Pull API or licensed feed
 
 For a provider API, the backend adapter owns authentication, pagination, retries and
-normalization. Secrets never ship in the Android app. The adapter must declare whether a
+normalization. Secrets never ship in the client app. The adapter must declare whether a
 successful run represents a **complete snapshot** or a **delta** because cleanup semantics
 are different.
 
@@ -91,10 +91,10 @@ lead attribution and better landed-cost assumptions can all improve Autka indepe
 
 ## Deep-link fallback
 
-`app/src/main/java/com/autka/feature/external/MarketplaceSearchLinks.kt` is the maintained
-source of truth for marketplace URL builders. It currently covers search hand-offs across
-Polish, European and US marketplaces, including local listing sites, aggregators and US
-auction/dealer sites.
+`shared/src/commonMain/kotlin/com/autka/feature/external/MarketplaceSearchLinks.kt` is the
+maintained source of truth for marketplace URL builders. It currently covers search
+hand-offs across Polish, European and US marketplaces, including local listing sites,
+aggregators and US auction/dealer sites.
 
 Do not duplicate every URL parameter in this document. The code carries per-provider
 verification notes and marks uncertain values with `TODO(verify)`. A guessed parameter can
@@ -145,7 +145,7 @@ When a lawful feed becomes available:
 1. document its rights and operational contract using the checklist above;
 2. add a backend `IngestSource` adapter and tests;
 3. declare snapshot/delta cleanup semantics explicitly;
-4. normalize into the shared backend/Android `CarOffer` model;
+4. normalize into the shared `CarOffer` model;
 5. keep credentials and provider-specific failures server-side;
 6. verify source health and expiry behavior before enabling production ingestion;
 7. decide separately whether the marketplace deep-link remains useful as an additional
