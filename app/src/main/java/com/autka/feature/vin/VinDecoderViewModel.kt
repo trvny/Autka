@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import com.autka.core.model.VinDecodeResult
 import com.autka.data.repository.VinDecoderRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import java.util.Locale
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -33,13 +32,13 @@ class VinDecoderViewModel @Inject constructor(
     fun onVinChange(value: String) {
         decodeJob?.cancel()
         decodeJob = null
-        _uiState.value = VinDecoderUiState(vin = normalizeVinInput(value))
+        _uiState.value = VinDecoderUiState(vin = VinInput.normalize(value))
     }
 
     fun decode() {
         if (decodeJob?.isActive == true) return
         val vin = _uiState.value.vin
-        if (!isValidVin(vin)) {
+        if (!VinInput.isValid(vin)) {
             _uiState.update { it.copy(validationError = true, loadFailed = false, result = null) }
             return
         }
@@ -57,13 +56,3 @@ class VinDecoderViewModel @Inject constructor(
         }
     }
 }
-
-internal fun normalizeVinInput(value: String): String = value
-    .filter { it in '0'..'9' || it in 'a'..'z' || it in 'A'..'Z' }
-    .uppercase(Locale.ROOT)
-    .take(17)
-
-internal fun isValidVin(vin: String): Boolean =
-    vin.length == 17 && vin.all { char ->
-        char.isDigit() || (char in 'A'..'Z' && char !in setOf('I', 'O', 'Q'))
-    }
