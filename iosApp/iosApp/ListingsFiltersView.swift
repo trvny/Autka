@@ -1,3 +1,4 @@
+import Foundation
 import SwiftUI
 
 enum ListingsSortOption: String, CaseIterable, Identifiable {
@@ -49,20 +50,17 @@ struct ListingsFilters: Equatable {
 }
 
 struct ListingsFiltersView: View {
-    private static let fuelChoices: [(String, String)] = [
-        ("PETROL", "Petrol"),
-        ("DIESEL", "Diesel"),
-        ("HYBRID", "Hybrid"),
-        ("PLUGIN_HYBRID", "Plug-in hybrid"),
-        ("ELECTRIC", "Electric"),
-        ("HYDROGEN", "Hydrogen"),
-        ("LPG", "LPG"),
-        ("OTHER", "Other"),
+    private static let fuelChoices = [
+        "PETROL",
+        "DIESEL",
+        "HYBRID",
+        "PLUGIN_HYBRID",
+        "ELECTRIC",
+        "HYDROGEN",
+        "LPG",
+        "OTHER",
     ]
-    private static let transmissionChoices: [(String, String)] = [
-        ("MANUAL", "Manual"),
-        ("AUTOMATIC", "Automatic"),
-    ]
+    private static let transmissionChoices = ["MANUAL", "AUTOMATIC"]
 
     @Environment(\.dismiss) private var dismiss
     @State private var draft: ListingsFilters
@@ -102,23 +100,23 @@ struct ListingsFiltersView: View {
                 }
 
                 Section(String(localized: "Fuel", table: "Filters")) {
-                    ForEach(Self.fuelChoices, id: \.0) { value, key in
+                    ForEach(Self.fuelChoices, id: \.self) { value in
                         SelectionRow(
-                            title: String(localized: String.LocalizationValue(key)),
+                            title: label(for: value),
                             selected: draft.fuelTypes.contains(value)
                         ) {
-                            toggle(value, in: &draft.fuelTypes)
+                            draft.fuelTypes = toggled(value, in: draft.fuelTypes)
                         }
                     }
                 }
 
                 Section(String(localized: "Transmission", table: "Filters")) {
-                    ForEach(Self.transmissionChoices, id: \.0) { value, key in
+                    ForEach(Self.transmissionChoices, id: \.self) { value in
                         SelectionRow(
-                            title: String(localized: String.LocalizationValue(key), table: "Filters"),
+                            title: label(for: value),
                             selected: draft.transmissions.contains(value)
                         ) {
-                            toggle(value, in: &draft.transmissions)
+                            draft.transmissions = toggled(value, in: draft.transmissions)
                         }
                     }
                 }
@@ -186,11 +184,27 @@ struct ListingsFiltersView: View {
         return parsed
     }
 
-    private func toggle(_ value: String, in set: inout Set<String>) {
-        if set.contains(value) {
-            set.remove(value)
-        } else {
-            set.insert(value)
+    private func toggled(_ value: String, in set: Set<String>) -> Set<String> {
+        var result = set
+        if !result.insert(value).inserted {
+            result.remove(value)
+        }
+        return result
+    }
+
+    private func label(for value: String) -> String {
+        switch value {
+        case "PETROL": String(localized: "Petrol")
+        case "DIESEL": String(localized: "Diesel")
+        case "HYBRID": String(localized: "Hybrid")
+        case "PLUGIN_HYBRID": String(localized: "Plug-in hybrid")
+        case "ELECTRIC": String(localized: "Electric")
+        case "HYDROGEN": String(localized: "Hydrogen")
+        case "LPG": String(localized: "LPG")
+        case "OTHER": String(localized: "Other")
+        case "MANUAL": String(localized: "Manual", table: "Filters")
+        case "AUTOMATIC": String(localized: "Automatic", table: "Filters")
+        default: value
         }
     }
 }
