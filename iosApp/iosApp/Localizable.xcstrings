@@ -1,0 +1,276 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Adjust shipping" : {
+      "localizations" : {
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zmień koszt transportu"
+          }
+        }
+      }
+    },
+    "Adjust vehicle price" : {
+      "localizations" : {
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zmień cenę pojazdu"
+          }
+        }
+      }
+    },
+    "Customs duty" : {
+      "localizations" : {
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cło"
+          }
+        }
+      }
+    },
+    "Diesel" : {
+      "localizations" : {
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diesel"
+          }
+        }
+      }
+    },
+    "Drivetrain" : {
+      "localizations" : {
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rodzaj napędu"
+          }
+        }
+      }
+    },
+    "Electric" : {
+      "localizations" : {
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elektryczny"
+          }
+        }
+      }
+    },
+    "Engine" : {
+      "localizations" : {
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Silnik"
+          }
+        }
+      }
+    },
+    "Engine capacity known" : {
+      "localizations" : {
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pojemność silnika znana"
+          }
+        }
+      }
+    },
+    "Estimated landed cost" : {
+      "localizations" : {
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Szacowany koszt importu"
+          }
+        }
+      }
+    },
+    "Excise" : {
+      "localizations" : {
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Akcyza"
+          }
+        }
+      }
+    },
+    "Hybrid" : {
+      "localizations" : {
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hybryda"
+          }
+        }
+      }
+    },
+    "Hydrogen" : {
+      "localizations" : {
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wodór"
+          }
+        }
+      }
+    },
+    "Import assumptions" : {
+      "localizations" : {
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Założenia importu"
+          }
+        }
+      }
+    },
+    "Import calculator" : {
+      "localizations" : {
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kalkulator importu"
+          }
+        }
+      }
+    },
+    "Indicative estimate only. Customs valuation, classification, transport and applicable tax relief can change the final cost." : {
+      "localizations" : {
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wynik jest orientacyjny. Wartość celna, klasyfikacja, transport i przysługujące ulgi podatkowe mogą zmienić końcowy koszt."
+          }
+        }
+      }
+    },
+    "LPG" : {
+      "localizations" : {
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "LPG"
+          }
+        }
+      }
+    },
+    "Other" : {
+      "localizations" : {
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inny"
+          }
+        }
+      }
+    },
+    "Petrol" : {
+      "localizations" : {
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Benzyna"
+          }
+        }
+      }
+    },
+    "Plug-in hybrid" : {
+      "localizations" : {
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hybryda plug-in"
+          }
+        }
+      }
+    },
+    "Shipping" : {
+      "localizations" : {
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transport"
+          }
+        }
+      }
+    },
+    "Total" : {
+      "localizations" : {
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Razem"
+          }
+        }
+      }
+    },
+    "Unknown" : {
+      "localizations" : {
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nieznany"
+          }
+        }
+      }
+    },
+    "Unknown engine capacity uses the conservative excise rate." : {
+      "localizations" : {
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przy nieznanej pojemności silnika przyjęto ostrożnie wyższą stawkę akcyzy."
+          }
+        }
+      }
+    },
+    "USD values are used for the landed-cost estimate." : {
+      "localizations" : {
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Do oszacowania kosztu importu używane są kwoty w USD."
+          }
+        }
+      }
+    },
+    "VAT" : {
+      "localizations" : {
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "VAT"
+          }
+        }
+      }
+    },
+    "Vehicle" : {
+      "localizations" : {
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pojazd"
+          }
+        }
+      }
+    },
+    "Vehicle price" : {
+      "localizations" : {
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cena pojazdu"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}
