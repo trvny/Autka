@@ -1,4 +1,5 @@
 import AutkaShared
+import Foundation
 import SwiftUI
 
 struct VinDecoderView: View {
