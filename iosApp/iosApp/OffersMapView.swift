@@ -21,12 +21,17 @@ struct OffersMapView: View {
                         Image(systemName: "map")
                             .font(.largeTitle)
                             .foregroundStyle(.secondary)
-                        Text("No cars on the map")
+                        Text(String(localized: "No cars on the map", table: "Map"))
                             .font(.headline)
-                        Text("The loaded offers do not contain location coordinates.")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
+                        Text(
+                            String(
+                                localized: "The loaded offers do not contain location coordinates.",
+                                table: "Map"
+                            )
+                        )
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
                     }
                     .padding()
                 } else {
@@ -37,8 +42,7 @@ struct OffersMapView: View {
                             } label: {
                                 Image(systemName: "car.circle.fill")
                                     .font(.title)
-                                    .symbolRenderingMode(.palette)
-                                    .foregroundStyle(.white, .tint)
+                                    .foregroundStyle(.tint)
                                     .shadow(radius: 2)
                             }
                             .accessibilityLabel(item.offer.title)
@@ -47,7 +51,7 @@ struct OffersMapView: View {
                     .ignoresSafeArea(edges: .bottom)
                 }
             }
-            .navigationTitle("Map")
+            .navigationTitle(String(localized: "Map", table: "Map"))
             .navigationBarTitleDisplayMode(.inline)
             .sheet(item: $selectedOffer) { item in
                 NavigationStack {
