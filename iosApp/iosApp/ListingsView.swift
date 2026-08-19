@@ -58,7 +58,11 @@ struct ListingsView: View {
                 } else {
                     Section {
                         ForEach(offers, id: \.id) { offer in
-                            OfferRow(offer: offer)
+                            NavigationLink {
+                                OfferDetailView(offer: offer)
+                            } label: {
+                                OfferRow(offer: offer)
+                            }
                         }
 
                         if !reachedEnd {
@@ -204,7 +208,9 @@ private struct OfferRow: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            OfferThumbnail(urlString: offer.thumbnailUrl)
+            OfferImageView(urlString: offer.thumbnailUrl)
+                .frame(width: 96, height: 76)
+                .clipShape(RoundedRectangle(cornerRadius: 10))
 
             VStack(alignment: .leading, spacing: 5) {
                 Text(offer.title)
@@ -243,13 +249,6 @@ private struct OfferRow: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 }
-
-                if let url = URL(string: offer.listingUrl) {
-                    Link(destination: url) {
-                        Label("Open listing", systemImage: "arrow.up.right")
-                            .font(.footnote)
-                    }
-                }
             }
         }
         .padding(.vertical, 4)
@@ -268,29 +267,6 @@ private struct OfferRow: View {
         case "USA": "USA"
         default: offer.region.name
         }
-    }
-}
-
-private struct OfferThumbnail: View {
-    let urlString: String?
-
-    var body: some View {
-        AsyncImage(url: urlString.flatMap(URL.init(string:))) { phase in
-            switch phase {
-            case .success(let image):
-                image
-                    .resizable()
-                    .scaledToFill()
-            default:
-                ZStack {
-                    Color.secondary.opacity(0.12)
-                    Image(systemName: "car.side")
-                        .foregroundStyle(.secondary)
-                }
-            }
-        }
-        .frame(width: 96, height: 76)
-        .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 }
 
