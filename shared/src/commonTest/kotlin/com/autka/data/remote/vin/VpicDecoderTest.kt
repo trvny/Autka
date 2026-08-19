@@ -52,4 +52,10 @@ class VpicDecoderTest {
             VpicDecoder.decodeJson("{\"Results\":[]}", fallbackVin = "TEST")
         }
     }
+
+    @Test
+    fun `safe decode returns null for unusable payloads`() {
+        assertNull(VpicDecoder.decodeJsonOrNull("not-json", fallbackVin = "TEST"))
+        assertNull(VpicDecoder.decodeJsonOrNull("{\"Results\":[]}", fallbackVin = "TEST"))
+    }
 }
