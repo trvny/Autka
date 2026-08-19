@@ -5,13 +5,12 @@ import com.autka.core.model.Region
 import com.autka.core.model.SearchFilter
 import com.autka.core.model.SortOrder
 import com.autka.core.model.Transmission
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
-import org.junit.Test
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class MarketplaceSearchLinksTest {
-
     @Test
     fun `otomoto keeps verified path and filter parameter contract`() {
         val url = urlFor(
@@ -107,6 +106,19 @@ class MarketplaceSearchLinksTest {
 
         assertEquals(
             "https://www.autouncle.pl/pl/samochody-uzywane/f-lpg/mp-do-10000-pln",
+            url,
+        )
+    }
+
+    @Test
+    fun `query encoding remains compatible with Android URLs`() {
+        val url = urlFor(
+            "facebook",
+            SearchFilter(query = "Audi A4 & C", regions = setOf(Region.POLAND)),
+        )
+
+        assertEquals(
+            "https://www.facebook.com/marketplace/category/vehicles?query=Audi%20A4%20%26%20C",
             url,
         )
     }
