@@ -5,6 +5,7 @@ on:
     branches: [ main ]
     paths:
       - 'shared/**'
+      - 'iosApp/**'
       - 'build.gradle.kts'
       - 'settings.gradle.kts'
       - 'gradle.properties'
@@ -15,6 +16,7 @@ on:
     branches: [ main ]
     paths:
       - 'shared/**'
+      - 'iosApp/**'
       - 'build.gradle.kts'
       - 'settings.gradle.kts'
       - 'gradle.properties'
@@ -55,6 +57,17 @@ jobs:
           ./gradlew --no-daemon --stacktrace
           :shared:assembleAutkaSharedDebugXCFramework
           :shared:iosSimulatorArm64Test
+
+      - name: Build native iOS app
+        run: >-
+          xcodebuild
+          -project iosApp/iosApp.xcodeproj
+          -scheme iosApp
+          -configuration Debug
+          -sdk iphonesimulator
+          -destination 'generic/platform=iOS Simulator'
+          CODE_SIGNING_ALLOWED=NO
+          build
 
       - name: Upload debug XCFramework
         uses: actions/upload-artifact@v7
