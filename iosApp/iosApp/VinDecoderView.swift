@@ -17,12 +17,15 @@ struct VinDecoderView: View {
                     TextField("VIN", text: $vin)
                         .textInputAutocapitalization(.characters)
                         .autocorrectionDisabled()
+                        .keyboardType(.asciiCapable)
+                        .submitLabel(.search)
                         .onChange(of: vin) { value in
                             let normalized = VinInput.shared.normalize(value: value)
                             if normalized != value {
                                 vin = normalized
                             }
                             requestGeneration += 1
+                            isLoading = false
                             validationError = false
                             loadFailed = false
                             result = nil
@@ -80,7 +83,6 @@ struct VinDecoderView: View {
 
     private func startDecode() {
         let normalized = VinInput.shared.normalize(value: vin)
-        vin = normalized
         guard VinInput.shared.isValid(vin: normalized) else {
             validationError = true
             loadFailed = false
@@ -161,9 +163,12 @@ private struct VinResultSection: View {
                 .font(.headline)
 
             if let warning = result.decoderWarning {
-                Text("Decoder warning: \(warning)")
-                    .font(.footnote)
-                    .foregroundStyle(.red)
+                HStack(alignment: .firstTextBaseline, spacing: 4) {
+                    Text("Decoder warning:")
+                    Text(warning)
+                }
+                .font(.footnote)
+                .foregroundStyle(.red)
             }
 
             if !summary.isEmpty { VinRow("VIN", result.vin) }
