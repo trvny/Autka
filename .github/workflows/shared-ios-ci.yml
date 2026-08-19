@@ -60,7 +60,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: AutkaShared-debug-xcframework
-          path: shared/build/XCFrameworks/debug/AutkaShared.xcframework
+          path: shared/build/XCFrameworks/debug
           if-no-files-found: error
 
   x64:
@@ -82,8 +82,5 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6.3.0
 
-      - name: Build framework and run iOS tests
-        run: >-
-          ./gradlew --no-daemon --stacktrace
-          :shared:linkDebugFrameworkIosX64
-          :shared:iosX64Test
+      - name: Run iOS tests
+        run: ./gradlew --no-daemon --stacktrace :shared:iosX64Test
