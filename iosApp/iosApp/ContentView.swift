@@ -17,6 +17,11 @@ struct ContentView: View {
                 .tabItem {
                     Label("VIN", systemImage: "barcode.viewfinder")
                 }
+
+            SourceHealthView()
+                .tabItem {
+                    Label("Sources", systemImage: "server.rack")
+                }
         }
     }
 }
