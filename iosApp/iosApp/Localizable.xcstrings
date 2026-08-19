@@ -21,6 +21,16 @@
         }
       }
     },
+    "Autka prepares the search, then opens the original marketplace. No listing data is copied or scraped." : {
+      "localizations" : {
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autka przygotowują wyszukiwanie, a potem otwierają oryginalny serwis. Dane ogłoszeń nie są kopiowane ani scrapowane."
+          }
+        }
+      }
+    },
     "Customs duty" : {
       "localizations" : {
         "pl" : {
@@ -91,6 +101,16 @@
         }
       }
     },
+    "Europe" : {
+      "localizations" : {
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Europa"
+          }
+        }
+      }
+    },
     "Excise" : {
       "localizations" : {
         "pl" : {
@@ -117,6 +137,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Wodór"
+          }
+        }
+      }
+    },
+    "Import" : {
+      "localizations" : {
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import"
           }
         }
       }
@@ -161,6 +191,26 @@
         }
       }
     },
+    "Make, model or keywords" : {
+      "localizations" : {
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marka, model lub słowa kluczowe"
+          }
+        }
+      }
+    },
+    "Marketplaces" : {
+      "localizations" : {
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Serwisy ogłoszeniowe"
+          }
+        }
+      }
+    },
     "Other" : {
       "localizations" : {
         "pl" : {
@@ -187,6 +237,46 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Hybryda plug-in"
+          }
+        }
+      }
+    },
+    "Poland" : {
+      "localizations" : {
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Polska"
+          }
+        }
+      }
+    },
+    "Region" : {
+      "localizations" : {
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Region"
+          }
+        }
+      }
+    },
+    "Search" : {
+      "localizations" : {
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Szukaj"
+          }
+        }
+      }
+    },
+    "Search cars" : {
+      "localizations" : {
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Szukaj aut"
           }
         }
       }
@@ -237,6 +327,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Do oszacowania kosztu importu używane są kwoty w USD."
+          }
+        }
+      }
+    },
+    "USA" : {
+      "localizations" : {
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "USA"
           }
         }
       }
