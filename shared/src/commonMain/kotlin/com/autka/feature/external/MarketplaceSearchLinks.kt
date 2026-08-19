@@ -5,7 +5,6 @@ import com.autka.core.model.Region
 import com.autka.core.model.SearchFilter
 import com.autka.core.model.SortOrder
 import com.autka.core.model.Transmission
-import java.util.Locale
 
 /**
  * Builds deep links into external marketplaces' OWN search pages from the current
@@ -408,7 +407,7 @@ object MarketplaceSearchLinks {
         if (min == null && max == null) null else "${min ?: ""}:${max ?: ""}"
 
     /** Lowercase, spaces/odd chars -> hyphens. Good enough for path/slug params. */
-    private fun slug(s: String): String = s.trim().lowercase(Locale.ROOT)
+    private fun slug(s: String): String = s.trim().lowercase()
         .replace(Regex("[^a-z0-9]+"), "-").trim('-')
 
     /** Tiny ordered query-string builder with percent-encoding. */
@@ -417,8 +416,30 @@ object MarketplaceSearchLinks {
         operator fun set(k: String, v: String) { pairs += k to v }
         fun render(): String {
             if (pairs.isEmpty()) return ""
-            fun enc(s: String) = java.net.URLEncoder.encode(s, "UTF-8").replace("+", "%20")
-            return "?" + pairs.joinToString("&") { (k, v) -> "${enc(k)}=${enc(v)}" }
+            return "?" + pairs.joinToString("&") { (k, v) ->
+                "${encodeQueryComponent(k)}=${encodeQueryComponent(v)}"
+            }
+        }
+    }
+}
+
+/** Matches the old URLEncoder UTF-8 output, normalizing spaces to %20. */
+private fun encodeQueryComponent(value: String): String {
+    val hex = "0123456789ABCDEF"
+    return buildString {
+        value.encodeToByteArray().forEach { byte ->
+            val b = byte.toInt() and 0xFF
+            val safe = b in 'a'.code..'z'.code ||
+                b in 'A'.code..'Z'.code ||
+                b in '0'.code..'9'.code ||
+                b == '-'.code || b == '_'.code || b == '.'.code || b == '*'.code
+            if (safe) {
+                append(b.toChar())
+            } else {
+                append('%')
+                append(hex[b ushr 4])
+                append(hex[b and 0x0F])
+            }
         }
     }
 }
