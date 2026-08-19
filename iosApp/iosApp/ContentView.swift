@@ -64,7 +64,7 @@ struct ContentView: View {
                         if engineCapacityKnown {
                             Stepper(value: $engineCapacityCc, in: 500...8_000, step: 100) {
                                 LabeledContent("Engine") {
-                                    Text("\(engineCapacityCc) cm³")
+                                    Text(engineCapacityCc.formatted()) + Text(verbatim: " cm³")
                                 }
                             }
                         }
