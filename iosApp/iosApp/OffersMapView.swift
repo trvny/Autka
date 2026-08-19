@@ -17,11 +17,18 @@ struct OffersMapView: View {
         NavigationStack {
             Group {
                 if locatedOffers.isEmpty {
-                    ContentUnavailableView(
-                        "No cars on the map",
-                        systemImage: "map",
-                        description: Text("The loaded offers do not contain location coordinates.")
-                    )
+                    VStack(spacing: 12) {
+                        Image(systemName: "map")
+                            .font(.largeTitle)
+                            .foregroundStyle(.secondary)
+                        Text("No cars on the map")
+                            .font(.headline)
+                        Text("The loaded offers do not contain location coordinates.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    .padding()
                 } else {
                     Map(coordinateRegion: $region, annotationItems: locatedOffers) { item in
                         MapAnnotation(coordinate: item.coordinate) {
