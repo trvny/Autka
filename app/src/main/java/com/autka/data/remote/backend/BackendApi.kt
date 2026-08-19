@@ -51,20 +51,6 @@ data class OffersResponse(
 )
 
 @Serializable
-data class SourcesResponse(val sources: List<SourceHealthDto> = emptyList())
-
-@Serializable
-data class SourceHealthDto(
-    val id: String,
-    val displayName: String,
-    val enabled: Boolean,
-    val offerCount: Int? = null,
-    val lastCompletedAtEpochMs: Long? = null,
-    val lastCompletedOk: Boolean? = null,
-    val lastOffersUpserted: Int? = null,
-)
-
-@Serializable
 data class OfferDto(
     val id: String,
     val sourceId: String,
