@@ -21,7 +21,7 @@ concurrency:
 jobs:
   analyze:
     name: Analyze (${{ matrix.language }})
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-latest
     timeout-minutes: 25
     permissions:
       security-events: write
