@@ -18,14 +18,6 @@ import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 import javax.inject.Singleton
 
-interface ExchangeRateRepository {
-    /** Latest rates; always has a value (seeded with offline fallback). */
-    fun rates(): StateFlow<ExchangeRates>
-
-    /** Refresh from the live source; concurrent callers share the same in-flight attempt. */
-    suspend fun refresh()
-}
-
 @Singleton
 class DefaultExchangeRateRepository @Inject constructor(
     private val live: NbpRateProvider,
