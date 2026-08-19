@@ -44,41 +44,6 @@ interface BackendApi {
 }
 
 @Serializable
-data class OffersResponse(
-    val offers: List<OfferDto>,
-    /** Total matching rows/groups in this response or before pagination. */
-    val count: Int,
-)
-
-@Serializable
-data class OfferDto(
-    val id: String,
-    val sourceId: String,
-    val title: String,
-    val make: String,
-    val model: String,
-    val year: Int? = null,
-    val mileageKm: Int? = null,
-    val price: MoneyDto,
-    val fuelType: String,
-    val transmission: String,
-    val powerHp: Int? = null,
-    val location: String? = null,
-    val region: String,
-    val thumbnailUrl: String? = null,
-    val imageUrls: List<String> = emptyList(),
-    val listingUrl: String,
-    val postedAtEpochMs: Long? = null,
-    val listingCount: Int? = null,
-    val otherSources: List<String> = emptyList(),
-    val latitude: Double? = null,
-    val longitude: Double? = null,
-)
-
-@Serializable
-data class MoneyDto(val amount: Double, val currency: String)
-
-@Serializable
 data class ImportServicesResponse(val services: List<ImportServiceDto> = emptyList())
 
 @Serializable

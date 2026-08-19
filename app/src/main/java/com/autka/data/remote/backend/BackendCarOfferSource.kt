@@ -44,6 +44,6 @@ class BackendCarOfferSource @Inject constructor(
             sort = serverSort.name,
             complete = true,
         )
-        return response.offers.map { it.toModel() }
+        return OfferDecoder.decode(response)
     }
 }
