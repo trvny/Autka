@@ -39,6 +39,9 @@ object VpicDecoder {
     fun decodeJson(payload: String, fallbackVin: String): VinDecodeResult =
         decode(json.decodeFromString<VpicResponse>(payload), fallbackVin)
 
+    fun decodeJsonOrNull(payload: String, fallbackVin: String): VinDecodeResult? =
+        runCatching { decodeJson(payload, fallbackVin) }.getOrNull()
+
     fun decode(response: VpicResponse, fallbackVin: String): VinDecodeResult {
         val decoded = response.results.firstOrNull()
             ?: error("NHTSA vPIC returned no VIN result")
