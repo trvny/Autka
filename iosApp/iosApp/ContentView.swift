@@ -5,7 +5,7 @@ struct ContentView: View {
     @State private var vehiclePriceUsd = 12_000.0
     @State private var shippingUsd = 2_000.0
 
-    private var estimate: ImportCostEstimate {
+    private func calculateEstimate() -> ImportCostEstimate {
         ImportCostCalculator.shared.estimate(
             vehiclePriceUsd: vehiclePriceUsd,
             shippingUsd: shippingUsd,
@@ -17,7 +17,9 @@ struct ContentView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        let estimate = calculateEstimate()
+
+        return NavigationStack {
             Form {
                 Section {
                     Label("Shared Kotlin core connected", systemImage: "checkmark.seal.fill")
