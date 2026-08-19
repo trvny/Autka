@@ -50,12 +50,18 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6.3.0
 
-      - name: Build frameworks and run iOS tests
+      - name: Build XCFramework and run iOS tests
         run: >-
           ./gradlew --no-daemon --stacktrace
-          :shared:linkDebugFrameworkIosArm64
-          :shared:linkDebugFrameworkIosSimulatorArm64
+          :shared:assembleAutkaSharedDebugXCFramework
           :shared:iosSimulatorArm64Test
+
+      - name: Upload debug XCFramework
+        uses: actions/upload-artifact@v7
+        with:
+          name: AutkaShared-debug-xcframework
+          path: shared/build/XCFrameworks/debug
+          if-no-files-found: error
 
   x64:
     name: Build & test shared iOS (x64)
@@ -76,8 +82,5 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6.3.0
 
-      - name: Build framework and run iOS tests
-        run: >-
-          ./gradlew --no-daemon --stacktrace
-          :shared:linkDebugFrameworkIosX64
-          :shared:iosX64Test
+      - name: Run iOS tests
+        run: ./gradlew --no-daemon --stacktrace :shared:iosX64Test
