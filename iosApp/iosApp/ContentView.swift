@@ -97,8 +97,11 @@ struct ContentView: View {
                     CostRow(title: "VAT", money: estimate.vat)
 
                     LabeledContent("Total") {
-                        Text(estimate.total.amount, format: .currency(code: "USD").precision(.fractionLength(0)))
-                            .fontWeight(.bold)
+                        Text(
+                            estimate.total.amount,
+                            format: .currency(code: estimate.total.currency.name).precision(.fractionLength(0))
+                        )
+                        .fontWeight(.bold)
                     }
 
                     if estimate.usesConservativeExcise {
@@ -128,7 +131,10 @@ private struct CostRow: View {
 
     var body: some View {
         LabeledContent(title) {
-            Text(money.amount, format: .currency(code: "USD").precision(.fractionLength(0)))
+            Text(
+                money.amount,
+                format: .currency(code: money.currency.name).precision(.fractionLength(0))
+            )
         }
     }
 }
