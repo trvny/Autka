@@ -23,7 +23,6 @@ object MarketplaceWebSearch {
             "autoplac.pl",
             "autotrader.pl",
             "autouncle.pl",
-            "autoscout24.pl",
         ),
         // Keep the Polish-locale aggregators here deliberately: they are already the
         // Europe-facing destinations exposed by MarketplaceSearchLinks. mobile.de adds
