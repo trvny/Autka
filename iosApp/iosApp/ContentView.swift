@@ -64,7 +64,7 @@ struct ContentView: View {
                         if engineCapacityKnown {
                             Stepper(value: $engineCapacityCc, in: 500...8_000, step: 100) {
                                 LabeledContent("Engine") {
-                                    Text("\(engineCapacityCc) cc")
+                                    Text("\(engineCapacityCc) cm³")
                                 }
                             }
                         }
@@ -126,7 +126,7 @@ struct ContentView: View {
 }
 
 private struct CostRow: View {
-    let title: String
+    let title: LocalizedStringKey
     let money: Money
 
     var body: some View {
@@ -152,7 +152,7 @@ private enum FuelChoice: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
-    var title: String {
+    var title: LocalizedStringKey {
         switch self {
         case .petrol: "Petrol"
         case .diesel: "Diesel"
