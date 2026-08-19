@@ -15,6 +15,7 @@ struct ListingsView: View {
     @State private var requestGeneration = 0
     @State private var hasLoaded = false
     @State private var showMarketplaces = false
+    @State private var showMap = false
 
     var body: some View {
         NavigationStack {
@@ -101,7 +102,15 @@ struct ListingsView: View {
                 await refresh()
             }
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    Button {
+                        showMap = true
+                    } label: {
+                        Image(systemName: "map")
+                    }
+                    .disabled(offers.isEmpty)
+                    .accessibilityLabel("Map")
+
                     Button {
                         showMarketplaces = true
                     } label: {
@@ -109,6 +118,9 @@ struct ListingsView: View {
                     }
                     .accessibilityLabel("Search marketplaces")
                 }
+            }
+            .sheet(isPresented: $showMap) {
+                OffersMapView(offers: offers)
             }
             .sheet(isPresented: $showMarketplaces) {
                 MarketplaceSearchView()

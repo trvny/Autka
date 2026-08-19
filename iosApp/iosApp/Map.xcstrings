@@ -1,0 +1,9 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Map" : { "localizations" : { "pl" : { "stringUnit" : { "state" : "translated", "value" : "Mapa" } } } },
+    "No cars on the map" : { "localizations" : { "pl" : { "stringUnit" : { "state" : "translated", "value" : "Brak aut na mapie" } } } },
+    "The loaded offers do not contain location coordinates." : { "localizations" : { "pl" : { "stringUnit" : { "state" : "translated", "value" : "Wczytane ogłoszenia nie zawierają współrzędnych lokalizacji." } } } }
+  },
+  "version" : "1.0"
+}
