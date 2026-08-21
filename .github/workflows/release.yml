@@ -77,7 +77,17 @@ jobs:
           valid=false
 
           for source_type in PKCS12 JKS; do
-            if keytool -importkeystore               -srckeystore "$keystore"               -srcstoretype "$source_type"               -srcstorepass "$KEYSTORE_PASSWORD"               -srcalias "$KEY_ALIAS"               -srckeypass "$KEY_PASSWORD"               -destkeystore "$check_store"               -deststoretype PKCS12               -deststorepass "$check_password"               -destkeypass "$check_password"               -noprompt >/dev/null 2>&1; then
+            if keytool -importkeystore \
+              -srckeystore "$keystore" \
+              -srcstoretype "$source_type" \
+              -srcstorepass "$KEYSTORE_PASSWORD" \
+              -srcalias "$KEY_ALIAS" \
+              -srckeypass "$KEY_PASSWORD" \
+              -destkeystore "$check_store" \
+              -deststoretype PKCS12 \
+              -deststorepass "$check_password" \
+              -destkeypass "$check_password" \
+              -noprompt >/dev/null 2>&1; then
               valid=true
               break
             fi
@@ -137,13 +147,24 @@ jobs:
           EOF
 
           if gh release view "$tag" >/dev/null 2>&1; then
-            gh api --method PATCH "repos/$GH_REPO/git/refs/tags/$tag"               -f sha="$GITHUB_SHA"               -F force=true
-            gh release edit "$tag"               --title "Autka · rolling"               --notes-file release-notes.md
+            gh api --method PATCH "repos/$GH_REPO/git/refs/tags/$tag" \
+              -f sha="$GITHUB_SHA" \
+              -F force=true
+            gh release edit "$tag" \
+              --title "Autka · rolling" \
+              --notes-file release-notes.md
           else
-            gh release create "$tag"               --draft               --target "$GITHUB_SHA"               --title "Autka · rolling"               --notes-file release-notes.md
+            gh release create "$tag" \
+              --draft \
+              --target "$GITHUB_SHA" \
+              --title "Autka · rolling" \
+              --notes-file release-notes.md
           fi
 
-          gh release upload "$tag"             dist/autka.apk             dist/autka.aab             --clobber
+          gh release upload "$tag" \
+            dist/autka.apk \
+            dist/autka.aab \
+            --clobber
           gh release edit "$tag" --draft=false --latest
 
           gh release delete v0.0.2 --yes 2>/dev/null || true
