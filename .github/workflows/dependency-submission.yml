@@ -39,6 +39,18 @@ jobs:
 
       - name: Generate and submit dependency graph
         uses: gradle/actions/dependency-submission@v6.3.0
+        with:
+          # Report only what reaches a user. Measured 22.08.2026 with `gradle :app:dependencies`:
+          # every netty coordinate here sits in AGP's Unified Test Platform configurations, and
+          # the rest of the flagged set comes from androidLintTool, unit-test classpaths and the
+          # buildscript. None of it is in releaseRuntimeClasspath, and AGP still pins netty
+          # 4.1.110, so there is no upstream fix to take. `kanarek` carries the identical set
+          # from the identical cause.
+          #
+          # The cost is deliberate: a CVE in a build tool -- the Kotlin Gradle plugin, lint --
+          # will no longer raise an alert. That build-integrity risk is traded against 97 alerts
+          # across two repositories that bury anything genuine. Delete this to get it back.
+          dependency-graph-include-configurations: .*ReleaseRuntimeClasspath
 
   # On pull requests: compare the PR's dependencies against the base and fail if a PR
   # introduces a known-vulnerable dependency, before it's merged.
