@@ -50,7 +50,13 @@ jobs:
           # The cost is deliberate: a CVE in a build tool -- the Kotlin Gradle plugin, lint --
           # will no longer raise an alert. That build-integrity risk is traded against 97 alerts
           # across two repositories that bury anything genuine. Delete this to get it back.
-          dependency-graph-include-configurations: .*ReleaseRuntimeClasspath
+          #
+          # `[Rr]` is not decoration: with no product flavours AGP names this project's
+          # shipping configuration `releaseRuntimeClasspath`, lowercase, which
+          # `.*ReleaseRuntimeClasspath` matches zero times -- an empty graph suppressing
+          # everything, the opposite of the intent. Verified against all 142 configuration
+          # names in this build. The upstream docs use the same `[Tt]` idiom.
+          dependency-graph-include-configurations: ^[a-z]*[Rr]eleaseRuntimeClasspath$
 
   # On pull requests: compare the PR's dependencies against the base and fail if a PR
   # introduces a known-vulnerable dependency, before it's merged.
