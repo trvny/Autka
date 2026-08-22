@@ -21,7 +21,7 @@ concurrency:
 jobs:
   analyze:
     name: Analyze (${{ matrix.language }})
-    runs-on: ubuntu-slim
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 25
     permissions:
       security-events: write
@@ -34,10 +34,13 @@ jobs:
         include:
           - language: actions
             build-mode: none
+            runner: ubuntu-slim
           - language: javascript-typescript
             build-mode: none
+            runner: ubuntu-slim
           - language: java-kotlin
             build-mode: manual
+            runner: ubuntu-latest
 
     steps:
       - name: Checkout
