@@ -26,7 +26,7 @@ app.notFound((c) => c.json({ error: "not_found" }, 404));
 export default {
   fetch: app.fetch,
 
-  // Cron trigger (configured in wrangler.jsonc). Runs ingestion on schedule.
+  // Scheduled ingestion entrypoint. Production cron stays disabled until a real source is enabled.
   async scheduled(_event: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
     // waitUntil keeps the run alive for the duration of the async work.
     ctx.waitUntil(

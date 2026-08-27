@@ -6,16 +6,17 @@
 
 Cloudflare Workers backend that aggregates authorised used-car offers server-side and
 serves a clean API to the Autka Android app. Built on **Workers + D1** (SQL) **+ R2**
-(images), with a cron-triggered ingestion pipeline. Aggregation, credentials and feed
-access live here — never on the device.
+(images), with a scheduled ingestion pipeline that is enabled once a real production
+source is configured. Aggregation, credentials and feed access live here — never on the
+device.
 
 ## Why a backend
 
 The app deliberately does not scrape marketplaces. This Worker is where compliant feeds
 are normalized into one schema and served. Each marketplace/partner is an `IngestSource`;
-the cron trigger runs every enabled source, isolates failures and upserts results into D1.
-Android talks to one backend API surface rather than carrying provider credentials or
-provider-specific ingestion logic.
+when scheduling is enabled, the cron trigger runs every enabled source, isolates failures
+and upserts results into D1. Android talks to one backend API surface rather than carrying
+provider credentials or provider-specific ingestion logic.
 
 The maintained policy for what may become an ingestion source, partner integration paths
 and the deep-link fallback lives in [`docs/DATA_SOURCES.md`](../docs/DATA_SOURCES.md).
@@ -116,7 +117,8 @@ fetches arbitrary URLs on demand.
 
 ## Operations
 
-- Cron runs hourly.
+- Production cron is currently disabled because no real ingestion source is enabled; re-enable
+  it when the first compliant source goes live.
 - `ingest_runs` retains the latest 500 diagnostic rows plus the latest completed row for
   every source, so source health does not disappear when another source is noisy.
 - `ingest_locks` prevents overlapping snapshots for one source and uses expiring leases so
