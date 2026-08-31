@@ -14,14 +14,14 @@
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.22.0",
-    "@cloudflare/workers-types": "^5.20260821.1",
-    "@types/node": "^26.2.0",
+    "@cloudflare/workers-types": "^5.20260828.1",
+    "@types/node": "^26.4.0",
     "typescript": "^7.0.2",
     "vitest": "~4.1.11",
-    "wrangler": "^4.114.0"
+    "wrangler": "^4.127.0"
   },
   "dependencies": {
-    "hono": "^4.13.3"
+    "hono": "^4.13.5"
   },
   "overrides": {
     "undici": "7.29.0"
