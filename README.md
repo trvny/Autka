@@ -1,6 +1,6 @@
 <!-- markdownlint-disable MD041 MD033 -->
 <p align="center">
-  <img src="https://raw.githubusercontent.com/trvny/autka/main/fastlane/metadata/android/en-US/images/icon.png" width="128" alt="Autka icon">
+  <img src="https://raw.githubusercontent.com/twojstar/Autka/main/fastlane/metadata/android/en-US/images/icon.png" width="128" alt="Autka icon">
 </p>
 
 <h1 align="center">Autka</h1>
@@ -10,16 +10,16 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/trvny/autka/actions/workflows/android-ci.yml"><img src="https://github.com/trvny/autka/actions/workflows/android-ci.yml/badge.svg" alt="Android CI"></a>
-  <a href="https://github.com/trvny/autka/actions/workflows/shared-ios-ci.yml"><img src="https://github.com/trvny/autka/actions/workflows/shared-ios-ci.yml/badge.svg" alt="Shared iOS CI"></a>
-  <a href="https://github.com/trvny/autka/actions/workflows/backend-ci.yml"><img src="https://github.com/trvny/autka/actions/workflows/backend-ci.yml/badge.svg" alt="Backend CI"></a>
+  <a href="https://github.com/twojstar/Autka/actions/workflows/android-ci.yml"><img src="https://github.com/twojstar/Autka/actions/workflows/android-ci.yml/badge.svg" alt="Android CI"></a>
+  <a href="https://github.com/twojstar/Autka/actions/workflows/shared-ios-ci.yml"><img src="https://github.com/twojstar/Autka/actions/workflows/shared-ios-ci.yml/badge.svg" alt="Shared iOS CI"></a>
+  <a href="https://github.com/twojstar/Autka/actions/workflows/backend-ci.yml"><img src="https://github.com/twojstar/Autka/actions/workflows/backend-ci.yml/badge.svg" alt="Backend CI"></a>
   <img src="https://img.shields.io/badge/Android-minSdk%2026-3DDC84?logo=android&logoColor=white" alt="minSdk 26">
-  <a href="LICENSE"><img src="https://img.shields.io/github/license/trvny/autka" alt="Apache-2.0"></a>
-  <a href="https://deepwiki.com/trvny/autka"><img src="https://deepwiki.com/badge.svg" alt="DeepWiki"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/twojstar/Autka" alt="Apache-2.0"></a>
+  <a href="https://deepwiki.com/twojstar/Autka"><img src="https://deepwiki.com/badge.svg" alt="DeepWiki"></a>
 </p>
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/trvny/autka/main/fastlane/metadata/android/en-US/images/featureGraphic.png" width="720" alt="Autka feature graphic">
+  <img src="https://raw.githubusercontent.com/twojstar/Autka/main/fastlane/metadata/android/en-US/images/featureGraphic.png" width="720" alt="Autka feature graphic">
 </p>
 <!-- markdownlint-enable MD041 MD033 -->
 
