@@ -9,7 +9,7 @@ updates:
     schedule:
       interval: "weekly"
       day: "monday"
-      time: "06:00"
+      time: "21:37"
       timezone: "Europe/Warsaw"
     open-pull-requests-limit: 15
     rebase-strategy: "disabled"
@@ -39,7 +39,7 @@ updates:
     schedule:
       interval: "weekly"
       day: "monday"
-      time: "06:00"
+      time: "21:37"
       timezone: "Europe/Warsaw"
     open-pull-requests-limit: 10
     commit-message:
@@ -56,7 +56,7 @@ updates:
     schedule:
       interval: "weekly"
       day: "monday"
-      time: "06:00"
+      time: "21:37"
       timezone: "Europe/Warsaw"
     open-pull-requests-limit: 5
     commit-message:
